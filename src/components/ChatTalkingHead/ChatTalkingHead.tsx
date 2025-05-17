@@ -200,7 +200,8 @@ const ChatTalkingHead: React.FC = () => {
           break;
           
         case 'local':
-          apiUrl = apiSettings.endpoint || 'http://localhost:1234/v1/chat/completions';
+          // Use our standalone proxy server to avoid CORS issues
+          apiUrl = apiSettings.endpoint || 'http://localhost:3000/api/v1/chat/completions';
           requestBody = {
             model: apiSettings.model,
             messages: [

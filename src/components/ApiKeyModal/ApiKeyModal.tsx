@@ -179,7 +179,7 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                 type="text"
                 value={endpoint}
                 onChange={(e) => setEndpoint(e.target.value)}
-                placeholder="http://localhost:1234/v1"
+                placeholder="http://localhost:3000/api/v1/chat/completions"
                 className="col-span-3"
               />
             </div>
