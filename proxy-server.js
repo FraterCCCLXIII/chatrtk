@@ -20,8 +20,12 @@ app.use(cors({
 }));
 
 // Handle OPTIONS requests directly to avoid LM Studio validation
-app.options('*', (req, res) => {
-  res.status(204).end();
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+  next();
 });
 
 // Create a proxy for LM Studio
