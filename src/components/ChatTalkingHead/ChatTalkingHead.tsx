@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,12 +9,8 @@ import TalkingHead from '../TalkingHead/TalkingHead';
 import ApiKeyModal from '../ApiKeyModal/ApiKeyModal';
 import './ChatTalkingHead.css';
 import { useToast } from "@/hooks/use-toast";
-
-interface ChatMessage {
-  text: string;
-  isUser: boolean;
-  expression?: 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
-}
+import { ChatMessage, TextMessage, CardMessage } from "@/lib/types";
+import { parseAIResponse, detectExpression } from "@/lib/aiParser";
 
 interface ApiSettings {
   provider: string;
@@ -24,11 +20,26 @@ interface ApiSettings {
 }
 
 const ChatTalkingHead: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([{
-    text: "Hello! How can I help you today?",
-    isUser: false,
-    expression: 'happy'
-  }]);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: 'welcome-message',
+      type: 'text',
+      text: "Hello! How can I help you today?",
+      isUser: false,
+      expression: 'happy'
+    } as TextMessage,
+    {
+      id: 'welcome-card',
+      type: 'card',
+      title: 'Card Prototype Demo',
+      content: 'This is a demonstration of the new card feature. Cards can contain interactive buttons that trigger actions.',
+      isUser: false,
+      actions: [
+        { label: 'Show Demo Card', action: 'runFunction:demo' },
+        { label: 'Settings', action: 'openModal:settings' }
+      ]
+    } as CardMessage
+  ]);
   const [inputText, setInputText] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentSpeechText, setCurrentSpeechText] = useState('');
@@ -55,18 +66,21 @@ const ChatTalkingHead: React.FC = () => {
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (!lastMessage || lastMessage.isUser || isSpeaking) return;
+    
+    // Only animate for text messages
+    if (lastMessage.type === 'text') {
+      setCurrentSpeechText(lastMessage.text);
+      setCurrentExpression(lastMessage.expression || 'neutral');
+      setIsSpeaking(true);
 
-    setCurrentSpeechText(lastMessage.text);
-    setCurrentExpression(lastMessage.expression || 'neutral');
-    setIsSpeaking(true);
+      // Auto-stop talking after a delay based on message length
+      const speakingTime = Math.max(2000, lastMessage.text.length * 50);
+      const timer = setTimeout(() => {
+        setIsSpeaking(false);
+      }, speakingTime);
 
-    // Auto-stop talking after a delay based on message length
-    const speakingTime = Math.max(2000, lastMessage.text.length * 50);
-    const timer = setTimeout(() => {
-      setIsSpeaking(false);
-    }, speakingTime);
-
-    return () => clearTimeout(timer);
+      return () => clearTimeout(timer);
+    }
   }, [messages]);
 
   // Save API settings
@@ -76,12 +90,62 @@ const ChatTalkingHead: React.FC = () => {
     localStorage.setItem('apiSettings', JSON.stringify(newSettings));
   };
 
+  // Handle card action
+  const handleCardAction = (actionString: string) => {
+    const [command, param] = actionString.split(':');
+    
+    switch (command) {
+      case 'openModal':
+        if (param === 'settings') {
+          setIsModalOpen(true);
+        }
+        break;
+        
+      case 'runFunction':
+        if (param === 'demo') {
+          // Add a demo card as a response
+          const demoCard: CardMessage = {
+            id: `demo-card-${Date.now()}`,
+            type: 'card',
+            isUser: false,
+            title: 'Demo Card',
+            content: 'This is a demo card created by the action handler.',
+            actions: [
+              { label: 'Close', action: 'runFunction:dismiss' }
+            ]
+          };
+          setMessages(prev => [...prev, demoCard]);
+        } else if (param === 'dismiss') {
+          // Do nothing, just acknowledge the action
+          toast({
+            title: "Action Received",
+            description: "Dismiss action processed successfully.",
+          });
+        }
+        break;
+        
+      default:
+        console.warn('Unknown action:', actionString);
+        toast({
+          title: "Unknown Action",
+          description: `The action "${actionString}" is not recognized.`,
+          variant: "destructive",
+        });
+    }
+  };
+
   // Handle user message submission
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
 
     // Add user message
-    setMessages([...messages, { text: inputText, isUser: true }]);
+    const userMessage: TextMessage = {
+      id: `user-${Date.now()}`,
+      type: 'text',
+      text: inputText,
+      isUser: true
+    };
+    setMessages([...messages, userMessage]);
     
     // Store the input and clear it
     const userInput = inputText;
@@ -112,11 +176,14 @@ const ChatTalkingHead: React.FC = () => {
       });
       
       // Add fallback response
-      setMessages(prev => [...prev, {
+      const errorMessage: TextMessage = {
+        id: `error-${Date.now()}`,
+        type: 'text',
         text: "Sorry, I encountered an error. Please check your API settings.",
         isUser: false,
         expression: 'sad'
-      }]);
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -136,6 +203,36 @@ const ChatTalkingHead: React.FC = () => {
         'Content-Type': 'application/json',
       };
 
+      // System prompt that includes card format instructions
+      const systemPrompt = `You are a helpful assistant with emotions. Express happiness, sadness, surprise, anger, or thoughtfulness in your responses. Keep responses concise.
+
+You can also generate interactive cards by using the [CARD]{"title": "Card Title", "content": "Card content", "actions": [{"label": "Button Text", "action": "command:param"}]}[/CARD] format.
+
+Available commands:
+- openModal:settings - Opens the settings modal
+- runFunction:demo - Shows a demo card
+- runFunction:dismiss - Dismisses/acknowledges an action
+
+Example card:
+[CARD]{"title": "Weather in New York", "content": "Currently 72°F and Sunny", "actions": [{"label": "Refresh", "action": "runFunction:demo"}, {"label": "Settings", "action": "openModal:settings"}]}[/CARD]`;
+
+      // Convert messages to API format
+      const apiMessages = messages.map(msg => {
+        if (msg.type === 'text') {
+          return {
+            role: msg.isUser ? "user" : "assistant",
+            content: msg.text
+          };
+        } else if (msg.type === 'card') {
+          // For card messages, convert to a text representation for the API
+          return {
+            role: "assistant",
+            content: `I sent a card titled "${msg.title}" with content: "${msg.content}"`
+          };
+        }
+        return null;
+      }).filter(Boolean);
+
       switch (apiSettings.provider) {
         case 'openai':
           apiUrl = 'https://api.openai.com/v1/chat/completions';
@@ -145,18 +242,15 @@ const ChatTalkingHead: React.FC = () => {
             messages: [
               {
                 role: "system",
-                content: "You are a helpful assistant with emotions. Express happiness, sadness, surprise, anger, or thoughtfulness in your responses. Keep responses concise."
+                content: systemPrompt
               },
-              ...messages.map(msg => ({
-                role: msg.isUser ? "user" : "assistant",
-                content: msg.text
-              })),
+              ...apiMessages,
               {
                 role: "user",
                 content: userInput
               }
             ],
-            max_tokens: 300
+            max_tokens: 500
           };
           break;
 
@@ -166,11 +260,11 @@ const ChatTalkingHead: React.FC = () => {
           headers['anthropic-version'] = '2023-06-01';
           requestBody = {
             model: apiSettings.model,
-            max_tokens: 300,
+            max_tokens: 500,
             messages: [
               {
                 role: "user",
-                content: `As an assistant with emotions, respond to: ${userInput}\nExpress happiness, sadness, surprise, anger, or thoughtfulness. Keep it concise.`
+                content: `${systemPrompt}\n\nRespond to: ${userInput}`
               }
             ]
           };
@@ -184,18 +278,15 @@ const ChatTalkingHead: React.FC = () => {
             messages: [
               {
                 role: "system",
-                content: "You are a helpful assistant with emotions. Express happiness, sadness, surprise, anger, or thoughtfulness in your responses. Keep responses concise."
+                content: systemPrompt
               },
-              ...messages.map(msg => ({
-                role: msg.isUser ? "user" : "assistant",
-                content: msg.text
-              })),
+              ...apiMessages,
               {
                 role: "user",
                 content: userInput
               }
             ],
-            max_tokens: 300
+            max_tokens: 500
           };
           break;
           
@@ -206,18 +297,15 @@ const ChatTalkingHead: React.FC = () => {
             messages: [
               {
                 role: "system",
-                content: "You are a helpful assistant with emotions. Express happiness, sadness, surprise, anger, or thoughtfulness in your responses. Keep responses concise."
+                content: systemPrompt
               },
-              ...messages.map(msg => ({
-                role: msg.isUser ? "user" : "assistant",
-                content: msg.text
-              })),
+              ...apiMessages,
               {
                 role: "user",
                 content: userInput
               }
             ],
-            max_tokens: 300
+            max_tokens: 500
           };
           break;
           
@@ -250,14 +338,8 @@ const ChatTalkingHead: React.FC = () => {
           break;
       }
       
-      // Detect expression from content
-      const expression = detectExpression(content);
-      
-      return {
-        text: content,
-        isUser: false,
-        expression
-      };
+      // Parse the response to potentially extract card data
+      return parseAIResponse(content);
     } catch (error) {
       console.error('API error:', error);
       throw error;
@@ -266,42 +348,70 @@ const ChatTalkingHead: React.FC = () => {
 
   // Mock AI response for testing or when API key isn't configured
   const mockGenerateResponse = (userInput: string): ChatMessage => {
-    let response: ChatMessage;
     const lowerInput = userInput.toLowerCase();
     
+    // For demo purposes, if the user asks about cards, return a card
+    if (lowerInput.includes('card') || lowerInput.includes('demo')) {
+      return {
+        id: `demo-card-${Date.now()}`,
+        type: 'card',
+        isUser: false,
+        title: 'Demo Card',
+        content: 'This is a demo card that shows how interactive cards work in the chat interface.',
+        actions: [
+          { label: 'Show Another', action: 'runFunction:demo' },
+          { label: 'Settings', action: 'openModal:settings' }
+        ]
+      } as CardMessage;
+    }
+    
     // Detect expression from user input (simplified for demo)
+    let response: TextMessage;
+    
     if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
       response = { 
+        id: `ai-${Date.now()}`,
+        type: 'text',
         text: "Hello there! How can I assist you today?", 
         isUser: false,
         expression: 'happy'
       };
     } else if (lowerInput.includes('sad') || lowerInput.includes('bad') || lowerInput.includes('sorry')) {
       response = { 
+        id: `ai-${Date.now()}`,
+        type: 'text',
         text: "I'm sorry to hear that. Is there anything I can do to help?", 
         isUser: false,
         expression: 'sad'
       };
     } else if (lowerInput.includes('wow') || lowerInput.includes('amazing') || lowerInput.includes('really')) {
       response = { 
+        id: `ai-${Date.now()}`,
+        type: 'text',
         text: "That's amazing! Tell me more about it!", 
         isUser: false,
         expression: 'surprised'
       };
     } else if (lowerInput.includes('angry') || lowerInput.includes('mad') || lowerInput.includes('upset')) {
       response = { 
+        id: `ai-${Date.now()}`,
+        type: 'text',
         text: "I understand your frustration. Let's try to resolve this issue together.", 
         isUser: false,
         expression: 'angry'
       };
     } else if (lowerInput.includes('think') || lowerInput.includes('question') || lowerInput.includes('how')) {
       response = { 
+        id: `ai-${Date.now()}`,
+        type: 'text',
         text: "That's an interesting question. Let me think about that for a moment...", 
         isUser: false,
         expression: 'thinking'
       };
     } else {
       response = { 
+        id: `ai-${Date.now()}`,
+        type: 'text',
         text: "I see. Tell me more about what you're looking for.", 
         isUser: false,
         expression: 'neutral'
@@ -356,12 +466,41 @@ const ChatTalkingHead: React.FC = () => {
       <div className="chat-container">
         <ScrollArea className="chat-messages">
           {messages.map((message, index) => (
-            <div 
-              key={index} 
-              className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
-            >
-              {message.text}
-            </div>
+            message.type === 'card' ? (
+              <div 
+                key={message.id || index} 
+                className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
+              >
+                <Card className="w-full">
+                  <CardHeader>
+                    <CardTitle>{message.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p>{message.content}</p>
+                  </CardContent>
+                  {message.actions && message.actions.length > 0 && (
+                    <CardFooter className="flex gap-2">
+                      {message.actions.map((action, idx) => (
+                        <Button 
+                          key={idx} 
+                          variant="outline" 
+                          onClick={() => handleCardAction(action.action)}
+                        >
+                          {action.label}
+                        </Button>
+                      ))}
+                    </CardFooter>
+                  )}
+                </Card>
+              </div>
+            ) : (
+              <div 
+                key={message.id || index} 
+                className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
+              >
+                {message.text}
+              </div>
+            )
           ))}
           {isLoading && (
             <div className="chat-message ai-message">
