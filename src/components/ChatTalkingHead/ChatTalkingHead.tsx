@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings } from "lucide-react";
+import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff } from "lucide-react";
 import TalkingHead from '../TalkingHead/TalkingHead';
 import ApiKeyModal from '../ApiKeyModal/ApiKeyModal';
 import './ChatTalkingHead.css';
@@ -46,6 +46,10 @@ const ChatTalkingHead: React.FC = () => {
   const [currentExpression, setCurrentExpression] = useState<'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking'>('happy');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showHead, setShowHead] = useState(true);
+  const [showChat, setShowChat] = useState(true);
+  const [headHeight, setHeadHeight] = useState(300); // Initial height in pixels
+  const [isDragging, setIsDragging] = useState(false);
   const [apiSettings, setApiSettings] = useState<ApiSettings>({
     provider: 'openai',
     apiKey: '',
@@ -421,6 +425,30 @@ Example card:
     return response;
   };
 
+  // Handle resizing of the talking head container
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const newHeight = Math.max(100, Math.min(600, moveEvent.clientY - 100)); // Min 100px, max 600px
+      setHeadHeight(newHeight);
+    };
+    
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+  
+  // Toggle visibility of components
+  const toggleHead = () => setShowHead(!showHead);
+  const toggleChat = () => setShowChat(!showChat);
+
   // Detect expression from text content
   const detectExpression = (content: string): 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking' => {
     const lowerContent = content.toLowerCase();
@@ -447,93 +475,134 @@ Example card:
 
   return (
     <Card className="chat-talking-head">
-      <div className="talking-head-container">
-        <TalkingHead 
-          text={currentSpeechText}
-          speaking={isSpeaking}
-          expression={currentExpression}
-        />
+      <div className="controls-container">
         <Button 
-          variant="outline" 
+          variant="ghost" 
           size="icon" 
-          className="absolute top-4 right-4"
+          onClick={toggleHead}
+          title={showHead ? "Hide talking head" : "Show talking head"}
+        >
+          {showHead ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={toggleChat}
+          title={showChat ? "Hide chat" : "Show chat"}
+        >
+          {showChat ? <MessageSquareOff className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon" 
           onClick={() => setIsModalOpen(true)}
+          title="Settings"
         >
           <Settings className="h-4 w-4" />
         </Button>
       </div>
       
-      <div className="chat-container">
-        <ScrollArea className="chat-messages">
-          {messages.map((message, index) => (
-            message.type === 'card' ? (
-              <div 
-                key={message.id || index} 
-                className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
-              >
-                <Card className="w-full">
-                  <CardHeader>
-                    <CardTitle>{message.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p>{message.content}</p>
-                  </CardContent>
-                  {message.actions && message.actions.length > 0 && (
-                    <CardFooter className="flex gap-2">
-                      {message.actions.map((action, idx) => (
-                        <Button 
-                          key={idx} 
-                          variant="outline" 
-                          onClick={() => handleCardAction(action.action)}
-                        >
-                          {action.label}
-                        </Button>
-                      ))}
-                    </CardFooter>
-                  )}
-                </Card>
-              </div>
-            ) : (
-              <div 
-                key={message.id || index} 
-                className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
-              >
-                {message.text}
-              </div>
-            )
-          ))}
-          {isLoading && (
-            <div className="chat-message ai-message">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse"></div>
-                <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-              </div>
-            </div>
-          )}
-        </ScrollArea>
-        
-        <div className="input-container">
-          <Textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Type your message..."
-            className="chat-input"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-          />
-          <Button 
-            onClick={handleSendMessage} 
-            className="send-button"
-            disabled={isLoading}
+      {showHead && (
+        <>
+          <div 
+            className="talking-head-container" 
+            style={{ height: `${headHeight}px` }}
           >
-            {isLoading ? 'Sending...' : 'Send'}
-          </Button>
+            <TalkingHead 
+              text={currentSpeechText}
+              speaking={isSpeaking}
+              expression={currentExpression}
+            />
+          </div>
+          
+          <div 
+            className="resize-handle"
+            onMouseDown={handleResizeStart}
+            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+          >
+            <div className="resize-handle-line"></div>
+            <div className="resize-handle-dots">
+              <div className="resize-dot"></div>
+              <div className="resize-dot"></div>
+              <div className="resize-dot"></div>
+            </div>
+          </div>
+        </>
+      )}
+      
+      {showChat && (
+        <div className="chat-container">
+          <ScrollArea className="chat-messages">
+            {messages.map((message, index) => (
+              message.type === 'card' ? (
+                <div 
+                  key={message.id || index} 
+                  className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
+                >
+                  <Card className="w-full">
+                    <CardHeader>
+                      <CardTitle>{message.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p>{message.content}</p>
+                    </CardContent>
+                    {message.actions && message.actions.length > 0 && (
+                      <CardFooter className="flex gap-2">
+                        {message.actions.map((action, idx) => (
+                          <Button 
+                            key={idx} 
+                            variant="outline" 
+                            onClick={() => handleCardAction(action.action)}
+                          >
+                            {action.label}
+                          </Button>
+                        ))}
+                      </CardFooter>
+                    )}
+                  </Card>
+                </div>
+              ) : (
+                <div 
+                  key={message.id || index} 
+                  className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
+                >
+                  {message.text}
+                </div>
+              )
+            ))}
+            {isLoading && (
+              <div className="chat-message ai-message">
+                <div className="flex space-x-2">
+                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse"></div>
+                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                </div>
+              </div>
+            )}
+          </ScrollArea>
         </div>
+      )}
+      
+      <div className="input-container">
+        <Textarea
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          placeholder="Type your message..."
+          className="chat-input"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSendMessage();
+            }
+          }}
+        />
+        <Button 
+          onClick={handleSendMessage} 
+          className="send-button"
+          disabled={isLoading}
+        >
+          {isLoading ? 'Sending...' : 'Send'}
+        </Button>
       </div>
 
       <ApiKeyModal

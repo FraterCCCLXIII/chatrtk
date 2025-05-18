@@ -4,19 +4,69 @@
   flex-direction: column;
   max-width: 1000px;
   margin: 0 auto;
-  height: 80vh;
+  height: 100vh;
   overflow: hidden;
+  position: relative;
+}
+
+.controls-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #eaeaea;
+  z-index: 10;
 }
 
 .talking-head-container {
   background-color: #5ddbaf;
   padding: 1rem;
-  border-radius: 8px 8px 0 0;
-  min-height: 300px;
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
+  overflow: hidden;
+  transition: height 0.3s ease;
+}
+
+.resize-handle {
+  height: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  cursor: grab;
+  user-select: none;
+  position: relative;
+  z-index: 5;
+}
+
+.resize-handle:hover {
+  background-color: #e0e0e0;
+}
+
+.resize-handle-line {
+  width: 40px;
+  height: 2px;
+  background-color: #aaa;
+  border-radius: 2px;
+}
+
+.resize-handle-dots {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.resize-dot {
+  width: 4px;
+  height: 4px;
+  background-color: #aaa;
+  border-radius: 50%;
 }
 
 .chat-container {
@@ -25,6 +75,8 @@
   flex-direction: column;
   padding: 1rem;
   gap: 1rem;
+  overflow: hidden;
+  min-height: 200px;
 }
 
 .chat-messages {
@@ -34,6 +86,7 @@
   background-color: #f9f9f9;
   overflow-y: auto;
   height: 100%;
+  margin-bottom: 1rem;
 }
 
 .chat-message {
@@ -72,12 +125,18 @@
 .input-container {
   display: flex;
   gap: 0.5rem;
-  padding-top: 0.5rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-top: 1px solid #eaeaea;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 .chat-input {
   flex: 1;
   resize: none;
+  max-height: 120px;
 }
 
 .send-button {
