@@ -18,16 +18,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 
 export interface ApiKeyModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (provider: string, apiKey: string, modelName: string, endpoint?: string) => void;
+  onSave: (provider: string, apiKey: string, modelName: string, endpoint?: string, audioEnabled?: boolean, piperEnabled?: boolean, piperEndpoint?: string) => void;
   currentProvider?: string;
   currentApiKey?: string;
   currentModel?: string;
   currentEndpoint?: string;
+  currentAudioEnabled?: boolean;
+  currentPiperEnabled?: boolean;
+  currentPiperEndpoint?: string;
 }
 
 type ModelOption = {
@@ -43,11 +47,17 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   currentApiKey = '',
   currentModel = '',
   currentEndpoint = '',
+  currentAudioEnabled = false,
+  currentPiperEnabled = false,
+  currentPiperEndpoint = 'http://localhost:5000/api/tts',
 }) => {
   const [provider, setProvider] = useState(currentProvider);
   const [apiKey, setApiKey] = useState(currentApiKey);
   const [model, setModel] = useState(currentModel);
   const [endpoint, setEndpoint] = useState(currentEndpoint);
+  const [audioEnabled, setAudioEnabled] = useState(currentAudioEnabled);
+  const [piperEnabled, setPiperEnabled] = useState(currentPiperEnabled);
+  const [piperEndpoint, setPiperEndpoint] = useState(currentPiperEndpoint);
   const { toast } = useToast();
 
   const getDefaultModel = (provider: string): string => {
@@ -95,7 +105,16 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
       return;
     }
 
-    onSave(provider, apiKey, model, provider === 'local' ? endpoint : undefined);
+    onSave(
+      provider, 
+      apiKey, 
+      model, 
+      provider === 'local' ? endpoint : undefined,
+      audioEnabled,
+      piperEnabled,
+      piperEndpoint
+    );
+    
     toast({
       title: "Settings Saved",
       description: `Successfully saved ${provider} API settings.`,
@@ -183,6 +202,57 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
                 className="col-span-3"
               />
             </div>
+          )}
+          
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="audio" className="text-right">
+              Text-to-Speech
+            </Label>
+            <div className="flex items-center space-x-2 col-span-3">
+              <Switch
+                id="audio"
+                checked={audioEnabled}
+                onCheckedChange={setAudioEnabled}
+              />
+              <Label htmlFor="audio" className="cursor-pointer">
+                {audioEnabled ? "Enabled" : "Disabled"}
+              </Label>
+            </div>
+          </div>
+
+          {audioEnabled && (
+            <>
+              <div className="grid grid-cols-4 items-center gap-4 mt-4">
+                <Label htmlFor="piper" className="text-right">
+                  Piper TTS
+                </Label>
+                <div className="flex items-center space-x-2 col-span-3">
+                  <Switch
+                    id="piper"
+                    checked={piperEnabled}
+                    onCheckedChange={setPiperEnabled}
+                  />
+                  <Label htmlFor="piper" className="cursor-pointer">
+                    {piperEnabled ? "Enabled" : "Disabled"}
+                  </Label>
+                </div>
+              </div>
+
+              {piperEnabled && (
+                <div className="grid grid-cols-4 items-center gap-4 mt-4">
+                  <Label htmlFor="piper-endpoint" className="text-right">
+                    Piper Endpoint
+                  </Label>
+                  <Input
+                    id="piper-endpoint"
+                    value={piperEndpoint}
+                    onChange={(e) => setPiperEndpoint(e.target.value)}
+                    placeholder="http://localhost:5000/api/tts"
+                    className="col-span-3"
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
 

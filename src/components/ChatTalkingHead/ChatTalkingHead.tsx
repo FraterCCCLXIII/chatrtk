@@ -1,14 +1,15 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings } from "lucide-react";
+import { Settings, Volume2, VolumeX } from "lucide-react";
 import TalkingHead from '../TalkingHead/TalkingHead';
 import ApiKeyModal from '../ApiKeyModal/ApiKeyModal';
 import './ChatTalkingHead.css';
 import { useToast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
 
 interface ChatMessage {
   text: string;
@@ -21,6 +22,9 @@ interface ApiSettings {
   apiKey: string;
   model: string;
   endpoint?: string;
+  audioEnabled?: boolean;
+  piperEnabled?: boolean;
+  piperEndpoint?: string;
 }
 
 const ChatTalkingHead: React.FC = () => {
@@ -39,9 +43,13 @@ const ChatTalkingHead: React.FC = () => {
     provider: 'openai',
     apiKey: '',
     model: 'gpt-4o',
-    endpoint: ''
+    endpoint: '',
+    audioEnabled: false,
+    piperEnabled: false,
+    piperEndpoint: 'http://localhost:5000/api/tts'
   });
   const { toast } = useToast();
+  const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Load API settings from localStorage on initial render
   useEffect(() => {
@@ -51,6 +59,103 @@ const ChatTalkingHead: React.FC = () => {
     }
   }, []);
 
+  // Function to speak text using Piper TTS
+  const speakWithPiper = async (text: string) => {
+    try {
+      setIsSpeaking(true);
+      
+      const response = await fetch(apiSettings.piperEndpoint || 'http://localhost:5000/api/tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Piper TTS request failed with status ${response.status}`);
+      }
+      
+      // Get audio data as blob
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      // Create and play audio element
+      const audio = new Audio(audioUrl);
+      
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl); // Clean up
+      };
+      
+      audio.onerror = (error) => {
+        console.error('Audio playback error:', error);
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl); // Clean up
+      };
+      
+      audio.play();
+    } catch (error) {
+      console.error('Error using Piper TTS:', error);
+      setIsSpeaking(false);
+      
+      // Fallback to Web Speech API if Piper fails
+      toast({
+        title: "Piper TTS Error",
+        description: "Failed to use Piper TTS. Falling back to browser TTS.",
+        variant: "destructive",
+      });
+      
+      speakWithWebSpeech(text);
+    }
+  };
+
+  // Function to speak text using Web Speech API
+  const speakWithWebSpeech = (text: string) => {
+    if (!text) return;
+    
+    // Cancel any ongoing speech
+    if (speechSynthesis.speaking) {
+      speechSynthesis.cancel();
+    }
+    
+    // Create a new utterance
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    // Store the utterance in the ref
+    speechSynthesisRef.current = utterance;
+    
+    // Speak the text
+    speechSynthesis.speak(utterance);
+    
+    // Add event listeners
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      speechSynthesisRef.current = null;
+    };
+    
+    utterance.onerror = (event) => {
+      console.error('Speech synthesis error:', event);
+      setIsSpeaking(false);
+      speechSynthesisRef.current = null;
+    };
+  };
+  
+  // Main function to speak text using selected TTS method
+  const speakText = (text: string) => {
+    if (!apiSettings.audioEnabled || !text) return;
+    
+    // Use Piper TTS if enabled, otherwise use Web Speech API
+    if (apiSettings.piperEnabled) {
+      speakWithPiper(text);
+    } else {
+      speakWithWebSpeech(text);
+    }
+  };
+  
   // Detect when AI is speaking and set the current text
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
@@ -59,21 +164,73 @@ const ChatTalkingHead: React.FC = () => {
     setCurrentSpeechText(lastMessage.text);
     setCurrentExpression(lastMessage.expression || 'neutral');
     setIsSpeaking(true);
+    
+    // Speak the text if audio is enabled
+    if (apiSettings.audioEnabled) {
+      speakText(lastMessage.text);
+    }
 
-    // Auto-stop talking after a delay based on message length
-    const speakingTime = Math.max(2000, lastMessage.text.length * 50);
-    const timer = setTimeout(() => {
-      setIsSpeaking(false);
-    }, speakingTime);
-
-    return () => clearTimeout(timer);
-  }, [messages]);
+    // Auto-stop talking after a delay based on message length (only if not using speech synthesis)
+    if (!apiSettings.audioEnabled) {
+      const speakingTime = Math.max(2000, lastMessage.text.length * 50);
+      const timer = setTimeout(() => {
+        setIsSpeaking(false);
+      }, speakingTime);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [messages, apiSettings.audioEnabled]);
+  
+  // Clean up speech synthesis when component unmounts
+  useEffect(() => {
+    return () => {
+      if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   // Save API settings
-  const handleSaveSettings = (provider: string, apiKey: string, model: string, endpoint?: string) => {
-    const newSettings = { provider, apiKey, model, endpoint };
+  const handleSaveSettings = (
+    provider: string, 
+    apiKey: string, 
+    model: string, 
+    endpoint?: string, 
+    audioEnabled?: boolean,
+    piperEnabled?: boolean,
+    piperEndpoint?: string
+  ) => {
+    const newSettings = { 
+      provider, 
+      apiKey, 
+      model, 
+      endpoint,
+      audioEnabled: audioEnabled !== undefined ? audioEnabled : apiSettings.audioEnabled,
+      piperEnabled: piperEnabled !== undefined ? piperEnabled : apiSettings.piperEnabled,
+      piperEndpoint: piperEndpoint || apiSettings.piperEndpoint
+    };
     setApiSettings(newSettings);
     localStorage.setItem('apiSettings', JSON.stringify(newSettings));
+  };
+  
+  // Toggle audio
+  const toggleAudio = () => {
+    const newAudioEnabled = !apiSettings.audioEnabled;
+    const newSettings = { ...apiSettings, audioEnabled: newAudioEnabled };
+    setApiSettings(newSettings);
+    localStorage.setItem('apiSettings', JSON.stringify(newSettings));
+    
+    // Show toast notification
+    toast({
+      title: newAudioEnabled ? "Audio Enabled" : "Audio Disabled",
+      description: newAudioEnabled ? "Text-to-speech is now enabled." : "Text-to-speech is now disabled.",
+      variant: "default",
+    });
+    
+    // Stop any ongoing speech if disabling audio
+    if (!newAudioEnabled && speechSynthesis.speaking) {
+      speechSynthesis.cancel();
+    }
   };
 
   // Handle user message submission
@@ -343,14 +500,27 @@ const ChatTalkingHead: React.FC = () => {
           speaking={isSpeaking}
           expression={currentExpression}
         />
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="absolute top-4 right-4"
-          onClick={() => setIsModalOpen(true)}
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
+        <div className="absolute top-4 right-4 flex gap-2">
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={toggleAudio}
+            title={apiSettings.audioEnabled ? "Disable audio" : "Enable audio"}
+          >
+            {apiSettings.audioEnabled ? (
+              <Volume2 className="h-4 w-4" />
+            ) : (
+              <VolumeX className="h-4 w-4" />
+            )}
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => setIsModalOpen(true)}
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       
       <div className="chat-container">
@@ -405,6 +575,9 @@ const ChatTalkingHead: React.FC = () => {
         currentApiKey={apiSettings.apiKey}
         currentModel={apiSettings.model}
         currentEndpoint={apiSettings.endpoint}
+        currentAudioEnabled={apiSettings.audioEnabled}
+        currentPiperEnabled={apiSettings.piperEnabled}
+        currentPiperEndpoint={apiSettings.piperEndpoint}
       />
     </Card>
   );

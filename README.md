@@ -1,56 +1,82 @@
-# Welcome to your Lovable project
+# Chatty Face Plugin
 
-## Project info
+A React-based talking head chat interface that can be integrated with various AI providers.
 
-**URL**: https://lovable.dev/projects/3e7f9d9f-5bec-40f8-b5ad-e7033b6813bd
+## Features
 
-## How can I edit this code?
+- Animated talking head with facial expressions
+- Support for multiple AI providers (OpenAI, Claude, DeepSeek, Local LLMs)
+- Text-to-speech capabilities
+- Piper TTS integration for high-quality speech synthesis
 
-There are several ways of editing your application.
+## Getting Started
 
-**Use Lovable**
+### Prerequisites
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3e7f9d9f-5bec-40f8-b5ad-e7033b6813bd) and start prompting.
+- Node.js 16+
+- npm or yarn
 
-Changes made via Lovable will be committed automatically to this repo.
+### Installation
 
-**Use your preferred IDE**
+1. Clone the repository
+2. Install dependencies:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+npm install
+# or
+yarn install
 ```
 
-**Edit a file directly in GitHub**
+3. Start the development server:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run dev
+# or
+yarn dev
+```
 
-**Use GitHub Codespaces**
+## Configuration
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### AI Providers
 
-## What technologies are used for this project?
+The application supports the following AI providers:
+
+- **OpenAI**: GPT-4o, GPT-4o Mini, GPT-4.5 Preview
+- **Anthropic**: Claude 3 Opus, Claude 3 Sonnet, Claude 3 Haiku
+- **DeepSeek**: DeepSeek Chat, DeepSeek Coder
+- **Local**: Any local LLM running with an OpenAI-compatible API (e.g., LM Studio)
+
+### Text-to-Speech
+
+The application supports two text-to-speech options:
+
+1. **Web Speech API**: Uses the browser's built-in speech synthesis
+2. **Piper TTS**: A high-quality neural text-to-speech system
+
+## Using Piper TTS
+
+To use Piper TTS with the application:
+
+1. Set up the Piper TTS server (see `/piper-server/README.md` for instructions)
+2. In the application settings, enable "Text-to-Speech"
+3. Enable "Piper TTS"
+4. Set the Piper TTS Endpoint to `http://localhost:5000/api/tts` (or the appropriate URL)
+5. Save the settings
+
+## Troubleshooting LM Studio Integration
+
+If you're using LM Studio as your local LLM provider and encountering issues, check the following:
+
+1. Make sure LM Studio server is running and accessible at the configured endpoint
+2. Check that you're using the correct endpoint format (typically `http://localhost:1234/v1/chat/completions`)
+3. Ensure your requests include the required `messages` field
+4. If you see "OPTIONS" errors in the LM Studio logs, this is normal for CORS preflight requests
+
+Common error messages from LM Studio:
+- `'messages' field is required`: This indicates the request format is incorrect
+- `Unexpected endpoint or method. (OPTIONS /)`: This is a CORS preflight request and can be ignored
+
+## Technologies Used
 
 This project is built with:
 
@@ -60,14 +86,10 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
-## How can I deploy this project?
+## Original Project
 
-Simply open [Lovable](https://lovable.dev/projects/3e7f9d9f-5bec-40f8-b5ad-e7033b6813bd) and click on Share -> Publish.
+This project was created with [Lovable](https://lovable.dev/projects/3e7f9d9f-5bec-40f8-b5ad-e7033b6813bd).
 
-## Can I connect a custom domain to my Lovable project?
+## License
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+[MIT License](LICENSE)
