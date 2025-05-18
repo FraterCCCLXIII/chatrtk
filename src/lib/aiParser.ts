@@ -31,7 +31,7 @@ export const detectExpression = (content: string): Expression => {
 
 // Parse AI response to extract card data if present
 export const parseAIResponse = (content: string): ChatMessage => {
-  // Check if the response contains a card directive
+  // Check if the response contains a card directive with JSON format
   const cardMatch = content.match(/\[CARD\](.*?)\[\/CARD\]/s);
   
   if (cardMatch) {
@@ -49,6 +49,33 @@ export const parseAIResponse = (content: string): ChatMessage => {
       console.error("Failed to parse card data:", error);
       // Fall back to text message
     }
+  }
+  
+  // Check for "I created a card with title" format
+  const createdCardMatch = content.match(/I created a card with title ["'](.+?)["'] and content:?\s*["'](.+?)["']/s);
+  if (createdCardMatch) {
+    return {
+      id: generateId(),
+      type: "card",
+      isUser: false,
+      title: createdCardMatch[1] || "Card",
+      content: createdCardMatch[2] || "",
+      actions: []
+    };
+  }
+  
+  // Check for multiple cards format
+  const multipleCardsMatch = content.match(/I created cards with titles ["'](.+?)["'] and contents ["'](.+?)["']/s);
+  if (multipleCardsMatch) {
+    // Just create one card with all the information for now
+    return {
+      id: generateId(),
+      type: "card",
+      isUser: false,
+      title: "Multiple Cards",
+      content: content.replace(/I created cards with titles.+/s, "Card Collection"),
+      actions: []
+    };
   }
   
   // Default to text message

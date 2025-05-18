@@ -210,15 +210,25 @@ const ChatTalkingHead: React.FC = () => {
       // System prompt that includes card format instructions
       const systemPrompt = `You are a helpful assistant with emotions. Express happiness, sadness, surprise, anger, or thoughtfulness in your responses. Keep responses concise.
 
-You can also generate interactive cards by using the [CARD]{"title": "Card Title", "content": "Card content", "actions": [{"label": "Button Text", "action": "command:param"}]}[/CARD] format.
+IMPORTANT: When asked to create a card, you MUST use the exact format below:
 
-Available commands:
+[CARD]{"title": "Card Title", "content": "Card content", "actions": [{"label": "Button Text", "action": "command:param"}]}[/CARD]
+
+Do not describe creating a card - actually create one using the [CARD] format. The entire JSON object must be valid and enclosed in the [CARD] tags.
+
+Available commands for actions:
 - openModal:settings - Opens the settings modal
 - runFunction:demo - Shows a demo card
 - runFunction:dismiss - Dismisses/acknowledges an action
 
-Example card:
-[CARD]{"title": "Weather in New York", "content": "Currently 72°F and Sunny", "actions": [{"label": "Refresh", "action": "runFunction:demo"}, {"label": "Settings", "action": "openModal:settings"}]}[/CARD]`;
+Example card formats:
+1. Simple card:
+[CARD]{"title": "Weather in New York", "content": "Currently 72°F and Sunny\\nHigh: 74°F\\nLow: 58°F"}[/CARD]
+
+2. Card with actions:
+[CARD]{"title": "Task List", "content": "- Create prototype\\n- Test functionality\\n- Deploy to production", "actions": [{"label": "Mark Complete", "action": "runFunction:dismiss"}, {"label": "Settings", "action": "openModal:settings"}]}[/CARD]
+
+When asked about cards, weather, recipes, or any structured information, respond with a properly formatted card.`;
 
       // Convert messages to API format
       const apiMessages = messages.map(msg => {
@@ -354,75 +364,57 @@ Example card:
   const mockGenerateResponse = (userInput: string): ChatMessage => {
     const lowerInput = userInput.toLowerCase();
     
-    // For demo purposes, if the user asks about cards, return a card
+    // For demo purposes, return different types of cards based on user input
     if (lowerInput.includes('card') || lowerInput.includes('demo')) {
-      return {
-        id: `demo-card-${Date.now()}`,
-        type: 'card',
-        isUser: false,
-        title: 'Demo Card',
-        content: 'This is a demo card that shows how interactive cards work in the chat interface.',
-        actions: [
-          { label: 'Show Another', action: 'runFunction:demo' },
-          { label: 'Settings', action: 'openModal:settings' }
-        ]
-      } as CardMessage;
+      return parseAIResponse(`[CARD]{"title": "Demo Card", "content": "This is a demo card that shows how interactive cards work in the chat interface.", "actions": [{"label": "Show Another", "action": "runFunction:demo"}, {"label": "Settings", "action": "openModal:settings"}]}[/CARD]`);
+    }
+    
+    // Task list card
+    if (lowerInput.includes('task') || lowerInput.includes('todo') || lowerInput.includes('to-do')) {
+      return parseAIResponse(`[CARD]{"title": "Task List", "content": "- Create card prototype\\n- Implement card parser\\n- Add interactive buttons\\n- Style the cards\\n- Test with different content", "actions": [{"label": "Mark Complete", "action": "runFunction:dismiss"}, {"label": "Add Task", "action": "runFunction:demo"}]}[/CARD]`);
+    }
+    
+    // Weather card
+    if (lowerInput.includes('weather') || lowerInput.includes('forecast')) {
+      return parseAIResponse(`[CARD]{"title": "Weather Forecast", "content": "New York, NY\\n\\nCurrently: 72°F, Sunny\\nHigh: 75°F\\nLow: 58°F\\n\\nTomorrow: Partly cloudy, 70°F", "actions": [{"label": "Refresh", "action": "runFunction:demo"}]}[/CARD]`);
+    }
+    
+    // Recipe card
+    if (lowerInput.includes('recipe') || lowerInput.includes('cook') || lowerInput.includes('food')) {
+      return parseAIResponse(`[CARD]{"title": "Simple Pasta Recipe", "content": "Ingredients:\\n- 1 lb pasta\\n- 2 cups marinara sauce\\n- 1 cup cheese\\n- Salt and pepper\\n\\nInstructions:\\n1. Cook pasta according to package\\n2. Heat sauce in a pan\\n3. Mix pasta and sauce\\n4. Top with cheese", "actions": [{"label": "Save Recipe", "action": "runFunction:dismiss"}]}[/CARD]`);
     }
     
     // Detect expression from user input (simplified for demo)
-    let response: TextMessage;
+    let response: string;
+    let expression: Expression = 'neutral';
     
     if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
-      response = { 
-        id: `ai-${Date.now()}`,
-        type: 'text',
-        text: "Hello there! How can I assist you today?", 
-        isUser: false,
-        expression: 'happy'
-      };
+      response = "Hello there! How can I assist you today?";
+      expression = 'happy';
     } else if (lowerInput.includes('sad') || lowerInput.includes('bad') || lowerInput.includes('sorry')) {
-      response = { 
-        id: `ai-${Date.now()}`,
-        type: 'text',
-        text: "I'm sorry to hear that. Is there anything I can do to help?", 
-        isUser: false,
-        expression: 'sad'
-      };
+      response = "I'm sorry to hear that. Is there anything I can do to help?";
+      expression = 'sad';
     } else if (lowerInput.includes('wow') || lowerInput.includes('amazing') || lowerInput.includes('really')) {
-      response = { 
-        id: `ai-${Date.now()}`,
-        type: 'text',
-        text: "That's amazing! Tell me more about it!", 
-        isUser: false,
-        expression: 'surprised'
-      };
+      response = "That's amazing! Tell me more about it!";
+      expression = 'surprised';
     } else if (lowerInput.includes('angry') || lowerInput.includes('mad') || lowerInput.includes('upset')) {
-      response = { 
-        id: `ai-${Date.now()}`,
-        type: 'text',
-        text: "I understand your frustration. Let's try to resolve this issue together.", 
-        isUser: false,
-        expression: 'angry'
-      };
+      response = "I understand your frustration. Let's try to resolve this issue together.";
+      expression = 'angry';
     } else if (lowerInput.includes('think') || lowerInput.includes('question') || lowerInput.includes('how')) {
-      response = { 
-        id: `ai-${Date.now()}`,
-        type: 'text',
-        text: "That's an interesting question. Let me think about that for a moment...", 
-        isUser: false,
-        expression: 'thinking'
-      };
+      response = "That's an interesting question. Let me think about that for a moment...";
+      expression = 'thinking';
     } else {
-      response = { 
-        id: `ai-${Date.now()}`,
-        type: 'text',
-        text: "I see. Tell me more about what you're looking for.", 
-        isUser: false,
-        expression: 'neutral'
-      };
+      response = "I see. Tell me more about what you're looking for.";
+      expression = 'neutral';
     }
 
-    return response;
+    return {
+      id: `ai-${Date.now()}`,
+      type: 'text',
+      text: response,
+      isUser: false,
+      expression: expression
+    };
   };
 
   // Handle resizing of the talking head container
