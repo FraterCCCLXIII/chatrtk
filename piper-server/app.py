@@ -107,8 +107,15 @@ def text_to_speech():
             os.unlink(temp_wav_path)
 
 if __name__ == '__main__':
+    import argparse
+
     # Try to load the voice model at startup
     load_voice_model()
-    
-    # Run the server
-    app.run(host='0.0.0.0', port=5000, debug=True)
+
+    # Set up command-line argument parsing
+    parser = argparse.ArgumentParser(description='Run the Piper TTS server.')
+    parser.add_argument('--port', type=int, default=5000, help='Port to run the server on')
+    args = parser.parse_args()
+
+    # Run the Flask app on the specified port
+    app.run(host='0.0.0.0', port=args.port, debug=True)
