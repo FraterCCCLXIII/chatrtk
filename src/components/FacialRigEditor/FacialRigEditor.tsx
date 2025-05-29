@@ -97,152 +97,218 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
     onOpenChange(false);
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Facial Rig Editor</DialogTitle>
-          <DialogDescription>
-            Customize your chatty face appearance and behavior.
-          </DialogDescription>
-        </DialogHeader>
+  // Define expressions for the animation panel
+  const expressions = [
+    { id: 'neutral', name: 'Neutral' },
+    { id: 'happy', name: 'Happy' },
+    { id: 'sad', name: 'Sad' },
+    { id: 'surprised', name: 'Surprised' },
+    { id: 'angry', name: 'Angry' },
+    { id: 'thinking', name: 'Thinking' }
+  ];
 
-        <div className="py-4 space-y-6">
-          {/* Preview */}
-          <Card>
-            <CardContent className="p-4">
-              <div 
-                style={{ backgroundColor: previewColor }} 
-                className="h-48 w-full flex items-center justify-center rounded-md"
+  // Define phonemes for the animation panel
+  const phonemes = [
+    { id: 'A', name: 'A' },
+    { id: 'E', name: 'E' },
+    { id: 'I', name: 'I' },
+    { id: 'O', name: 'O' },
+    { id: 'U', name: 'U' },
+    { id: 'M', name: 'M' },
+    { id: 'B', name: 'B' },
+    { id: 'P', name: 'P' },
+    { id: 'F', name: 'F' },
+    { id: 'V', name: 'V' },
+    { id: 'L', name: 'L' },
+    { id: 'T', name: 'T' }
+  ];
+
+  const [currentExpression, setCurrentExpression] = useState('happy');
+  const [currentPhoneme, setCurrentPhoneme] = useState('');
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
+      <DialogContent className="max-w-full w-screen h-screen max-h-screen p-0 overflow-hidden">
+        <div className="flex h-full">
+          {/* Left Drawer - Animation Controls */}
+          <div className="w-64 bg-slate-100 p-4 overflow-y-auto border-r">
+            <h2 className="text-xl font-bold mb-4">Animation</h2>
+            
+            {/* Expressions */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-2">Expressions</h3>
+              <div className="space-y-2">
+                {expressions.map(exp => (
+                  <Button 
+                    key={exp.id}
+                    variant={currentExpression === exp.id ? "default" : "outline"}
+                    className="w-full justify-start"
+                    onClick={() => setCurrentExpression(exp.id)}
+                  >
+                    {exp.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Phonemes */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-2">Phonemes</h3>
+              <div className="grid grid-cols-3 gap-2">
+                {phonemes.map(phoneme => (
+                  <Button 
+                    key={phoneme.id}
+                    variant={currentPhoneme === phoneme.id ? "default" : "outline"}
+                    className="w-full"
+                    onClick={() => setCurrentPhoneme(phoneme.id)}
+                  >
+                    {phoneme.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+          
+          {/* Main Content - Face Preview */}
+          <div className="flex-1 flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <DialogTitle className="text-2xl">Facial Rig Editor</DialogTitle>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSave}>
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+            
+            <div className="flex-1 flex items-center justify-center p-8" style={{ backgroundColor: previewColor }}>
+              <div className="w-96 h-96">
+                <TalkingHead 
+                  theme={{
+                    id: selectedTheme.id,
+                    name: selectedTheme.name,
+                    description: selectedTheme.description,
+                    previewColor: previewColor,
+                    screenColor: screenColor,
+                    faceColor: faceColor,
+                    tongueColor: tongueColor,
+                  }}
+                  headShape={selectedHeadShape}
+                  expression={currentExpression as any}
+                  text={currentPhoneme ? `Example of ${currentPhoneme} sound` : undefined}
+                  speaking={!!currentPhoneme}
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Right Drawer - Inspector */}
+          <div className="w-80 bg-slate-100 p-4 overflow-y-auto border-l">
+            <h2 className="text-xl font-bold mb-4">Inspector</h2>
+            
+            {/* Head Shape */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-2">Head Shape</h3>
+              <RadioGroup 
+                value={selectedHeadShape.id} 
+                onValueChange={(value) => {
+                  const shape = headShapes.find(s => s.id === value);
+                  if (shape) setSelectedHeadShape(shape);
+                }}
+                className="grid grid-cols-2 gap-2"
               >
-                <div className="w-40 h-40">
-                  <TalkingHead 
-                    theme={{
-                      id: selectedTheme.id,
-                      name: selectedTheme.name,
-                      description: selectedTheme.description,
-                      previewColor: previewColor,
-                      screenColor: screenColor,
-                      faceColor: faceColor,
-                      tongueColor: tongueColor,
-                    }}
-                    headShape={selectedHeadShape}
-                    expression="happy"
+                {headShapes.map((shape) => (
+                  <div key={shape.id} className="flex items-start space-x-2">
+                    <RadioGroupItem value={shape.id} id={`shape-${shape.id}`} className="mt-1" />
+                    <div className="grid gap-1.5 w-full">
+                      <Label htmlFor={`shape-${shape.id}`} className="font-medium">
+                        {shape.name}
+                      </Label>
+                      <Card className="overflow-hidden">
+                        <CardContent className="p-2 flex items-center justify-center h-16">
+                          {shape.shape === 'rectangle' && (
+                            <div className="w-12 h-8 bg-gray-300 rounded-md"></div>
+                          )}
+                          {shape.shape === 'circle' && (
+                            <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+                          )}
+                          {shape.shape === 'triangle' && (
+                            <div className="w-0 h-0 border-l-[20px] border-r-[20px] border-b-[35px] border-l-transparent border-r-transparent border-b-gray-300"></div>
+                          )}
+                          {shape.shape === 'star' && (
+                            <div className="text-3xl text-gray-300">★</div>
+                          )}
+                          {shape.shape === 'heart' && (
+                            <div className="text-3xl text-gray-300">❤</div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                ))}
+              </RadioGroup>
+            </div>
+
+            {/* Color Controls */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Color Customization</h3>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="preview-color">Background Color</Label>
+                  <input 
+                    type="color" 
+                    value={previewColor} 
+                    onChange={(e) => setPreviewColor(e.target.value)}
+                    id="preview-color"
+                    className="w-10 h-6"
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Head Shape */}
-          <div className="space-y-2">
-            <h3 className="text-lg font-medium">Head Shape</h3>
-            <RadioGroup 
-              value={selectedHeadShape.id} 
-              onValueChange={(value) => {
-                const shape = headShapes.find(s => s.id === value);
-                if (shape) setSelectedHeadShape(shape);
-              }}
-              className="grid grid-cols-2 gap-4"
-            >
-              {headShapes.map((shape) => (
-                <div key={shape.id} className="flex items-start space-x-2">
-                  <RadioGroupItem value={shape.id} id={`shape-${shape.id}`} className="mt-1" />
-                  <div className="grid gap-1.5 w-full">
-                    <Label htmlFor={`shape-${shape.id}`} className="font-medium">
-                      {shape.name}
-                    </Label>
-                    <Card className="overflow-hidden">
-                      <CardContent className="p-3 flex items-center justify-center h-20">
-                        {shape.shape === 'rectangle' && (
-                          <div className="w-16 h-12 bg-gray-300 rounded-md"></div>
-                        )}
-                        {shape.shape === 'circle' && (
-                          <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
-                        )}
-                        {shape.shape === 'triangle' && (
-                          <div className="w-0 h-0 border-l-[30px] border-r-[30px] border-b-[50px] border-l-transparent border-r-transparent border-b-gray-300"></div>
-                        )}
-                        {shape.shape === 'star' && (
-                          <div className="text-4xl text-gray-300">★</div>
-                        )}
-                        {shape.shape === 'heart' && (
-                          <div className="text-4xl text-gray-300">❤</div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="screen-color">Screen Color</Label>
+                  <input 
+                    type="color" 
+                    value={screenColor} 
+                    onChange={(e) => setScreenColor(e.target.value)}
+                    id="screen-color"
+                    className="w-10 h-6"
+                  />
                 </div>
-              ))}
-            </RadioGroup>
-          </div>
-
-          {/* Color Controls */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Color Customization</h3>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="preview-color">Background Color</Label>
-                <input 
-                  type="color" 
-                  value={previewColor} 
-                  onChange={(e) => setPreviewColor(e.target.value)}
-                  id="preview-color"
-                  className="w-10 h-6"
-                />
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="screen-color">Screen Color</Label>
-                <input 
-                  type="color" 
-                  value={screenColor} 
-                  onChange={(e) => setScreenColor(e.target.value)}
-                  id="screen-color"
-                  className="w-10 h-6"
-                />
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="face-color">Face Color</Label>
+                  <input 
+                    type="color" 
+                    value={faceColor} 
+                    onChange={(e) => setFaceColor(e.target.value)}
+                    id="face-color"
+                    className="w-10 h-6"
+                  />
+                </div>
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="face-color">Face Color</Label>
-                <input 
-                  type="color" 
-                  value={faceColor} 
-                  onChange={(e) => setFaceColor(e.target.value)}
-                  id="face-color"
-                  className="w-10 h-6"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="tongue-color">Tongue Color</Label>
-                <input 
-                  type="color" 
-                  value={tongueColor} 
-                  onChange={(e) => setTongueColor(e.target.value)}
-                  id="tongue-color"
-                  className="w-10 h-6"
-                />
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="tongue-color">Tongue Color</Label>
+                  <input 
+                    type="color" 
+                    value={tongueColor} 
+                    onChange={(e) => setTongueColor(e.target.value)}
+                    id="tongue-color"
+                    className="w-10 h-6"
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
-
-        <DialogFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>
-            Save Changes
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

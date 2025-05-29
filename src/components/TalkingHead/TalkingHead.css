@@ -31,6 +31,20 @@
   clip-path: var(--clip-path, none);
 }
 
+/* Apply the same clip-path to the border */
+.screen::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  background-color: #333;
+  z-index: -1;
+  clip-path: var(--clip-path, none);
+  border-radius: inherit;
+}
+
 /* Triangle shape */
 .screen.triangle {
   --clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
