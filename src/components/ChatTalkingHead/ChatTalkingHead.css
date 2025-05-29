@@ -9,12 +9,12 @@
   max-width: 1000px;
   margin: 0 auto;
   height: 100vh;
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden to visible */
   position: relative;
   border: none;
   box-shadow: none;
   background-color: transparent;
-  padding-bottom: 200px; /* Further increased padding to ensure message thread ends above input field */
+  padding-bottom: 0; /* Removed padding as we're using absolute positioning */
 }
 
 .app-title {
@@ -115,7 +115,6 @@
 }
 
 .chat-container {
-  flex: 1;
   display: flex;
   flex-direction: column;
   padding: 1rem;
@@ -123,28 +122,38 @@
   gap: 1rem;
   overflow: hidden;
   min-height: 200px;
-  position: relative;
+  position: fixed; /* Changed from absolute to fixed */
+  top: 0;
+  left: 0;
+  right: 0;
   margin: 0 auto;
   width: 100%;
   max-width: 600px; /* Match the input container max-width */
   height: 100vh; /* Full viewport height */
+  z-index: 10; /* Ensure it's above other elements but below the input */
 }
 
 .chat-messages {
-  flex: 1;
   padding: 1rem;
   border-radius: 0;
   background-color: transparent;
   overflow-y: auto;
-  height: calc(100vh - 180px); /* Set a fixed height that leaves space for the input */
+  height: calc(100vh - 100px); /* Set a fixed height that leaves space for the input */
   margin-bottom: 0; /* Remove margin as we're using fixed positioning */
   display: flex;
   flex-direction: column;
   scroll-behavior: auto; /* No smooth scrolling */
   width: 100%;
-  padding-bottom: 80px; /* Add padding to ensure messages appear above input */
-  position: relative;
-  z-index: 1;
+  padding-bottom: 20px; /* Reduced padding */
+  position: fixed; /* Fixed position */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 100px; /* Space for input container */
+  z-index: 11; /* Higher than chat-container but lower than input-container */
+  max-width: 600px; /* Match the input container max-width */
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .chat-message {
@@ -217,16 +226,16 @@
   bottom: 1rem;
   left: 0;
   right: 0;
-  margin: 0 auto;
+  margin: 0 auto; /* Center horizontally */
   width: 100%;
   max-width: 600px; /* Consistent width with message container */
-  z-index: 20; /* Higher z-index to ensure it's above messages */
+  z-index: 30; /* Higher z-index to ensure it's above messages and chat container */
   justify-content: center; /* Center the input horizontally */
   align-items: flex-end; /* Align items to the bottom */
   box-sizing: border-box;
   /* No background gradient */
   background: transparent;
-  padding-top: 1rem; /* Reduced padding */
+  padding-top: 0.5rem; /* Reduced padding */
 }
 
 .chat-input {
