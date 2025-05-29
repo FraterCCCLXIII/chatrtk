@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,6 +7,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2 } from "lucide-react";
 import { Smiley, Robot } from "@phosphor-icons/react";
 import { PersonIcon } from "@radix-ui/react-icons";
+import { 
+  AnimatedMessage, 
+  AnimatedCard, 
+  AnimatedDiv, 
+  MotionDiv, 
+  MotionButton, 
+  MotionTextarea,
+  useFloatingAnimation,
+  useFadeIn,
+  useSlideIn,
+  use3DRotation
+} from '../animations';
 import TalkingHead from '../TalkingHead/TalkingHead';
 import ApiKeyModal from '../ApiKeyModal/ApiKeyModal';
 import FaceSelectorModal, { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
@@ -677,76 +689,116 @@ When asked about cards, weather, recipes, or any structured information, respond
     borderRadius: '12px 12px 12px 2px',
   };
 
+  // Animation for the app title
+  const titleAnimation = useFadeIn();
+  const floatingAnimation = useFloatingAnimation();
+  
   return (
     <div>
-      <div className="app-title">ChatRTK</div>
-      <div className="model-version">RTK-100</div>
+      <MotionDiv 
+        className="app-title"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      >
+        ChatRTK
+      </MotionDiv>
+      <MotionDiv 
+        className="model-version"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.2 }}
+      >
+        RTK-100
+      </MotionDiv>
       <div className="controls-container">
-        <Button 
+        <MotionButton 
           variant="ghost" 
           size="icon" 
           onClick={toggleHead}
           title={showHead ? "Hide talking head" : "Show talking head"}
+          whileHover={{ scale: 1.2, rotate: 5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
           {showHead ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </Button>
-        <Button 
+        </MotionButton>
+        <MotionButton 
           variant="ghost" 
           size="icon" 
           onClick={toggleChat}
           title={showChat ? "Hide chat" : "Show chat"}
+          whileHover={{ scale: 1.2, rotate: -5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
           {showChat ? <MessageSquareOff className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
-        </Button>
-        <Button 
+        </MotionButton>
+        <MotionButton 
           variant="ghost" 
           size="icon" 
           onClick={() => setIsFaceSelectorOpen(true)}
           title="Change face theme"
+          whileHover={{ scale: 1.2, rotate: 5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
           <UserCircle2 className="h-4 w-4" />
-        </Button>
-        <Button 
+        </MotionButton>
+        <MotionButton 
           variant="ghost" 
           size="icon" 
           onClick={() => setIsHeadSelectorOpen(true)}
           title="Select head theme"
+          whileHover={{ scale: 1.2, rotate: -5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
           <Smiley className="h-4 w-4" weight="fill" />
-        </Button>
-        <Button 
+        </MotionButton>
+        <MotionButton 
           variant="ghost" 
           size="icon" 
           onClick={() => setIsAnimatedHeadSelectorOpen(true)}
           title="Select animated head"
+          whileHover={{ scale: 1.2, rotate: 5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
           <Robot className="h-4 w-4" weight="fill" />
-        </Button>
-        <Button 
+        </MotionButton>
+        <MotionButton 
           variant="ghost" 
           size="icon" 
           onClick={() => setIsFacialRigEditorOpen(true)}
           title="Edit facial rig"
+          whileHover={{ scale: 1.2, rotate: -5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
           <Edit2 className="h-4 w-4" />
-        </Button>
-        <Button 
+        </MotionButton>
+        <MotionButton 
           variant="ghost" 
           size="icon" 
           onClick={() => setIsModalOpen(true)}
           title="Settings"
+          whileHover={{ scale: 1.2, rotate: 5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
           <Settings className="h-4 w-4" />
-        </Button>
+        </MotionButton>
       </div>
       
       {showHead && (
         <>
-          <div 
+          <AnimatedDiv 
             className="talking-head-container" 
             style={{ 
               height: `${headHeight}px`,
-              backgroundColor: currentFaceTheme.previewColor
+              backgroundColor: currentFaceTheme.previewColor,
+              ...floatingAnimation
             }}
           >
             <TalkingHead 
@@ -757,7 +809,7 @@ When asked about cards, weather, recipes, or any structured information, respond
               headShape={currentHeadShape}
               animatedTheme={currentAnimatedHeadTheme}
             />
-          </div>
+          </AnimatedDiv>
           
           <div 
             className="resize-handle"
@@ -779,40 +831,55 @@ When asked about cards, weather, recipes, or any structured information, respond
           <ScrollArea className="chat-messages">
             {messages.map((message, index) => (
               message.type === 'card' ? (
-                <div 
-                  key={message.id || index} 
-                  className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
+                <AnimatedMessage 
+                  key={message.id || index}
+                  isUser={message.isUser}
+                  delay={index * 0.05}
                 >
-                  <Card className="w-full">
-                    <CardHeader>
-                      <CardTitle>{message.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p>{message.content}</p>
-                    </CardContent>
-                    {message.actions && message.actions.length > 0 && (
-                      <CardFooter className="flex gap-2">
-                        {message.actions.map((action, idx) => (
-                          <Button 
-                            key={idx} 
-                            variant="outline" 
-                            onClick={() => handleCardAction(action.action)}
-                          >
-                            {action.label}
-                          </Button>
-                        ))}
-                      </CardFooter>
-                    )}
-                  </Card>
-                </div>
+                  <div
+                    className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
+                  >
+                    <AnimatedCard>
+                      <Card className="w-full">
+                        <CardHeader>
+                          <CardTitle>{message.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p>{message.content}</p>
+                        </CardContent>
+                        {message.actions && message.actions.length > 0 && (
+                          <CardFooter className="flex gap-2">
+                            {message.actions.map((action, idx) => (
+                              <MotionButton
+                                key={idx}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                                variant="outline" 
+                                onClick={() => handleCardAction(action.action)}
+                              >
+                                {action.label}
+                              </MotionButton>
+                            ))}
+                          </CardFooter>
+                        )}
+                      </Card>
+                    </AnimatedCard>
+                  </div>
+                </AnimatedMessage>
               ) : (
-                <div 
-                  key={message.id || index} 
-                  className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
-                  style={message.isUser ? userMessageStyle : aiMessageStyle}
+                <AnimatedMessage 
+                  key={message.id || index}
+                  isUser={message.isUser}
+                  delay={index * 0.05}
                 >
-                  {message.text}
-                </div>
+                  <div
+                    className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
+                    style={message.isUser ? userMessageStyle : aiMessageStyle}
+                  >
+                    {message.text}
+                  </div>
+                </AnimatedMessage>
               )
             ))}
             {isLoading && (
@@ -828,12 +895,19 @@ When asked about cards, weather, recipes, or any structured information, respond
         </div>
       )}
       
-      <div className="input-container">
-        <Textarea
+      <MotionDiv 
+        className="input-container"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      >
+        <MotionTextarea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="Type your message..."
           className="chat-input"
+          whileFocus={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -841,16 +915,19 @@ When asked about cards, weather, recipes, or any structured information, respond
             }
           }}
         />
-        <Button 
+        <MotionButton 
           onClick={handleSendMessage} 
           className="send-button"
           disabled={isLoading}
           variant="default"
           size="icon"
+          whileHover={{ scale: 1.1, rotate: 5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
           {isLoading ? '...' : <MessageCircleMore className="h-5 w-5" />}
-        </Button>
-      </div>
+        </MotionButton>
+      </MotionDiv>
 
       <ApiKeyModal
         open={isModalOpen}
