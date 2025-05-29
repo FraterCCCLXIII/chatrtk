@@ -68,6 +68,15 @@ const FaceSelectorModal: React.FC<FaceSelectorModalProps> = ({
       faceColor: '#e67d45',
       tongueColor: '#ff5d7d',
     },
+    {
+      id: 'bubblegum',
+      name: 'Bubblegum',
+      description: 'A playful pink theme with a sweet and bubbly personality',
+      previewColor: '#ff7dc7',
+      screenColor: '#ffe2f5',
+      faceColor: '#e45daa',
+      tongueColor: '#5ddbaf',
+    },
   ];
 
   const handleSave = () => {

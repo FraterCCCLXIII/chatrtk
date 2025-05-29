@@ -133,7 +133,7 @@ const ChatTalkingHead: React.FC = () => {
     window.dispatchEvent(new Event('storage'));
     
     // Update document body background color
-    document.body.style.backgroundColor = faceTheme.screenColor;
+    document.body.style.backgroundColor = faceTheme.previewColor;
   };
 
   // Handle card action
@@ -507,6 +507,20 @@ When asked about cards, weather, recipes, or any structured information, respond
     }
   };
 
+  // Set CSS variable for head height
+  useEffect(() => {
+    document.documentElement.style.setProperty('--head-height', `${headHeight}px`);
+  }, [headHeight]);
+
+  // Define message bubble colors based on theme
+  const userMessageStyle = {
+    backgroundColor: `${currentFaceTheme.previewColor}80`, // 50% opacity
+  };
+  
+  const aiMessageStyle = {
+    backgroundColor: `${currentFaceTheme.previewColor}40`, // 25% opacity
+  };
+
   return (
     <Card className="chat-talking-head">
       <div className="controls-container">
@@ -611,17 +625,18 @@ When asked about cards, weather, recipes, or any structured information, respond
                 <div 
                   key={message.id || index} 
                   className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
+                  style={message.isUser ? userMessageStyle : aiMessageStyle}
                 >
                   {message.text}
                 </div>
               )
             ))}
             {isLoading && (
-              <div className="chat-message ai-message">
+              <div className="chat-message ai-message" style={aiMessageStyle}>
                 <div className="flex space-x-2">
-                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse"></div>
-                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor }}></div>
+                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor, animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor, animationDelay: '0.4s' }}></div>
                 </div>
               </div>
             )}
