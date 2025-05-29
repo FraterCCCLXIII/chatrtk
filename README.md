@@ -1,8 +1,21 @@
-# Welcome to your Lovable project
+# Chatty Face Plugin
+
+A customizable talking head interface for chat applications.
 
 ## Project info
 
 **URL**: https://lovable.dev/projects/3e7f9d9f-5bec-40f8-b5ad-e7033b6813bd
+
+## Features
+
+- **Animated Talking Head**: A responsive face that animates when speaking
+- **Multiple Head Themes**: Choose from different themes including:
+  - Classic: The original talking head
+  - Blueberry: A cool blue theme
+  - Sunshine: A bright and cheerful yellow theme
+  - Mint Chocolate: A refreshing mint with chocolate accents
+- **Facial Rig Editor**: Customize the appearance and behavior of the talking head
+- **Responsive Design**: Works on desktop and mobile devices
 
 ## How can I edit this code?
 

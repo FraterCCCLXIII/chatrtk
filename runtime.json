@@ -1,0 +1,9 @@
+{
+  "name": "Chatty Face Plugin",
+  "description": "A customizable talking head interface for chat applications",
+  "script": "/workspace/chatty-face-plugin/runtime.sh",
+  "port": 12001,
+  "env": {
+    "NODE_ENV": "development"
+  }
+}
