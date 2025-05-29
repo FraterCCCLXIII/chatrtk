@@ -42,15 +42,15 @@ const ChatTalkingHead: React.FC = () => {
     {
       id: 'welcome-message',
       type: 'text',
-      text: "Hello! How can I help you today?",
+      text: "Hello! I'm running in simulator mode since no API key is configured. You can still chat with me and try out all the features!",
       isUser: false,
       expression: 'happy'
     } as TextMessage,
     {
       id: 'welcome-card',
       type: 'card',
-      title: 'Card Prototype Demo',
-      content: 'This is a demonstration of the new card feature. Cards can contain interactive buttons that trigger actions.',
+      title: 'ChatRTK Simulator',
+      content: 'Try these commands to see what I can do:\n- "help" - Show available commands\n- "weather" - Show a weather card\n- "recipe" - Get a recipe\n- "tasks" - Create a task list\n- "features" - Learn about my capabilities',
       isUser: false,
       actions: [
         { label: 'Show Demo Card', action: 'runFunction:demo' },
@@ -363,39 +363,31 @@ const ChatTalkingHead: React.FC = () => {
     const userInput = inputText;
     setInputText('');
 
-    // Check if API key is configured
-    if (!apiSettings.apiKey) {
-      setIsModalOpen(true);
-      toast({
-        title: "API Key Required",
-        description: "Please configure your AI provider settings first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      const response = await generateAIResponse(userInput);
-      setMessages(prev => [...prev, response]);
+      // Check if API key is configured - if not, use simulator without showing modal
+      if (!apiSettings.apiKey) {
+        // Add a small delay to simulate processing
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const response = mockGenerateResponse(userInput);
+        setMessages(prev => [...prev, response]);
+      } else {
+        // Use the real API if key is configured
+        const response = await generateAIResponse(userInput);
+        setMessages(prev => [...prev, response]);
+      }
     } catch (error) {
       console.error('Error generating response:', error);
       toast({
         title: "Error",
-        description: "Failed to get response from AI. Please check your API settings.",
+        description: "Failed to get response. Using simulator mode instead.",
         variant: "destructive",
       });
       
-      // Add fallback response
-      const errorMessage: TextMessage = {
-        id: `error-${Date.now()}`,
-        type: 'text',
-        text: "Sorry, I encountered an error. Please check your API settings.",
-        isUser: false,
-        expression: 'sad'
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      // Use simulator as fallback
+      const response = mockGenerateResponse(userInput);
+      setMessages(prev => [...prev, response]);
     } finally {
       setIsLoading(false);
     }
@@ -592,27 +584,71 @@ When asked about cards, weather, recipes, or any structured information, respond
       return parseAIResponse(`[CARD]{"title": "Simple Pasta Recipe", "content": "Ingredients:\\n- 1 lb pasta\\n- 2 cups marinara sauce\\n- 1 cup cheese\\n- Salt and pepper\\n\\nInstructions:\\n1. Cook pasta according to package\\n2. Heat sauce in a pan\\n3. Mix pasta and sauce\\n4. Top with cheese", "actions": [{"label": "Save Recipe", "action": "runFunction:dismiss"}]}[/CARD]`);
     }
     
+    // Help card
+    if (lowerInput.includes('help') || lowerInput.includes('assist') || lowerInput.includes('support')) {
+      return parseAIResponse(`[CARD]{"title": "ChatRTK Help", "content": "Here are some things you can ask me about:\\n\\n- Ask for a recipe\\n- Check the weather\\n- Create a task list\\n- Show a demo card\\n- Change my expression (try: happy, sad, angry, surprised)\\n- Ask about my features", "actions": [{"label": "Show Demo", "action": "runFunction:demo"}, {"label": "Settings", "action": "openModal:settings"}]}[/CARD]`);
+    }
+    
+    // Features card
+    if (lowerInput.includes('feature') || lowerInput.includes('what can you do') || lowerInput.includes('capability')) {
+      return parseAIResponse(`[CARD]{"title": "ChatRTK Features", "content": "- Interactive talking head with facial expressions\\n- Customizable appearance themes\\n- Interactive cards with buttons\\n- Responsive chat interface\\n- Animated expressions\\n- API integration (requires key)\\n- Local simulator mode", "actions": [{"label": "Try a Demo", "action": "runFunction:demo"}]}[/CARD]`);
+    }
+    
     // Detect expression from user input (simplified for demo)
     let response: string;
     let expression: Expression = 'neutral';
     
-    if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
-      response = "Hello there! How can I assist you today?";
+    if (lowerInput.includes('hello') || lowerInput.includes('hi') || lowerInput.includes('hey')) {
+      response = "Hello there! How can I assist you today? Try asking me about recipes, weather, or tasks!";
       expression = 'happy';
     } else if (lowerInput.includes('sad') || lowerInput.includes('bad') || lowerInput.includes('sorry')) {
-      response = "I'm sorry to hear that. Is there anything I can do to help?";
+      response = "I'm sorry to hear that. Is there anything I can do to help? Maybe a funny joke would cheer you up?";
       expression = 'sad';
     } else if (lowerInput.includes('wow') || lowerInput.includes('amazing') || lowerInput.includes('really')) {
-      response = "That's amazing! Tell me more about it!";
+      response = "That's amazing! I'm surprised and excited to hear about it. Tell me more!";
       expression = 'surprised';
     } else if (lowerInput.includes('angry') || lowerInput.includes('mad') || lowerInput.includes('upset')) {
-      response = "I understand your frustration. Let's try to resolve this issue together.";
+      response = "I understand your frustration. Let's try to resolve this issue together. Deep breaths help!";
       expression = 'angry';
     } else if (lowerInput.includes('think') || lowerInput.includes('question') || lowerInput.includes('how')) {
-      response = "That's an interesting question. Let me think about that for a moment...";
+      response = "That's an interesting question. Let me think about that for a moment... I'm running in simulator mode, so I don't have access to real-time data, but I can show you some demo responses!";
+      expression = 'thinking';
+    } else if (lowerInput.includes('joke') || lowerInput.includes('funny')) {
+      response = "Why don't scientists trust atoms? Because they make up everything! 😄";
+      expression = 'happy';
+    } else if (lowerInput.includes('name') || lowerInput.includes('who are you')) {
+      response = "I'm ChatRTK, a talking head chat interface with expressive animations. I'm currently running in simulator mode since no API key is configured.";
+      expression = 'happy';
+    } else if (lowerInput.includes('thank')) {
+      response = "You're very welcome! Is there anything else I can help you with today?";
+      expression = 'happy';
+    } else if (lowerInput.includes('bye') || lowerInput.includes('goodbye')) {
+      response = "Goodbye! Have a wonderful day. Come back anytime you want to chat!";
+      expression = 'happy';
+    } else if (lowerInput.includes('happy') || lowerInput.includes('smile') || lowerInput.includes('joy')) {
+      response = "That makes me happy to hear! I'm smiling right now. Positive emotions are wonderful!";
+      expression = 'happy';
+    } else if (lowerInput.includes('surprise') || lowerInput.includes('shocked')) {
+      response = "Wow! That's quite surprising! I didn't expect that at all!";
+      expression = 'surprised';
+    } else if (lowerInput.includes('time') || lowerInput.includes('date')) {
+      const now = new Date();
+      response = `The current time is ${now.toLocaleTimeString()} on ${now.toLocaleDateString()}. Note that I'm running in simulator mode, so this is your device's time.`;
+      expression = 'neutral';
+    } else if (lowerInput.includes('api') || lowerInput.includes('key')) {
+      response = "To use me with a real AI model, you'll need to configure an API key. Click the settings icon in the top right corner to set up your API credentials.";
       expression = 'thinking';
     } else {
-      response = "I see. Tell me more about what you're looking for.";
+      // Default response for anything else
+      const defaultResponses = [
+        "I see. Tell me more about what you're looking for.",
+        "That's interesting! Would you like to see a demo of what I can do?",
+        "I'm running in simulator mode right now. Try asking me about recipes, weather, or tasks!",
+        "Interesting point! What else would you like to discuss?",
+        "I'm here to help! Try saying 'help' to see what I can do.",
+        "I'm listening. Feel free to ask me about my features or try different expressions!"
+      ];
+      response = defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
       expression = 'neutral';
     }
 
