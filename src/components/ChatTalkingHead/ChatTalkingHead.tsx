@@ -747,6 +747,10 @@ When asked about cards, weather, recipes, or any structured information, respond
         animate={{ opacity: 1, x: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
       >
+        <svg xmlns="http://www.w3.org/2000/svg" className="rtk-logo" width="24" height="24" viewBox="0 0 173.35 75.11">
+          <path d="M86.67 0 0 37.81l86.68 37.3 86.67-37.8L86.67 0zm76.62 37.33L86.67 70.75 10.06 37.78 86.68 4.36l76.61 32.97z" />
+          <path d="M128.79 31.06v13.47l10-4.36v4.64l-14.25 6.21V24.57l14.25 6.21v4.64l-10-4.36zm-20-8.72v13.34h7.5v4.25h-7.5v13.33l10-4.36v4.63l-14.25 6.21V15.85l14.25 6.21v4.64l-10-4.36zm-10-9.01v4.65l-10-4.37v53.01l-2.12.92-2.13-.92V13.61l-10 4.36v-4.64l12.13-5.29 12.12 5.29zM65.83 35.05l2.96-1.3V15.84l-14.25 6.22v31.47l4.25 1.85V38.11l3.12-1.37 7.7 23.37 2.84 1.23h.29v.14l2.1.91-9.01-27.34zm-1.29-4.09-5.75 2.51v-8.63l5.75-2.51v8.63zm-30-.18v14.03l4.25 1.85v-4.59h5.75v7.1l4.25 1.85V24.57l-14.25 6.21zm10 7.04h-5.75v-4.26l5.75-2.51v6.77z" />
+        </svg>
         ChatRTK
       </MotionDiv>
       <MotionDiv 
@@ -854,43 +858,32 @@ When asked about cards, weather, recipes, or any structured information, respond
           <ScrollArea className="chat-messages">
             {messages.map((message, index) => (
               message.type === 'card' ? (
-                <AnimatedMessage 
-                  key={message.id || index}
-                  isUser={message.isUser}
-                  delay={index * 0.05}
-                >
-                  <div
-                    id={`message-${index}`}
-                    className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
-                  >
-                    <AnimatedCard>
-                      <Card className="w-full">
-                        <CardHeader>
-                          <CardTitle>{message.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p>{message.content}</p>
-                        </CardContent>
-                        {message.actions && message.actions.length > 0 && (
-                          <CardFooter className="flex gap-2">
-                            {message.actions.map((action, idx) => (
-                              <MotionButton
-                                key={idx}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                                variant="outline" 
-                                onClick={() => handleCardAction(action.action)}
-                              >
-                                {action.label}
-                              </MotionButton>
-                            ))}
-                          </CardFooter>
-                        )}
-                      </Card>
-                    </AnimatedCard>
-                  </div>
-                </AnimatedMessage>
+                <AnimatedCard key={message.id || index}>
+                  <Card className="w-full max-w-[600px] mx-auto">
+                    <CardHeader>
+                      <CardTitle>{message.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p>{message.content}</p>
+                    </CardContent>
+                    {message.actions && message.actions.length > 0 && (
+                      <CardFooter className="flex gap-2">
+                        {message.actions.map((action, idx) => (
+                          <MotionButton
+                            key={idx}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                            variant="outline"
+                            onClick={() => handleCardAction(action.action)}
+                          >
+                            {action.label}
+                          </MotionButton>
+                        ))}
+                      </CardFooter>
+                    )}
+                  </Card>
+                </AnimatedCard>
               ) : (
                 <AnimatedMessage 
                   key={message.id || index}

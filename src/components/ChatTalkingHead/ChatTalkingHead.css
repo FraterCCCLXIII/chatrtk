@@ -25,6 +25,14 @@
   font-weight: 600;
   z-index: 30;
   color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rtk-logo {
+  fill: currentColor;
+  margin-right: 0.25rem;
 }
 
 .model-version {
