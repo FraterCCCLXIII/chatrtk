@@ -77,6 +77,15 @@ const FaceSelectorModal: React.FC<FaceSelectorModalProps> = ({
       faceColor: '#e45daa',
       tongueColor: '#5ddbaf',
     },
+    {
+      id: 'lavender',
+      name: 'Lavender',
+      description: 'A calming purple theme with a dreamy personality',
+      previewColor: '#9d7dff',
+      screenColor: '#f0e2ff',
+      faceColor: '#7d5daa',
+      tongueColor: '#5ddbff',
+    },
   ];
 
   const handleSave = () => {

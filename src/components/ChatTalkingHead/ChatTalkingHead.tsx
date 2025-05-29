@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff } from "lucide-react";
+import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2 } from "lucide-react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import TalkingHead from '../TalkingHead/TalkingHead';
 import ApiKeyModal from '../ApiKeyModal/ApiKeyModal';
@@ -514,7 +514,7 @@ When asked about cards, weather, recipes, or any structured information, respond
 
   // Define message bubble colors based on theme
   const userMessageStyle = {
-    backgroundColor: `${currentFaceTheme.previewColor}80`, // 50% opacity
+    backgroundColor: `${currentFaceTheme.tongueColor}80`, // 50% opacity
   };
   
   const aiMessageStyle = {
@@ -522,7 +522,7 @@ When asked about cards, weather, recipes, or any structured information, respond
   };
 
   return (
-    <Card className="chat-talking-head">
+    <div>
       <div className="controls-container">
         <Button 
           variant="ghost" 
@@ -546,7 +546,7 @@ When asked about cards, weather, recipes, or any structured information, respond
           onClick={() => setIsFaceSelectorOpen(true)}
           title="Change face theme"
         >
-          <PersonIcon className="h-4 w-4" />
+          <UserCircle2 className="h-4 w-4" />
         </Button>
         <Button 
           variant="ghost" 
@@ -661,8 +661,10 @@ When asked about cards, weather, recipes, or any structured information, respond
           onClick={handleSendMessage} 
           className="send-button"
           disabled={isLoading}
+          variant="default"
+          size="icon"
         >
-          {isLoading ? 'Sending...' : 'Send'}
+          {isLoading ? '...' : <MessageCircleMore className="h-5 w-5" />}
         </Button>
       </div>
 
@@ -682,7 +684,7 @@ When asked about cards, weather, recipes, or any structured information, respond
         onSelectFace={handleSelectFace}
         currentFaceTheme={currentFaceTheme.id}
       />
-    </Card>
+    </div>
   );
 };
 
