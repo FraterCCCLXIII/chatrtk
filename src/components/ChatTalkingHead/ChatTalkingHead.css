@@ -126,13 +126,36 @@
 
 .chat-message {
   padding: 0.75rem 1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.5rem; /* Increased to make room for the address */
+  margin-top: 1rem; /* Added to ensure space for the address */
   border-radius: 18px;
   display: inline-block;
   max-width: 80%;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: all 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67);
   width: auto;
+  position: relative;
+  scroll-margin-top: 100px; /* Ensures proper scrolling position */
+}
+
+.message-address {
+  position: absolute;
+  top: -20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 2px 8px;
+  border-radius: 12px;
+  z-index: 5;
+}
+
+.user-message .message-address {
+  right: 0;
+}
+
+.ai-message .message-address {
+  left: 0;
 }
 
 .chat-message.ai-message .card {
