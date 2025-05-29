@@ -833,7 +833,7 @@ When asked about cards, weather, recipes, or any structured information, respond
       
       {showHead && (
         <>
-          <AnimatedDiv 
+          <div 
             className="talking-head-container" 
             style={{ 
               height: `${headHeight}px`,
@@ -848,7 +848,7 @@ When asked about cards, weather, recipes, or any structured information, respond
               headShape={currentHeadShape}
               animatedTheme={currentAnimatedHeadTheme}
             />
-          </AnimatedDiv>
+          </div>
           
           <div 
             className="resize-handle"

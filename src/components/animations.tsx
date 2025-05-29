@@ -151,9 +151,9 @@ export const useFloatingAnimation = () => useSpring({
   from: { y: 0 },
   to: async (next) => {
     while (true) {
-      await next({ y: -5, rotateZ: -1 });
+      await next({ y: -5, rotateZ: 0 }); // Removed rotation for head shake
       await next({ y: 0, rotateZ: 0 });
-      await next({ y: 5, rotateZ: 1 });
+      await next({ y: 5, rotateZ: 0 }); // Removed rotation for head shake
       await next({ y: 0, rotateZ: 0 });
     }
   },

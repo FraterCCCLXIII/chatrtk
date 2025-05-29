@@ -10,7 +10,7 @@
   border: none;
   box-shadow: none;
   background-color: transparent;
-  padding-bottom: 80px; /* Add padding to prevent content from being hidden behind input */
+  padding-bottom: 120px; /* Increased padding to ensure message thread ends above input field */
 }
 
 .app-title {
@@ -123,10 +123,10 @@
   background-color: transparent;
   overflow-y: auto;
   height: 100%;
-  margin-bottom: 1rem;
+  margin-bottom: 80px; /* Increased margin to ensure space between messages and input field */
   display: flex;
   flex-direction: column;
-  scroll-behavior: smooth; /* Add smooth scrolling */
+  scroll-behavior: auto; /* Remove smooth scrolling */
   width: 100%;
 }
 
@@ -145,6 +145,7 @@
 }
 
 .message-address {
+  display: none; /* Hide message address pills */
   position: absolute;
   top: -20px;
   font-size: 0.8rem;
