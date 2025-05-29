@@ -63,6 +63,16 @@ const headThemes: HeadTheme[] = [
     screenColor: '#c8e6c9',
     faceColor: '#66bb6a',
     tongueColor: '#5d4037'
+  },
+  {
+    id: 'galaxy',
+    name: 'Galaxy',
+    description: 'A cosmic deep space theme with starry accents',
+    headShape: { id: 'circle', shape: 'circle', width: 100, height: 100 },
+    previewColor: '#1a1a2e',
+    screenColor: '#16213e',
+    faceColor: '#0f3460',
+    tongueColor: '#e94560'
   }
 ];
 
@@ -87,7 +97,7 @@ export function HeadSelectorModal({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid grid-cols-2 md:grid-cols-2 gap-4 py-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-4">
           {headThemes.map((theme) => (
             <div 
               key={theme.id}
