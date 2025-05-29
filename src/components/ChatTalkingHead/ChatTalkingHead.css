@@ -126,11 +126,11 @@
 
 .chat-message {
   padding: 0.75rem 1rem;
-  margin-bottom: 1.5rem; /* Increased to make room for the address */
-  margin-top: 1rem; /* Added to ensure space for the address */
+  margin-bottom: 1.5rem;
+  margin-top: 1rem;
   border-radius: 18px;
   display: inline-block;
-  max-width: 80%;
+  max-width: 600px; /* Match the input container max-width */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: all 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67);
   width: auto;
@@ -178,7 +178,7 @@
   background-color: rgba(255, 255, 255, 0.25) !important; /* Light shade with !important to override inline styles */
   color: white !important; /* White text for better contrast */
   width: auto !important; /* Ensure width is based on content */
-  max-width: 80% !important; /* Limit maximum width */
+  max-width: 600px !important; /* Match the input container max-width */
 }
 
 .ai-message {
@@ -193,7 +193,7 @@
 
 /* Make card messages wider */
 .ai-message:has(.card) {
-  max-width: 90%;
+  max-width: 600px; /* Match the input container max-width */
   padding: 0;
   background-color: transparent;
 }
@@ -213,6 +213,8 @@
   z-index: 10;
   justify-content: center; /* Center the input horizontally */
   align-items: center; /* Center vertically */
+  /* Ensure it's centered on the page */
+  right: 0;
 }
 
 .chat-input {

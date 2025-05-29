@@ -166,24 +166,8 @@ const ChatTalkingHead: React.FC = () => {
     }
   }, []);
 
-  // Scroll to the newest message when messages are added
-  useEffect(() => {
-    // Find the scrollable element inside the ScrollArea
-    const scrollableElement = document.querySelector('.chat-messages .scrollbar-container > div');
-    if (scrollableElement && messages.length > 0) {
-      // Get the last message element
-      const lastMessageId = `message-${messages.length - 1}`;
-      const lastMessageElement = document.getElementById(lastMessageId);
-      
-      if (lastMessageElement) {
-        // Scroll to the last message with smooth behavior
-        lastMessageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        // Fallback to scrolling to the bottom if element not found
-        scrollableElement.scrollTop = scrollableElement.scrollHeight;
-      }
-    }
-  }, [messages]);
+  // We've removed the auto-scroll effect as requested
+  // This allows the user to manually scroll through the messages
 
   // Detect when AI is speaking and set the current text
   useEffect(() => {
@@ -383,14 +367,6 @@ const ChatTalkingHead: React.FC = () => {
     setInputText('');
 
     setIsLoading(true);
-    
-    // Scroll to loading indicator after a short delay
-    setTimeout(() => {
-      const loadingElement = document.getElementById('loading-message');
-      if (loadingElement) {
-        loadingElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
 
     try {
       // Check if API key is configured - if not, use simulator without showing modal
@@ -904,7 +880,6 @@ When asked about cards, weather, recipes, or any structured information, respond
                     id={`message-${index}`}
                     className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
                   >
-                    <div className="message-address">#{index + 1}</div>
                     <AnimatedCard>
                       <Card className="w-full">
                         <CardHeader>
@@ -944,7 +919,6 @@ When asked about cards, weather, recipes, or any structured information, respond
                     className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
                     style={message.isUser ? userMessageStyle : aiMessageStyle}
                   >
-                    <div className="message-address">#{index + 1}</div>
                     {message.text}
                   </div>
                 </AnimatedMessage>
@@ -952,7 +926,6 @@ When asked about cards, weather, recipes, or any structured information, respond
             ))}
             {isLoading && (
               <div id="loading-message" className="chat-message ai-message" style={aiMessageStyle}>
-                <div className="message-address">#loading</div>
                 <div className="flex space-x-2">
                   <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor }}></div>
                   <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor, animationDelay: '0.2s' }}></div>
