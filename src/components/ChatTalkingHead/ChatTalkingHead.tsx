@@ -716,8 +716,9 @@ When asked about cards, weather, recipes, or any structured information, respond
 
   // Define message bubble colors based on theme
   const userMessageStyle = {
-    backgroundColor: `${currentFaceTheme.tongueColor}80`, // 50% opacity
+    backgroundColor: `${currentFaceTheme.previewColor}aa`, // Shade of the main background with 67% opacity
     borderRadius: '12px 12px 2px 12px',
+    color: '#fff', // White text for better contrast
   };
   
   const aiMessageStyle = {

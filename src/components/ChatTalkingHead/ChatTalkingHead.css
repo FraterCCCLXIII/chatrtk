@@ -119,6 +119,8 @@
   overflow-y: auto;
   height: 100%;
   margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-message {
@@ -144,12 +146,14 @@
   text-align: right;
   /* Background color will be set dynamically based on theme */
   transform-origin: bottom right;
+  align-self: flex-end; /* Right align in flex container */
 }
 
 .ai-message {
   margin-right: auto;
   /* Background color will be set dynamically based on theme */
   transform-origin: bottom left;
+  align-self: flex-start; /* Left align in flex container */
 }
 
 /* Make card messages wider */
