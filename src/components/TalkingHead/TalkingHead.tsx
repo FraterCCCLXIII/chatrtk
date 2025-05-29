@@ -303,7 +303,7 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
             {text}
           </div>
         )}
-      </div>
+      </AnimatedDiv>
     </div>
   );
 };
