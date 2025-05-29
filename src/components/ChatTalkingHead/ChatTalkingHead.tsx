@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2 } from "lucide-react";
+import { Smiley } from "@phosphor-icons/react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import TalkingHead from '../TalkingHead/TalkingHead';
 import ApiKeyModal from '../ApiKeyModal/ApiKeyModal';
 import FaceSelectorModal, { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
+import { HeadSelectorModal, HeadTheme } from '../HeadSelectorModal/HeadSelectorModal';
 import FacialRigEditor, { HeadShape, FaceRigConfig } from '../FacialRigEditor';
 import './ChatTalkingHead.css';
 import { useToast } from "@/hooks/use-toast";
@@ -60,6 +62,7 @@ const ChatTalkingHead: React.FC = () => {
     endpoint: ''
   });
   const [isFaceSelectorOpen, setIsFaceSelectorOpen] = useState(false);
+  const [isHeadSelectorOpen, setIsHeadSelectorOpen] = useState(false);
   const [isFacialRigEditorOpen, setIsFacialRigEditorOpen] = useState(false);
   const [currentFaceTheme, setCurrentFaceTheme] = useState<FaceTheme>({
     id: 'default',
@@ -146,6 +149,49 @@ const ChatTalkingHead: React.FC = () => {
     
     // Update document body background color
     document.body.style.backgroundColor = faceTheme.previewColor;
+  };
+  
+  // Save head theme
+  const handleSelectHead = (headTheme: HeadTheme) => {
+    // Update the face theme with the head theme colors
+    const updatedFaceTheme: FaceTheme = {
+      ...currentFaceTheme,
+      id: headTheme.id,
+      name: headTheme.name,
+      description: headTheme.description,
+      previewColor: headTheme.previewColor,
+      screenColor: headTheme.screenColor,
+      faceColor: headTheme.faceColor,
+      tongueColor: headTheme.tongueColor
+    };
+    
+    // Update the head shape
+    const updatedHeadShape: HeadShape = headTheme.headShape;
+    
+    // Save the updated face theme and head shape
+    setCurrentFaceTheme(updatedFaceTheme);
+    setCurrentHeadShape(updatedHeadShape);
+    
+    // Save to localStorage
+    localStorage.setItem('faceTheme', JSON.stringify(updatedFaceTheme));
+    localStorage.setItem('headShape', JSON.stringify(updatedHeadShape));
+    
+    // Update the talking head container background color
+    const container = document.querySelector('.talking-head-container');
+    if (container) {
+      (container as HTMLElement).style.backgroundColor = headTheme.previewColor;
+    }
+    
+    // Dispatch a custom event to notify theme change
+    window.dispatchEvent(new Event('storage'));
+    
+    // Update document body background color
+    document.body.style.backgroundColor = headTheme.previewColor;
+    
+    toast({
+      title: "Head Theme Updated",
+      description: `Now using the ${headTheme.name} theme.`,
+    });
   };
   
   // Save facial rig changes
@@ -597,6 +643,14 @@ When asked about cards, weather, recipes, or any structured information, respond
         <Button 
           variant="ghost" 
           size="icon" 
+          onClick={() => setIsHeadSelectorOpen(true)}
+          title="Select animated head"
+        >
+          <Smiley className="h-4 w-4" weight="fill" />
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon" 
           onClick={() => setIsFacialRigEditorOpen(true)}
           title="Edit facial rig"
         >
@@ -738,6 +792,12 @@ When asked about cards, weather, recipes, or any structured information, respond
         onOpenChange={setIsFaceSelectorOpen}
         onSelectFace={handleSelectFace}
         currentFaceTheme={currentFaceTheme.id}
+      />
+      
+      <HeadSelectorModal
+        open={isHeadSelectorOpen}
+        onOpenChange={setIsHeadSelectorOpen}
+        onSelectHead={handleSelectHead}
       />
       
       <FacialRigEditor

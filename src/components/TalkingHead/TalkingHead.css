@@ -69,22 +69,58 @@
   height: 100%;
 }
 
+.eye-container {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+}
+
+.eye-container.left {
+  left: 30%;
+  top: 40%;
+  transform: translateX(-50%) translateY(-50%);
+}
+
+.eye-container.right {
+  right: 30%;
+  top: 40%;
+  transform: translateX(50%) translateY(-50%);
+}
+
 .eye {
   position: absolute;
   width: 12px;
   height: 12px;
   background-color: black;
   border-radius: 50%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
 }
 
-.eye.left {
-  left: 30%;
-  top: 40%;
+.eyelid {
+  position: absolute;
+  width: 14px;
+  height: 6px;
+  background-color: #333333;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  opacity: 0;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.eye.right {
-  right: 30%;
-  top: 40%;
+.eyelid.top {
+  top: 0;
+  border-radius: 50% 50% 0 0;
+  transform-origin: bottom center;
+}
+
+.eyelid.bottom {
+  bottom: 0;
+  border-radius: 0 0 50% 50%;
+  transform-origin: top center;
 }
 
 .mouth-container {

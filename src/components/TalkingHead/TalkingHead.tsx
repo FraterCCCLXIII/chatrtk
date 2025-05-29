@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './TalkingHead.css';
 import { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
-import { HeadShape } from '../FacialRigEditor';
+import { HeadShape, FaceRigConfig } from '../FacialRigEditor';
 
 interface TalkingHeadProps {
   text?: string;
@@ -10,6 +10,7 @@ interface TalkingHeadProps {
   expression?: 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
   theme?: FaceTheme;
   headShape?: HeadShape;
+  config?: FaceRigConfig;
 }
 
 const TalkingHead: React.FC<TalkingHeadProps> = ({
@@ -17,7 +18,8 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
   speaking = false,
   expression = 'neutral',
   theme,
-  headShape
+  headShape,
+  config
 }) => {
   const [currentPhoneme, setCurrentPhoneme] = useState('rest');
   const [currentExpression, setCurrentExpression] = useState(expression);
@@ -171,8 +173,76 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
           }}
         >
           <div className="face">
-            <div className="eye left"></div>
-            <div className="eye right"></div>
+            <div className="eye-container left">
+              <div 
+                className="eye left"
+                style={{
+                  width: `${config?.leftEye?.width || 12}px`,
+                  height: `${config?.leftEye?.height || 12}px`,
+                  backgroundColor: config?.leftEye?.fillColor || 'black',
+                  borderRadius: config?.leftEye?.borderRadius || '50%',
+                  transform: config?.leftEye?.rotation ? `rotate(${config.leftEye.rotation}deg)` : 'none',
+                  opacity: config?.leftEye?.opacity !== undefined ? config.leftEye.opacity : 1
+                }}
+              ></div>
+              <div 
+                className="eyelid top left"
+                style={{
+                  width: `${config?.leftTopEyelid?.width || 14}px`,
+                  height: `${config?.leftTopEyelid?.height || 6}px`,
+                  backgroundColor: config?.leftTopEyelid?.fillColor || '#333333',
+                  borderRadius: config?.leftTopEyelid?.borderRadius || '50% 50% 0 0',
+                  transform: config?.leftTopEyelid?.rotation ? `rotate(${config.leftTopEyelid.rotation}deg)` : 'none',
+                  opacity: config?.leftTopEyelid?.opacity !== undefined ? config.leftTopEyelid.opacity : 0
+                }}
+              ></div>
+              <div 
+                className="eyelid bottom left"
+                style={{
+                  width: `${config?.leftBottomEyelid?.width || 14}px`,
+                  height: `${config?.leftBottomEyelid?.height || 6}px`,
+                  backgroundColor: config?.leftBottomEyelid?.fillColor || '#333333',
+                  borderRadius: config?.leftBottomEyelid?.borderRadius || '0 0 50% 50%',
+                  transform: config?.leftBottomEyelid?.rotation ? `rotate(${config.leftBottomEyelid.rotation}deg)` : 'none',
+                  opacity: config?.leftBottomEyelid?.opacity !== undefined ? config.leftBottomEyelid.opacity : 0
+                }}
+              ></div>
+            </div>
+            <div className="eye-container right">
+              <div 
+                className="eye right"
+                style={{
+                  width: `${config?.rightEye?.width || 12}px`,
+                  height: `${config?.rightEye?.height || 12}px`,
+                  backgroundColor: config?.rightEye?.fillColor || 'black',
+                  borderRadius: config?.rightEye?.borderRadius || '50%',
+                  transform: config?.rightEye?.rotation ? `rotate(${config.rightEye.rotation}deg)` : 'none',
+                  opacity: config?.rightEye?.opacity !== undefined ? config.rightEye.opacity : 1
+                }}
+              ></div>
+              <div 
+                className="eyelid top right"
+                style={{
+                  width: `${config?.rightTopEyelid?.width || 14}px`,
+                  height: `${config?.rightTopEyelid?.height || 6}px`,
+                  backgroundColor: config?.rightTopEyelid?.fillColor || '#333333',
+                  borderRadius: config?.rightTopEyelid?.borderRadius || '50% 50% 0 0',
+                  transform: config?.rightTopEyelid?.rotation ? `rotate(${config.rightTopEyelid.rotation}deg)` : 'none',
+                  opacity: config?.rightTopEyelid?.opacity !== undefined ? config.rightTopEyelid.opacity : 0
+                }}
+              ></div>
+              <div 
+                className="eyelid bottom right"
+                style={{
+                  width: `${config?.rightBottomEyelid?.width || 14}px`,
+                  height: `${config?.rightBottomEyelid?.height || 6}px`,
+                  backgroundColor: config?.rightBottomEyelid?.fillColor || '#333333',
+                  borderRadius: config?.rightBottomEyelid?.borderRadius || '0 0 50% 50%',
+                  transform: config?.rightBottomEyelid?.rotation ? `rotate(${config.rightBottomEyelid.rotation}deg)` : 'none',
+                  opacity: config?.rightBottomEyelid?.opacity !== undefined ? config.rightBottomEyelid.opacity : 0
+                }}
+              ></div>
+            </div>
             <div className="mouth-container">
               <div 
                 className="mouth"

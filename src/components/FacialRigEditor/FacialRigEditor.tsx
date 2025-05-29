@@ -45,6 +45,8 @@ export interface ElementStyle {
   strokeColor: string;
   strokeWidth: number;
   borderRadius?: string;
+  rotation?: number;
+  opacity?: number;
 }
 
 export interface FaceRigConfig {
@@ -52,6 +54,10 @@ export interface FaceRigConfig {
   head: ElementStyle;
   leftEye: ElementStyle;
   rightEye: ElementStyle;
+  leftTopEyelid: ElementStyle;
+  leftBottomEyelid: ElementStyle;
+  rightTopEyelid: ElementStyle;
+  rightBottomEyelid: ElementStyle;
   mouth: ElementStyle;
   topTeeth: ElementStyle;
   bottomTeeth: ElementStyle;
@@ -147,6 +153,58 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
     borderRadius: '50%'
   };
   
+  const defaultLeftTopEyelidStyle: ElementStyle = {
+    x: 30,
+    y: 34,
+    width: 14,
+    height: 6,
+    fillColor: '#333333',
+    strokeColor: 'transparent',
+    strokeWidth: 0,
+    borderRadius: '50% 50% 0 0',
+    rotation: 0,
+    opacity: 0
+  };
+  
+  const defaultLeftBottomEyelidStyle: ElementStyle = {
+    x: 30,
+    y: 46,
+    width: 14,
+    height: 6,
+    fillColor: '#333333',
+    strokeColor: 'transparent',
+    strokeWidth: 0,
+    borderRadius: '0 0 50% 50%',
+    rotation: 0,
+    opacity: 0
+  };
+  
+  const defaultRightTopEyelidStyle: ElementStyle = {
+    x: 70,
+    y: 34,
+    width: 14,
+    height: 6,
+    fillColor: '#333333',
+    strokeColor: 'transparent',
+    strokeWidth: 0,
+    borderRadius: '50% 50% 0 0',
+    rotation: 0,
+    opacity: 0
+  };
+  
+  const defaultRightBottomEyelidStyle: ElementStyle = {
+    x: 70,
+    y: 46,
+    width: 14,
+    height: 6,
+    fillColor: '#333333',
+    strokeColor: 'transparent',
+    strokeWidth: 0,
+    borderRadius: '0 0 50% 50%',
+    rotation: 0,
+    opacity: 0
+  };
+  
   const defaultMouthStyle: ElementStyle = {
     x: 50,
     y: 60,
@@ -195,6 +253,10 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
   const [headStyle, setHeadStyle] = useState<ElementStyle>(defaultHeadStyle);
   const [leftEyeStyle, setLeftEyeStyle] = useState<ElementStyle>(defaultLeftEyeStyle);
   const [rightEyeStyle, setRightEyeStyle] = useState<ElementStyle>(defaultRightEyeStyle);
+  const [leftTopEyelidStyle, setLeftTopEyelidStyle] = useState<ElementStyle>(defaultLeftTopEyelidStyle);
+  const [leftBottomEyelidStyle, setLeftBottomEyelidStyle] = useState<ElementStyle>(defaultLeftBottomEyelidStyle);
+  const [rightTopEyelidStyle, setRightTopEyelidStyle] = useState<ElementStyle>(defaultRightTopEyelidStyle);
+  const [rightBottomEyelidStyle, setRightBottomEyelidStyle] = useState<ElementStyle>(defaultRightBottomEyelidStyle);
   const [mouthStyle, setMouthStyle] = useState<ElementStyle>(defaultMouthStyle);
   const [topTeethStyle, setTopTeethStyle] = useState<ElementStyle>(defaultTopTeethStyle);
   const [bottomTeethStyle, setBottomTeethStyle] = useState<ElementStyle>(defaultBottomTeethStyle);
@@ -216,6 +278,10 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
       head: headStyle,
       leftEye: leftEyeStyle,
       rightEye: rightEyeStyle,
+      leftTopEyelid: leftTopEyelidStyle,
+      leftBottomEyelid: leftBottomEyelidStyle,
+      rightTopEyelid: rightTopEyelidStyle,
+      rightBottomEyelid: rightBottomEyelidStyle,
       mouth: mouthStyle,
       topTeeth: topTeethStyle,
       bottomTeeth: bottomTeethStyle,
@@ -424,6 +490,56 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                 placeholder="e.g. 10px or 50%"
               />
             </div>
+            
+            {/* Rotation */}
+            <div className="space-y-1">
+              <Label htmlFor={`${title}-rotation`}>Rotation (deg)</Label>
+              <div className="flex items-center gap-2">
+                <Slider 
+                  id={`${title}-rotation`}
+                  min={0}
+                  max={360}
+                  step={1}
+                  value={[style.rotation || 0]}
+                  onValueChange={(value) => onChange({...style, rotation: value[0]})}
+                />
+                <Input 
+                  className="w-16"
+                  value={style.rotation || 0}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value);
+                    if (!isNaN(value)) {
+                      onChange({...style, rotation: value});
+                    }
+                  }}
+                />
+              </div>
+            </div>
+            
+            {/* Opacity */}
+            <div className="space-y-1">
+              <Label htmlFor={`${title}-opacity`}>Opacity</Label>
+              <div className="flex items-center gap-2">
+                <Slider 
+                  id={`${title}-opacity`}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={[style.opacity !== undefined ? style.opacity : 1]}
+                  onValueChange={(value) => onChange({...style, opacity: value[0]})}
+                />
+                <Input 
+                  className="w-16"
+                  value={style.opacity !== undefined ? style.opacity : 1}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value);
+                    if (!isNaN(value)) {
+                      onChange({...style, opacity: value});
+                    }
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </AccordionContent>
       </AccordionItem>
@@ -559,9 +675,29 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                   onChange={setLeftEyeStyle} 
                 />
                 <ElementStyleControls 
+                  title="Left Top Eyelid" 
+                  style={leftTopEyelidStyle} 
+                  onChange={setLeftTopEyelidStyle} 
+                />
+                <ElementStyleControls 
+                  title="Left Bottom Eyelid" 
+                  style={leftBottomEyelidStyle} 
+                  onChange={setLeftBottomEyelidStyle} 
+                />
+                <ElementStyleControls 
                   title="Right Eye" 
                   style={rightEyeStyle} 
                   onChange={setRightEyeStyle} 
+                />
+                <ElementStyleControls 
+                  title="Right Top Eyelid" 
+                  style={rightTopEyelidStyle} 
+                  onChange={setRightTopEyelidStyle} 
+                />
+                <ElementStyleControls 
+                  title="Right Bottom Eyelid" 
+                  style={rightBottomEyelidStyle} 
+                  onChange={setRightBottomEyelidStyle} 
                 />
                 <ElementStyleControls 
                   title="Mouth" 
