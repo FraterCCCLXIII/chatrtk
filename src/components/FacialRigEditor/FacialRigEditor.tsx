@@ -15,6 +15,20 @@ import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
 import TalkingHead from '../TalkingHead/TalkingHead';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Input } from "@/components/ui/input";
 
 export interface HeadShape {
   id: string;
@@ -22,12 +36,34 @@ export interface HeadShape {
   shape: 'rectangle' | 'circle' | 'triangle' | 'star' | 'heart';
 }
 
+export interface ElementStyle {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fillColor: string;
+  strokeColor: string;
+  strokeWidth: number;
+  borderRadius?: string;
+}
+
+export interface FaceRigConfig {
+  headShape: HeadShape;
+  head: ElementStyle;
+  leftEye: ElementStyle;
+  rightEye: ElementStyle;
+  mouth: ElementStyle;
+  topTeeth: ElementStyle;
+  bottomTeeth: ElementStyle;
+  tongue: ElementStyle;
+}
+
 export interface FacialRigEditorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentFaceTheme: FaceTheme;
   currentHeadShape?: HeadShape;
-  onSave: (faceTheme: FaceTheme, headShape: HeadShape) => void;
+  onSave: (faceTheme: FaceTheme, headShape: HeadShape, rigConfig?: Partial<FaceRigConfig>) => void;
 }
 
 const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
@@ -76,6 +112,93 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
   const [selectedHeadShape, setSelectedHeadShape] = useState<HeadShape>(
     currentHeadShape || headShapes[0]
   );
+  
+  // Default element styles
+  const defaultHeadStyle: ElementStyle = {
+    x: 0,
+    y: 0,
+    width: 220,
+    height: 160,
+    fillColor: screenColor,
+    strokeColor: '#333333',
+    strokeWidth: 8,
+    borderRadius: '20px'
+  };
+  
+  const defaultLeftEyeStyle: ElementStyle = {
+    x: 30,
+    y: 40,
+    width: 12,
+    height: 12,
+    fillColor: '#000000',
+    strokeColor: 'transparent',
+    strokeWidth: 0,
+    borderRadius: '50%'
+  };
+  
+  const defaultRightEyeStyle: ElementStyle = {
+    x: 70,
+    y: 40,
+    width: 12,
+    height: 12,
+    fillColor: '#000000',
+    strokeColor: 'transparent',
+    strokeWidth: 0,
+    borderRadius: '50%'
+  };
+  
+  const defaultMouthStyle: ElementStyle = {
+    x: 50,
+    y: 60,
+    width: 60,
+    height: 30,
+    fillColor: faceColor,
+    strokeColor: 'transparent',
+    strokeWidth: 0,
+    borderRadius: '15px'
+  };
+  
+  const defaultTopTeethStyle: ElementStyle = {
+    x: 50,
+    y: -6,
+    width: 110,
+    height: 12,
+    fillColor: '#FFFFFF',
+    strokeColor: '#DDDDDD',
+    strokeWidth: 1,
+    borderRadius: '0 0 8px 8px'
+  };
+  
+  const defaultBottomTeethStyle: ElementStyle = {
+    x: 50,
+    y: 6,
+    width: 110,
+    height: 12,
+    fillColor: '#FFFFFF',
+    strokeColor: '#DDDDDD',
+    strokeWidth: 1,
+    borderRadius: '8px 8px 0 0'
+  };
+  
+  const defaultTongueStyle: ElementStyle = {
+    x: 50,
+    y: -4,
+    width: 30,
+    height: 12,
+    fillColor: tongueColor,
+    strokeColor: 'transparent',
+    strokeWidth: 0,
+    borderRadius: '15px 15px 5px 5px'
+  };
+  
+  // Element style states
+  const [headStyle, setHeadStyle] = useState<ElementStyle>(defaultHeadStyle);
+  const [leftEyeStyle, setLeftEyeStyle] = useState<ElementStyle>(defaultLeftEyeStyle);
+  const [rightEyeStyle, setRightEyeStyle] = useState<ElementStyle>(defaultRightEyeStyle);
+  const [mouthStyle, setMouthStyle] = useState<ElementStyle>(defaultMouthStyle);
+  const [topTeethStyle, setTopTeethStyle] = useState<ElementStyle>(defaultTopTeethStyle);
+  const [bottomTeethStyle, setBottomTeethStyle] = useState<ElementStyle>(defaultBottomTeethStyle);
+  const [tongueStyle, setTongueStyle] = useState<ElementStyle>(defaultTongueStyle);
 
   const handleSave = () => {
     // Create updated theme
@@ -87,7 +210,19 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
       tongueColor,
     };
     
-    onSave(updatedTheme, selectedHeadShape);
+    // Create rig configuration
+    const rigConfig: FaceRigConfig = {
+      headShape: selectedHeadShape,
+      head: headStyle,
+      leftEye: leftEyeStyle,
+      rightEye: rightEyeStyle,
+      mouth: mouthStyle,
+      topTeeth: topTeethStyle,
+      bottomTeeth: bottomTeethStyle,
+      tongue: tongueStyle
+    };
+    
+    onSave(updatedTheme, selectedHeadShape, rigConfig);
     
     toast({
       title: "Changes Saved",
@@ -125,6 +260,175 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
 
   const [currentExpression, setCurrentExpression] = useState('happy');
   const [currentPhoneme, setCurrentPhoneme] = useState('');
+  
+  // Helper component for element style controls
+  const ElementStyleControls = ({ 
+    title, 
+    style, 
+    onChange 
+  }: { 
+    title: string; 
+    style: ElementStyle; 
+    onChange: (style: ElementStyle) => void 
+  }) => {
+    return (
+      <AccordionItem value={title.toLowerCase().replace(/\s+/g, '-')}>
+        <AccordionTrigger className="text-base font-medium">{title}</AccordionTrigger>
+        <AccordionContent>
+          <div className="space-y-4">
+            {/* Position Controls */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label htmlFor={`${title}-x`}>X Position (%)</Label>
+                <div className="flex items-center gap-2">
+                  <Slider 
+                    id={`${title}-x`}
+                    min={0} 
+                    max={100} 
+                    step={1} 
+                    value={[style.x]} 
+                    onValueChange={(value) => onChange({...style, x: value[0]})}
+                    className="flex-1"
+                  />
+                  <Input 
+                    type="number" 
+                    value={style.x} 
+                    onChange={(e) => onChange({...style, x: Number(e.target.value)})}
+                    className="w-16"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor={`${title}-y`}>Y Position (%)</Label>
+                <div className="flex items-center gap-2">
+                  <Slider 
+                    id={`${title}-y`}
+                    min={0} 
+                    max={100} 
+                    step={1} 
+                    value={[style.y]} 
+                    onValueChange={(value) => onChange({...style, y: value[0]})}
+                    className="flex-1"
+                  />
+                  <Input 
+                    type="number" 
+                    value={style.y} 
+                    onChange={(e) => onChange({...style, y: Number(e.target.value)})}
+                    className="w-16"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* Size Controls */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label htmlFor={`${title}-width`}>Width (px)</Label>
+                <div className="flex items-center gap-2">
+                  <Slider 
+                    id={`${title}-width`}
+                    min={1} 
+                    max={300} 
+                    step={1} 
+                    value={[style.width]} 
+                    onValueChange={(value) => onChange({...style, width: value[0]})}
+                    className="flex-1"
+                  />
+                  <Input 
+                    type="number" 
+                    value={style.width} 
+                    onChange={(e) => onChange({...style, width: Number(e.target.value)})}
+                    className="w-16"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor={`${title}-height`}>Height (px)</Label>
+                <div className="flex items-center gap-2">
+                  <Slider 
+                    id={`${title}-height`}
+                    min={1} 
+                    max={300} 
+                    step={1} 
+                    value={[style.height]} 
+                    onValueChange={(value) => onChange({...style, height: value[0]})}
+                    className="flex-1"
+                  />
+                  <Input 
+                    type="number" 
+                    value={style.height} 
+                    onChange={(e) => onChange({...style, height: Number(e.target.value)})}
+                    className="w-16"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* Color Controls */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor={`${title}-fill`}>Fill Color</Label>
+                  <input 
+                    type="color" 
+                    id={`${title}-fill`}
+                    value={style.fillColor} 
+                    onChange={(e) => onChange({...style, fillColor: e.target.value})}
+                    className="w-8 h-6"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor={`${title}-stroke`}>Stroke Color</Label>
+                  <input 
+                    type="color" 
+                    id={`${title}-stroke`}
+                    value={style.strokeColor} 
+                    onChange={(e) => onChange({...style, strokeColor: e.target.value})}
+                    className="w-8 h-6"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* Stroke Width */}
+            <div className="space-y-1">
+              <Label htmlFor={`${title}-stroke-width`}>Stroke Width (px)</Label>
+              <div className="flex items-center gap-2">
+                <Slider 
+                  id={`${title}-stroke-width`}
+                  min={0} 
+                  max={20} 
+                  step={1} 
+                  value={[style.strokeWidth]} 
+                  onValueChange={(value) => onChange({...style, strokeWidth: value[0]})}
+                  className="flex-1"
+                />
+                <Input 
+                  type="number" 
+                  value={style.strokeWidth} 
+                  onChange={(e) => onChange({...style, strokeWidth: Number(e.target.value)})}
+                  className="w-16"
+                />
+              </div>
+            </div>
+            
+            {/* Border Radius */}
+            <div className="space-y-1">
+              <Label htmlFor={`${title}-border-radius`}>Border Radius</Label>
+              <Input 
+                id={`${title}-border-radius`}
+                value={style.borderRadius || ''} 
+                onChange={(e) => onChange({...style, borderRadius: e.target.value})}
+                placeholder="e.g. 10px or 50%"
+              />
+            </div>
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
@@ -208,102 +512,143 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
           <div className="w-80 bg-slate-100 p-4 overflow-y-auto border-l">
             <h2 className="text-xl font-bold mb-4">Inspector</h2>
             
-            {/* Head Shape */}
+            {/* Head Shape Dropdown */}
             <div className="mb-6">
               <h3 className="text-lg font-medium mb-2">Head Shape</h3>
-              <RadioGroup 
-                value={selectedHeadShape.id} 
+              <Select 
+                value={selectedHeadShape.id}
                 onValueChange={(value) => {
                   const shape = headShapes.find(s => s.id === value);
                   if (shape) setSelectedHeadShape(shape);
                 }}
-                className="grid grid-cols-2 gap-2"
               >
-                {headShapes.map((shape) => (
-                  <div key={shape.id} className="flex items-start space-x-2">
-                    <RadioGroupItem value={shape.id} id={`shape-${shape.id}`} className="mt-1" />
-                    <div className="grid gap-1.5 w-full">
-                      <Label htmlFor={`shape-${shape.id}`} className="font-medium">
-                        {shape.name}
-                      </Label>
-                      <Card className="overflow-hidden">
-                        <CardContent className="p-2 flex items-center justify-center h-16">
-                          {shape.shape === 'rectangle' && (
-                            <div className="w-12 h-8 bg-gray-300 rounded-md"></div>
-                          )}
-                          {shape.shape === 'circle' && (
-                            <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
-                          )}
-                          {shape.shape === 'triangle' && (
-                            <div className="w-0 h-0 border-l-[20px] border-r-[20px] border-b-[35px] border-l-transparent border-r-transparent border-b-gray-300"></div>
-                          )}
-                          {shape.shape === 'star' && (
-                            <div className="text-3xl text-gray-300">★</div>
-                          )}
-                          {shape.shape === 'heart' && (
-                            <div className="text-3xl text-gray-300">❤</div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-                ))}
-              </RadioGroup>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a head shape" />
+                </SelectTrigger>
+                <SelectContent>
+                  {headShapes.map((shape) => (
+                    <SelectItem key={shape.id} value={shape.id}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">
+                          {shape.shape === 'rectangle' && '▭'}
+                          {shape.shape === 'circle' && '⬤'}
+                          {shape.shape === 'triangle' && '▲'}
+                          {shape.shape === 'star' && '★'}
+                          {shape.shape === 'heart' && '❤'}
+                        </span>
+                        <span>{shape.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Color Controls */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Color Customization</h3>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="preview-color">Background Color</Label>
-                  <input 
-                    type="color" 
-                    value={previewColor} 
-                    onChange={(e) => setPreviewColor(e.target.value)}
-                    id="preview-color"
-                    className="w-10 h-6"
-                  />
+            {/* Element Style Controls */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-2">Element Controls</h3>
+              <Accordion type="multiple" className="w-full">
+                <ElementStyleControls 
+                  title="Head" 
+                  style={headStyle} 
+                  onChange={setHeadStyle} 
+                />
+                <ElementStyleControls 
+                  title="Left Eye" 
+                  style={leftEyeStyle} 
+                  onChange={setLeftEyeStyle} 
+                />
+                <ElementStyleControls 
+                  title="Right Eye" 
+                  style={rightEyeStyle} 
+                  onChange={setRightEyeStyle} 
+                />
+                <ElementStyleControls 
+                  title="Mouth" 
+                  style={mouthStyle} 
+                  onChange={setMouthStyle} 
+                />
+                <ElementStyleControls 
+                  title="Top Teeth" 
+                  style={topTeethStyle} 
+                  onChange={setTopTeethStyle} 
+                />
+                <ElementStyleControls 
+                  title="Bottom Teeth" 
+                  style={bottomTeethStyle} 
+                  onChange={setBottomTeethStyle} 
+                />
+                <ElementStyleControls 
+                  title="Tongue" 
+                  style={tongueStyle} 
+                  onChange={setTongueStyle} 
+                />
+              </Accordion>
+            </div>
+
+            {/* Theme Colors */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-2">Theme Colors</h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="preview-color">Background</Label>
+                    <input 
+                      type="color" 
+                      value={previewColor} 
+                      onChange={(e) => setPreviewColor(e.target.value)}
+                      id="preview-color"
+                      className="w-10 h-6"
+                    />
+                  </div>
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="screen-color">Screen Color</Label>
-                  <input 
-                    type="color" 
-                    value={screenColor} 
-                    onChange={(e) => setScreenColor(e.target.value)}
-                    id="screen-color"
-                    className="w-10 h-6"
-                  />
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="screen-color">Screen</Label>
+                    <input 
+                      type="color" 
+                      value={screenColor} 
+                      onChange={(e) => {
+                        setScreenColor(e.target.value);
+                        setHeadStyle({...headStyle, fillColor: e.target.value});
+                      }}
+                      id="screen-color"
+                      className="w-10 h-6"
+                    />
+                  </div>
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="face-color">Face Color</Label>
-                  <input 
-                    type="color" 
-                    value={faceColor} 
-                    onChange={(e) => setFaceColor(e.target.value)}
-                    id="face-color"
-                    className="w-10 h-6"
-                  />
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="face-color">Face</Label>
+                    <input 
+                      type="color" 
+                      value={faceColor} 
+                      onChange={(e) => {
+                        setFaceColor(e.target.value);
+                        setMouthStyle({...mouthStyle, fillColor: e.target.value});
+                      }}
+                      id="face-color"
+                      className="w-10 h-6"
+                    />
+                  </div>
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="tongue-color">Tongue Color</Label>
-                  <input 
-                    type="color" 
-                    value={tongueColor} 
-                    onChange={(e) => setTongueColor(e.target.value)}
-                    id="tongue-color"
-                    className="w-10 h-6"
-                  />
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="tongue-color">Tongue</Label>
+                    <input 
+                      type="color" 
+                      value={tongueColor} 
+                      onChange={(e) => {
+                        setTongueColor(e.target.value);
+                        setTongueStyle({...tongueStyle, fillColor: e.target.value});
+                      }}
+                      id="tongue-color"
+                      className="w-10 h-6"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

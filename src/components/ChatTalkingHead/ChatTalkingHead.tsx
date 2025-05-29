@@ -9,7 +9,7 @@ import { PersonIcon } from "@radix-ui/react-icons";
 import TalkingHead from '../TalkingHead/TalkingHead';
 import ApiKeyModal from '../ApiKeyModal/ApiKeyModal';
 import FaceSelectorModal, { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
-import FacialRigEditor, { HeadShape } from '../FacialRigEditor';
+import FacialRigEditor, { HeadShape, FaceRigConfig } from '../FacialRigEditor';
 import './ChatTalkingHead.css';
 import { useToast } from "@/hooks/use-toast";
 import { ChatMessage, TextMessage, CardMessage } from "@/lib/types";
@@ -149,13 +149,18 @@ const ChatTalkingHead: React.FC = () => {
   };
   
   // Save facial rig changes
-  const handleSaveFacialRigChanges = (faceTheme: FaceTheme, headShape: HeadShape) => {
+  const handleSaveFacialRigChanges = (faceTheme: FaceTheme, headShape: HeadShape, rigConfig?: Partial<FaceRigConfig>) => {
     setCurrentFaceTheme(faceTheme);
     setCurrentHeadShape(headShape);
     
     // Save to localStorage
     localStorage.setItem('faceTheme', JSON.stringify(faceTheme));
     localStorage.setItem('headShape', JSON.stringify(headShape));
+    
+    // Save rig configuration if provided
+    if (rigConfig) {
+      localStorage.setItem('faceRigConfig', JSON.stringify(rigConfig));
+    }
     
     // Update the talking head container background color
     const container = document.querySelector('.talking-head-container');
