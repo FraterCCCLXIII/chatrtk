@@ -778,34 +778,12 @@ When asked about cards, weather, recipes, or any structured information, respond
           variant="ghost" 
           size="icon" 
           onClick={() => setIsFaceSelectorOpen(true)}
-          title="Change face theme"
+          title="Change theme"
           whileHover={{ scale: 1.2, rotate: 5 }}
           whileTap={{ scale: 0.9 }}
           transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
           <UserCircle2 className="h-4 w-4" />
-        </MotionButton>
-        <MotionButton 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => setIsHeadSelectorOpen(true)}
-          title="Select head theme"
-          whileHover={{ scale: 1.2, rotate: -5 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-        >
-          <Smiley className="h-4 w-4" weight="fill" />
-        </MotionButton>
-        <MotionButton 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => setIsAnimatedHeadSelectorOpen(true)}
-          title="Select animated head"
-          whileHover={{ scale: 1.2, rotate: 5 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-        >
-          <Robot className="h-4 w-4" weight="fill" />
         </MotionButton>
         <MotionButton 
           variant="ghost" 
