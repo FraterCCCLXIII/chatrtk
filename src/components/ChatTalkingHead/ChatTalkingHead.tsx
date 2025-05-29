@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff } from "lucide-react";
+import { PersonIcon } from "@radix-ui/react-icons";
 import TalkingHead from '../TalkingHead/TalkingHead';
 import ApiKeyModal from '../ApiKeyModal/ApiKeyModal';
+import FaceSelectorModal, { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
 import './ChatTalkingHead.css';
 import { useToast } from "@/hooks/use-toast";
 import { ChatMessage, TextMessage, CardMessage } from "@/lib/types";
@@ -56,13 +58,28 @@ const ChatTalkingHead: React.FC = () => {
     model: 'gpt-4o',
     endpoint: ''
   });
+  const [isFaceSelectorOpen, setIsFaceSelectorOpen] = useState(false);
+  const [currentFaceTheme, setCurrentFaceTheme] = useState<FaceTheme>({
+    id: 'default',
+    name: 'Minty',
+    description: 'The classic mint green face',
+    previewColor: '#5ddbaf',
+    screenColor: '#e2ffe5',
+    faceColor: '#5daa77',
+    tongueColor: '#ff7d9d',
+  });
   const { toast } = useToast();
 
-  // Load API settings from localStorage on initial render
+  // Load API settings and face theme from localStorage on initial render
   useEffect(() => {
     const savedSettings = localStorage.getItem('apiSettings');
     if (savedSettings) {
       setApiSettings(JSON.parse(savedSettings));
+    }
+    
+    const savedFaceTheme = localStorage.getItem('faceTheme');
+    if (savedFaceTheme) {
+      setCurrentFaceTheme(JSON.parse(savedFaceTheme));
     }
   }, []);
 
@@ -92,6 +109,18 @@ const ChatTalkingHead: React.FC = () => {
     const newSettings = { provider, apiKey, model, endpoint };
     setApiSettings(newSettings);
     localStorage.setItem('apiSettings', JSON.stringify(newSettings));
+  };
+  
+  // Save face theme
+  const handleSelectFace = (faceTheme: FaceTheme) => {
+    setCurrentFaceTheme(faceTheme);
+    localStorage.setItem('faceTheme', JSON.stringify(faceTheme));
+    
+    // Update the talking head container background color
+    const container = document.querySelector('.talking-head-container');
+    if (container) {
+      (container as HTMLElement).style.backgroundColor = faceTheme.previewColor;
+    }
   };
 
   // Handle card action
@@ -487,6 +516,14 @@ When asked about cards, weather, recipes, or any structured information, respond
         <Button 
           variant="ghost" 
           size="icon" 
+          onClick={() => setIsFaceSelectorOpen(true)}
+          title="Change face theme"
+        >
+          <PersonIcon className="h-4 w-4" />
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon" 
           onClick={() => setIsModalOpen(true)}
           title="Settings"
         >
@@ -498,12 +535,16 @@ When asked about cards, weather, recipes, or any structured information, respond
         <>
           <div 
             className="talking-head-container" 
-            style={{ height: `${headHeight}px` }}
+            style={{ 
+              height: `${headHeight}px`,
+              backgroundColor: currentFaceTheme.previewColor
+            }}
           >
             <TalkingHead 
               text={currentSpeechText}
               speaking={isSpeaking}
               expression={currentExpression}
+              theme={currentFaceTheme}
             />
           </div>
           
@@ -605,6 +646,13 @@ When asked about cards, weather, recipes, or any structured information, respond
         currentApiKey={apiSettings.apiKey}
         currentModel={apiSettings.model}
         currentEndpoint={apiSettings.endpoint}
+      />
+
+      <FaceSelectorModal
+        open={isFaceSelectorOpen}
+        onOpenChange={setIsFaceSelectorOpen}
+        onSelectFace={handleSelectFace}
+        currentFaceTheme={currentFaceTheme.id}
       />
     </Card>
   );

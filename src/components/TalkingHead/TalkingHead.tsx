@@ -1,23 +1,39 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import './TalkingHead.css';
+import { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
 
 interface TalkingHeadProps {
   text?: string;
   speaking?: boolean;
   expression?: 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
+  theme?: FaceTheme;
 }
 
 const TalkingHead: React.FC<TalkingHeadProps> = ({
   text = '',
   speaking = false,
-  expression = 'neutral'
+  expression = 'neutral',
+  theme
 }) => {
   const [currentPhoneme, setCurrentPhoneme] = useState('rest');
   const [currentExpression, setCurrentExpression] = useState(expression);
   const speakingRef = useRef(false);
   const phonemeIndexRef = useRef(0);
   const timerRef = useRef<number | null>(null);
+
+  // Default theme
+  const defaultTheme: FaceTheme = {
+    id: 'default',
+    name: 'Minty',
+    description: 'The classic mint green face',
+    previewColor: '#5ddbaf',
+    screenColor: '#e2ffe5',
+    faceColor: '#5daa77',
+    tongueColor: '#ff7d9d',
+  };
+
+  const currentTheme = theme || defaultTheme;
 
   // Phoneme definitions with mouth shapes
   const phonemes = {
@@ -135,7 +151,10 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
   return (
     <div className="talking-head">
       <div className="face-container">
-        <div className="screen">
+        <div 
+          className="screen"
+          style={{ backgroundColor: currentTheme.screenColor }}
+        >
           <div className="face">
             <div className="eye left"></div>
             <div className="eye right"></div>
@@ -145,7 +164,8 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
                 style={{ 
                   width: `${shape.width}px`, 
                   height: `${shape.height}px`, 
-                  borderRadius: shape.borderRadius 
+                  borderRadius: shape.borderRadius,
+                  backgroundColor: currentTheme.faceColor
                 }}
               >
                 <div className="mouth-inner">
@@ -161,7 +181,8 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
                     style={{
                       '--tongue-width': `${shape.tongueWidth}px`,
                       '--tongue-height': `${shape.tongueHeight}px`,
-                      '--tongue-bottom': `${shape.tongueBottom}px`
+                      '--tongue-bottom': `${shape.tongueBottom}px`,
+                      backgroundColor: currentTheme.tongueColor
                     } as React.CSSProperties}
                   ></div>
                   <div 
