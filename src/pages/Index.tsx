@@ -1,15 +1,58 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import ChatTalkingHead from '@/components/ChatTalkingHead/ChatTalkingHead';
 
 const Index = () => {
+    const [backgroundColor, setBackgroundColor] = useState('#e2ffe5'); // Default mint background
+
+    useEffect(() => {
+        // Get the current theme from localStorage
+        const savedFaceTheme = localStorage.getItem('faceTheme');
+        if (savedFaceTheme) {
+            const theme = JSON.parse(savedFaceTheme);
+            setBackgroundColor(theme.screenColor);
+        }
+
+        // Listen for theme changes
+        const handleStorageChange = () => {
+            const updatedTheme = localStorage.getItem('faceTheme');
+            if (updatedTheme) {
+                const theme = JSON.parse(updatedTheme);
+                setBackgroundColor(theme.screenColor);
+            }
+        };
+
+        // Create a custom event listener for theme changes
+        window.addEventListener('storage', handleStorageChange);
+        
+        // Create a MutationObserver to watch for changes to the talking-head-container
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                    const savedFaceTheme = localStorage.getItem('faceTheme');
+                    if (savedFaceTheme) {
+                        const theme = JSON.parse(savedFaceTheme);
+                        setBackgroundColor(theme.screenColor);
+                    }
+                }
+            });
+        });
+
+        // Start observing the document with the configured parameters
+        const container = document.querySelector('.talking-head-container');
+        if (container) {
+            observer.observe(container, { attributes: true });
+        }
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            observer.disconnect();
+        };
+    }, []);
+
     return (
-    <div className="min-h-screen p-4 bg-gradient-to-b from-gray-50 to-gray-100">
+    <div className="min-h-screen p-4" style={{ backgroundColor }}>
       <div className="container mx-auto py-8">
-        {/* <h1 className="text-3xl font-bold text-center mb-2">Talking Head Chat Demo</h1>
-        <p className="text-center text-gray-600 mb-8">
-          Click the settings icon in the top-right corner of the avatar to configure your AI provider.
-        </p> */}
         <ChatTalkingHead />
       </div>
     </div>

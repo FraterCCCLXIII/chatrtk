@@ -79,7 +79,14 @@ const ChatTalkingHead: React.FC = () => {
     
     const savedFaceTheme = localStorage.getItem('faceTheme');
     if (savedFaceTheme) {
-      setCurrentFaceTheme(JSON.parse(savedFaceTheme));
+      const theme = JSON.parse(savedFaceTheme);
+      setCurrentFaceTheme(theme);
+      
+      // Set initial background color
+      document.body.style.backgroundColor = theme.screenColor;
+    } else {
+      // Set default background color
+      document.body.style.backgroundColor = currentFaceTheme.screenColor;
     }
   }, []);
 
@@ -121,6 +128,12 @@ const ChatTalkingHead: React.FC = () => {
     if (container) {
       (container as HTMLElement).style.backgroundColor = faceTheme.previewColor;
     }
+    
+    // Dispatch a custom event to notify theme change
+    window.dispatchEvent(new Event('storage'));
+    
+    // Update document body background color
+    document.body.style.backgroundColor = faceTheme.screenColor;
   };
 
   // Handle card action

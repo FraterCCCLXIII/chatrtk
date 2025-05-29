@@ -7,6 +7,9 @@
   height: 100vh;
   overflow: hidden;
   position: relative;
+  border: none;
+  box-shadow: none;
+  background-color: transparent;
 }
 
 .controls-container {
@@ -14,8 +17,8 @@
   justify-content: flex-end;
   gap: 0.5rem;
   padding: 0.5rem;
-  background-color: #f9f9f9;
-  border-bottom: 1px solid #eaeaea;
+  background-color: transparent;
+  border-bottom: none;
   z-index: 10;
 }
 
@@ -36,37 +39,33 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #f0f0f0;
-  border-top: 1px solid #ddd;
-  border-bottom: 1px solid #ddd;
+  background-color: transparent;
+  border: none;
   cursor: grab;
   user-select: none;
   position: relative;
   z-index: 5;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .resize-handle:hover {
-  background-color: #e0e0e0;
+  opacity: 1;
 }
 
 .resize-handle-line {
-  width: 40px;
-  height: 2px;
-  background-color: #aaa;
+  width: 60px;
+  height: 3px;
+  background-color: white;
   border-radius: 2px;
 }
 
 .resize-handle-dots {
-  display: flex;
-  gap: 4px;
-  margin-top: 2px;
+  display: none;
 }
 
 .resize-dot {
-  width: 4px;
-  height: 4px;
-  background-color: #aaa;
-  border-radius: 50%;
+  display: none;
 }
 
 .chat-container {
@@ -82,8 +81,8 @@
 .chat-messages {
   flex: 1;
   padding: 1rem;
-  border-radius: 8px;
-  background-color: #f9f9f9;
+  border-radius: 0;
+  background-color: transparent;
   overflow-y: auto;
   height: 100%;
   margin-bottom: 1rem;
@@ -124,12 +123,15 @@
 
 .input-container {
   display: flex;
-  gap: 0.5rem;
   padding: 1rem;
-  background-color: #f9f9f9;
-  border-top: 1px solid #eaeaea;
-  position: sticky;
-  bottom: 0;
+  background-color: transparent;
+  border-top: none;
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 2rem);
+  max-width: 968px;
   z-index: 10;
 }
 
@@ -137,8 +139,14 @@
   flex: 1;
   resize: none;
   max-height: 120px;
+  padding-right: 5rem;
+  background-color: white;
+  border: 1px solid #eaeaea;
+  border-radius: 8px;
 }
 
 .send-button {
-  align-self: flex-end;
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.5rem;
 }
