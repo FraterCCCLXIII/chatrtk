@@ -11,6 +11,7 @@ interface TalkingHeadProps {
   theme?: FaceTheme;
   headShape?: HeadShape;
   config?: FaceRigConfig;
+  animatedTheme?: string;
 }
 
 const TalkingHead: React.FC<TalkingHeadProps> = ({
@@ -19,7 +20,8 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
   expression = 'neutral',
   theme,
   headShape,
-  config
+  config,
+  animatedTheme = 'rtk-100'
 }) => {
   const [currentPhoneme, setCurrentPhoneme] = useState('rest');
   const [currentExpression, setCurrentExpression] = useState(expression);
@@ -168,11 +170,18 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
           className={`screen ${currentHeadShape.shape}`}
           style={{ 
             backgroundColor: currentTheme.screenColor,
-            borderRadius: currentHeadShape.shape === 'circle' ? '50%' : 
-                         currentHeadShape.shape === 'rectangle' ? '10px' : '0'
+            borderRadius: config?.head?.borderRadius || 
+                         (currentHeadShape.shape === 'circle' ? '50%' : 
+                         currentHeadShape.shape === 'rectangle' ? '10px' : '0'),
+            border: `${config?.head?.strokeWidth || 8}px solid ${config?.head?.strokeColor || '#333333'}`,
+            boxShadow: `0 4px 8px rgba(0,0,0,0.2)`
           }}
         >
-          <div className="face">
+          <div 
+            className="face"
+            style={{
+              backgroundColor: config?.head?.fillColor || currentTheme.screenColor
+            }}>
             <div className="eye-container left">
               <div 
                 className="eye left"
@@ -249,8 +258,9 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
                 style={{ 
                   width: `${shape.width}px`, 
                   height: `${shape.height}px`, 
-                  borderRadius: shape.borderRadius,
-                  backgroundColor: currentTheme.faceColor
+                  borderRadius: config?.mouth?.borderRadius || shape.borderRadius,
+                  backgroundColor: config?.mouth?.fillColor || currentTheme.faceColor,
+                  border: config?.mouth?.strokeWidth ? `${config.mouth.strokeWidth}px solid ${config.mouth.strokeColor}` : 'none'
                 }}
               >
                 <div className="mouth-inner">

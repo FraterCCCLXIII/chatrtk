@@ -12,6 +12,27 @@
   background-color: transparent;
 }
 
+.app-title {
+  position: fixed;
+  top: 0.5rem;
+  left: 1rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  z-index: 30;
+  color: #333;
+}
+
+.model-version {
+  position: fixed;
+  top: 2.2rem;
+  left: 1rem;
+  font-size: 0.7rem;
+  font-weight: 300;
+  z-index: 30;
+  color: #666;
+  letter-spacing: 0.05rem;
+}
+
 .controls-container {
   display: flex;
   justify-content: flex-end;

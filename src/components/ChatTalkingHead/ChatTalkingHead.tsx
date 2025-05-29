@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2 } from "lucide-react";
-import { Smiley } from "@phosphor-icons/react";
+import { Smiley, Robot } from "@phosphor-icons/react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import TalkingHead from '../TalkingHead/TalkingHead';
 import ApiKeyModal from '../ApiKeyModal/ApiKeyModal';
 import FaceSelectorModal, { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
 import { HeadSelectorModal, HeadTheme } from '../HeadSelectorModal/HeadSelectorModal';
+import { AnimatedHeadSelectorModal, AnimatedHeadTheme } from '../AnimatedHeadSelectorModal/AnimatedHeadSelectorModal';
 import FacialRigEditor, { HeadShape, FaceRigConfig } from '../FacialRigEditor';
 import './ChatTalkingHead.css';
 import { useToast } from "@/hooks/use-toast";
@@ -63,6 +64,54 @@ const ChatTalkingHead: React.FC = () => {
   });
   const [isFaceSelectorOpen, setIsFaceSelectorOpen] = useState(false);
   const [isHeadSelectorOpen, setIsHeadSelectorOpen] = useState(false);
+  const [isAnimatedHeadSelectorOpen, setIsAnimatedHeadSelectorOpen] = useState(false);
+  const [currentAnimatedHeadTheme, setCurrentAnimatedHeadTheme] = useState<AnimatedHeadTheme>({
+    id: 'rtk-100',
+    name: 'RTK-100',
+    description: 'The original talking head',
+    config: {
+      head: {
+        x: 0,
+        y: 0,
+        width: 220,
+        height: 160,
+        fillColor: '#5daa77',
+        strokeColor: '#333333',
+        strokeWidth: 8,
+        borderRadius: '20px'
+      },
+      leftEye: {
+        x: 30,
+        y: 40,
+        width: 12,
+        height: 12,
+        fillColor: '#000000',
+        strokeColor: 'transparent',
+        strokeWidth: 0,
+        borderRadius: '50%'
+      },
+      rightEye: {
+        x: 70,
+        y: 40,
+        width: 12,
+        height: 12,
+        fillColor: '#000000',
+        strokeColor: 'transparent',
+        strokeWidth: 0,
+        borderRadius: '50%'
+      },
+      mouth: {
+        x: 50,
+        y: 60,
+        width: 60,
+        height: 30,
+        fillColor: '#5daa77',
+        strokeColor: '#333333',
+        strokeWidth: 1,
+        borderRadius: '15px'
+      }
+    }
+  });
   const [isFacialRigEditorOpen, setIsFacialRigEditorOpen] = useState(false);
   const [currentFaceTheme, setCurrentFaceTheme] = useState<FaceTheme>({
     id: 'default',
@@ -191,6 +240,21 @@ const ChatTalkingHead: React.FC = () => {
     toast({
       title: "Head Theme Updated",
       description: `Now using the ${headTheme.name} theme.`,
+    });
+  };
+  
+  // Save animated head theme
+  const handleSelectAnimatedHead = (theme: AnimatedHeadTheme) => {
+    setCurrentAnimatedHeadTheme(theme);
+    
+    // Save to localStorage
+    localStorage.setItem('animatedHeadTheme', JSON.stringify(theme));
+    
+    // Show toast notification
+    toast({
+      title: `${theme.name} head selected`,
+      description: `The ${theme.name} head style has been applied.`,
+      duration: 3000
     });
   };
   
@@ -615,6 +679,8 @@ When asked about cards, weather, recipes, or any structured information, respond
 
   return (
     <div>
+      <div className="app-title">ChatRTK</div>
+      <div className="model-version">RTK-100</div>
       <div className="controls-container">
         <Button 
           variant="ghost" 
@@ -644,9 +710,17 @@ When asked about cards, weather, recipes, or any structured information, respond
           variant="ghost" 
           size="icon" 
           onClick={() => setIsHeadSelectorOpen(true)}
-          title="Select animated head"
+          title="Select head theme"
         >
           <Smiley className="h-4 w-4" weight="fill" />
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => setIsAnimatedHeadSelectorOpen(true)}
+          title="Select animated head"
+        >
+          <Robot className="h-4 w-4" weight="fill" />
         </Button>
         <Button 
           variant="ghost" 
@@ -681,6 +755,7 @@ When asked about cards, weather, recipes, or any structured information, respond
               expression={currentExpression}
               theme={currentFaceTheme}
               headShape={currentHeadShape}
+              animatedTheme={currentAnimatedHeadTheme}
             />
           </div>
           
@@ -798,6 +873,13 @@ When asked about cards, weather, recipes, or any structured information, respond
         open={isHeadSelectorOpen}
         onOpenChange={setIsHeadSelectorOpen}
         onSelectHead={handleSelectHead}
+      />
+      
+      <AnimatedHeadSelectorModal
+        isOpen={isAnimatedHeadSelectorOpen}
+        onClose={() => setIsAnimatedHeadSelectorOpen(false)}
+        onSelectHead={handleSelectAnimatedHead}
+        currentHeadId={currentAnimatedHeadTheme.id}
       />
       
       <FacialRigEditor

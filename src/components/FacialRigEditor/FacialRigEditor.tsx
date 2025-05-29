@@ -125,7 +125,7 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
     y: 0,
     width: 220,
     height: 160,
-    fillColor: screenColor,
+    fillColor: '#5daa77', // Default face color
     strokeColor: '#333333',
     strokeWidth: 8,
     borderRadius: '20px'
@@ -210,9 +210,9 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
     y: 60,
     width: 60,
     height: 30,
-    fillColor: faceColor,
-    strokeColor: 'transparent',
-    strokeWidth: 0,
+    fillColor: '#5daa77', // Default face color
+    strokeColor: '#333333',
+    strokeWidth: 1,
     borderRadius: '15px'
   };
   
@@ -483,12 +483,24 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
             {/* Border Radius */}
             <div className="space-y-1">
               <Label htmlFor={`${title}-border-radius`}>Border Radius</Label>
-              <Input 
-                id={`${title}-border-radius`}
-                value={style.borderRadius || ''} 
-                onChange={(e) => onChange({...style, borderRadius: e.target.value})}
-                placeholder="e.g. 10px or 50%"
-              />
+              <div className="flex items-center gap-2">
+                <Slider 
+                  id={`${title}-border-radius-slider`}
+                  min={0} 
+                  max={50} 
+                  step={1} 
+                  value={[parseInt(style.borderRadius || '0') || 0]} 
+                  onValueChange={(value) => onChange({...style, borderRadius: `${value[0]}px`})}
+                  className="flex-1"
+                />
+                <Input 
+                  id={`${title}-border-radius`}
+                  value={style.borderRadius || ''} 
+                  onChange={(e) => onChange({...style, borderRadius: e.target.value})}
+                  placeholder="e.g. 10px or 50%"
+                  className="w-24"
+                />
+              </div>
             </div>
             
             {/* Rotation */}
