@@ -92,10 +92,63 @@ export const AnimatedMessage: React.FC<{
   isUser: boolean;
   delay?: number;
 }> = ({ children, isUser, delay = 0 }) => {
+  const [ref, setRef] = React.useState<HTMLDivElement | null>(null);
+  const [isVisible, setIsVisible] = React.useState(true);
+  const [scale, setScale] = React.useState(1);
+  const [opacity, setOpacity] = React.useState(1);
+
+  React.useEffect(() => {
+    if (!ref) return;
+
+    const checkPosition = () => {
+      const messageRect = ref.getBoundingClientRect();
+      const inputContainer = document.querySelector('.input-container');
+      
+      if (inputContainer) {
+        const inputRect = inputContainer.getBoundingClientRect();
+        const distanceToInput = inputRect.top - messageRect.bottom;
+        
+        // Start fading when message is within 100px of the input container
+        if (distanceToInput < 100 && distanceToInput > -50) {
+          // Calculate scale and opacity based on distance
+          const newScale = Math.max(0.7, 1 - (0.3 * (1 - distanceToInput / 100)));
+          const newOpacity = Math.max(0.3, distanceToInput / 100);
+          
+          setScale(newScale);
+          setOpacity(newOpacity);
+        } else if (distanceToInput <= -50) {
+          // Hide completely when too far into the input container
+          setIsVisible(false);
+        } else {
+          // Reset when far enough away
+          setScale(1);
+          setOpacity(1);
+          setIsVisible(true);
+        }
+      }
+    };
+
+    // Check position on scroll
+    const scrollArea = document.querySelector('.chat-messages');
+    if (scrollArea) {
+      scrollArea.addEventListener('scroll', checkPosition);
+    }
+
+    // Initial check
+    checkPosition();
+
+    return () => {
+      if (scrollArea) {
+        scrollArea.removeEventListener('scroll', checkPosition);
+      }
+    };
+  }, [ref]);
+
   return (
     <MotionDiv
+      ref={setRef}
       initial="hidden"
-      animate="visible"
+      animate={isVisible ? "visible" : "hidden"}
       variants={{
         hidden: { 
           opacity: 0,
@@ -113,6 +166,11 @@ export const AnimatedMessage: React.FC<{
             delay: delay
           }
         }
+      }}
+      style={{
+        scale,
+        opacity,
+        transition: "scale 0.2s ease-out, opacity 0.2s ease-out"
       }}
     >
       {children}

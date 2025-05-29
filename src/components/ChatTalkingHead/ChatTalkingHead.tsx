@@ -213,6 +213,9 @@ const ChatTalkingHead: React.FC = () => {
     
     // Update document body background color
     document.body.style.backgroundColor = faceTheme.previewColor;
+    
+    // Update CSS variable for background color
+    document.documentElement.style.setProperty('--body-bg-color', faceTheme.previewColor);
   };
   
   // Save head theme
@@ -251,6 +254,9 @@ const ChatTalkingHead: React.FC = () => {
     
     // Update document body background color
     document.body.style.backgroundColor = headTheme.previewColor;
+    
+    // Update CSS variable for background color
+    document.documentElement.style.setProperty('--body-bg-color', headTheme.previewColor);
     
     toast({
       title: "Head Theme Updated",
