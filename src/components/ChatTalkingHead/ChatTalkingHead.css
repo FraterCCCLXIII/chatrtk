@@ -207,18 +207,18 @@
   border-top: none;
   position: fixed;
   bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  margin: 0;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   width: 100%;
   max-width: 600px; /* Consistent width with message container */
   z-index: 20; /* Higher z-index to ensure it's above messages */
   justify-content: center; /* Center the input horizontally */
   align-items: flex-end; /* Align items to the bottom */
   box-sizing: border-box;
-  /* Use a dynamic gradient that matches the body background color */
-  background: linear-gradient(to bottom, transparent, var(--body-bg-color, #e2ffe5) 20%);
-  padding-top: 2rem; /* Add padding to the top for the gradient effect */
+  /* No background gradient */
+  background: transparent;
+  padding-top: 1rem; /* Reduced padding */
 }
 
 .chat-input {
