@@ -4,11 +4,12 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2 } from "lucide-react";
+import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2 } from "lucide-react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import TalkingHead from '../TalkingHead/TalkingHead';
 import ApiKeyModal from '../ApiKeyModal/ApiKeyModal';
 import FaceSelectorModal, { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
+import FacialRigEditor, { HeadShape } from '../FacialRigEditor';
 import './ChatTalkingHead.css';
 import { useToast } from "@/hooks/use-toast";
 import { ChatMessage, TextMessage, CardMessage } from "@/lib/types";
@@ -59,6 +60,7 @@ const ChatTalkingHead: React.FC = () => {
     endpoint: ''
   });
   const [isFaceSelectorOpen, setIsFaceSelectorOpen] = useState(false);
+  const [isFacialRigEditorOpen, setIsFacialRigEditorOpen] = useState(false);
   const [currentFaceTheme, setCurrentFaceTheme] = useState<FaceTheme>({
     id: 'default',
     name: 'Minty',
@@ -68,9 +70,14 @@ const ChatTalkingHead: React.FC = () => {
     faceColor: '#5daa77',
     tongueColor: '#ff7d9d',
   });
+  const [currentHeadShape, setCurrentHeadShape] = useState<HeadShape>({
+    id: 'rectangle',
+    name: 'Rectangle',
+    shape: 'rectangle',
+  });
   const { toast } = useToast();
 
-  // Load API settings and face theme from localStorage on initial render
+  // Load API settings, face theme, and head shape from localStorage on initial render
   useEffect(() => {
     const savedSettings = localStorage.getItem('apiSettings');
     if (savedSettings) {
@@ -87,6 +94,11 @@ const ChatTalkingHead: React.FC = () => {
     } else {
       // Set default background color
       document.body.style.backgroundColor = currentFaceTheme.screenColor;
+    }
+    
+    const savedHeadShape = localStorage.getItem('headShape');
+    if (savedHeadShape) {
+      setCurrentHeadShape(JSON.parse(savedHeadShape));
     }
   }, []);
 
@@ -134,6 +146,33 @@ const ChatTalkingHead: React.FC = () => {
     
     // Update document body background color
     document.body.style.backgroundColor = faceTheme.previewColor;
+  };
+  
+  // Save facial rig changes
+  const handleSaveFacialRigChanges = (faceTheme: FaceTheme, headShape: HeadShape) => {
+    setCurrentFaceTheme(faceTheme);
+    setCurrentHeadShape(headShape);
+    
+    // Save to localStorage
+    localStorage.setItem('faceTheme', JSON.stringify(faceTheme));
+    localStorage.setItem('headShape', JSON.stringify(headShape));
+    
+    // Update the talking head container background color
+    const container = document.querySelector('.talking-head-container');
+    if (container) {
+      (container as HTMLElement).style.backgroundColor = faceTheme.previewColor;
+    }
+    
+    // Dispatch a custom event to notify theme change
+    window.dispatchEvent(new Event('storage'));
+    
+    // Update document body background color
+    document.body.style.backgroundColor = faceTheme.previewColor;
+    
+    toast({
+      title: "Facial Rig Updated",
+      description: "Your customizations have been applied.",
+    });
   };
 
   // Handle card action
@@ -515,10 +554,12 @@ When asked about cards, weather, recipes, or any structured information, respond
   // Define message bubble colors based on theme
   const userMessageStyle = {
     backgroundColor: `${currentFaceTheme.tongueColor}80`, // 50% opacity
+    borderRadius: '12px 12px 2px 12px',
   };
   
   const aiMessageStyle = {
-    backgroundColor: `${currentFaceTheme.previewColor}40`, // 25% opacity
+    backgroundColor: `${currentFaceTheme.screenColor}cc`, // 80% opacity
+    borderRadius: '12px 12px 12px 2px',
   };
 
   return (
@@ -551,6 +592,14 @@ When asked about cards, weather, recipes, or any structured information, respond
         <Button 
           variant="ghost" 
           size="icon" 
+          onClick={() => setIsFacialRigEditorOpen(true)}
+          title="Edit facial rig"
+        >
+          <Edit2 className="h-4 w-4" />
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon" 
           onClick={() => setIsModalOpen(true)}
           title="Settings"
         >
@@ -572,6 +621,7 @@ When asked about cards, weather, recipes, or any structured information, respond
               speaking={isSpeaking}
               expression={currentExpression}
               theme={currentFaceTheme}
+              headShape={currentHeadShape}
             />
           </div>
           
@@ -683,6 +733,14 @@ When asked about cards, weather, recipes, or any structured information, respond
         onOpenChange={setIsFaceSelectorOpen}
         onSelectFace={handleSelectFace}
         currentFaceTheme={currentFaceTheme.id}
+      />
+      
+      <FacialRigEditor
+        open={isFacialRigEditorOpen}
+        onOpenChange={setIsFacialRigEditorOpen}
+        onSave={handleSaveFacialRigChanges}
+        currentFaceTheme={currentFaceTheme}
+        currentHeadShape={currentHeadShape}
       />
     </div>
   );

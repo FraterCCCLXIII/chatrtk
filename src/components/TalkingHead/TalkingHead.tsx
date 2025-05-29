@@ -2,19 +2,22 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './TalkingHead.css';
 import { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
+import { HeadShape } from '../FacialRigEditor';
 
 interface TalkingHeadProps {
   text?: string;
   speaking?: boolean;
   expression?: 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
   theme?: FaceTheme;
+  headShape?: HeadShape;
 }
 
 const TalkingHead: React.FC<TalkingHeadProps> = ({
   text = '',
   speaking = false,
   expression = 'neutral',
-  theme
+  theme,
+  headShape
 }) => {
   const [currentPhoneme, setCurrentPhoneme] = useState('rest');
   const [currentExpression, setCurrentExpression] = useState(expression);
@@ -32,8 +35,16 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
     faceColor: '#5daa77',
     tongueColor: '#ff7d9d',
   };
+  
+  // Default head shape
+  const defaultHeadShape: HeadShape = {
+    id: 'rectangle',
+    name: 'Rectangle',
+    shape: 'rectangle',
+  };
 
   const currentTheme = theme || defaultTheme;
+  const currentHeadShape = headShape || defaultHeadShape;
 
   // Phoneme definitions with mouth shapes
   const phonemes = {
@@ -152,8 +163,12 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
     <div className="talking-head">
       <div className="face-container">
         <div 
-          className="screen"
-          style={{ backgroundColor: currentTheme.screenColor }}
+          className={`screen ${currentHeadShape.shape}`}
+          style={{ 
+            backgroundColor: currentTheme.screenColor,
+            borderRadius: currentHeadShape.shape === 'circle' ? '50%' : 
+                         currentHeadShape.shape === 'rectangle' ? '10px' : '0'
+          }}
         >
           <div className="face">
             <div className="eye left"></div>
