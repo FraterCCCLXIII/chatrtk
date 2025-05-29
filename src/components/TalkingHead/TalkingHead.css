@@ -23,17 +23,72 @@
   border-radius: 20px;
   border: 8px solid #333;
   left: 50%;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
   top: 20%;
   transform: translateX(-50%);
   display: flex;
   justify-content: center;
   align-items: center;
+  clip-path: var(--clip-path, none);
+}
+
+/* Apply the same clip-path to the border */
+.screen::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  background-color: #333;
+  z-index: -1;
+  clip-path: var(--clip-path, none);
+  border-radius: inherit;
+}
+
+/* Triangle shape */
+.screen.triangle {
+  --clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  border-radius: 0;
+}
+
+/* Star shape */
+.screen.star {
+  --clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  border-radius: 0;
+}
+
+/* Heart shape */
+.screen.heart {
+  --clip-path: polygon(50% 0%, 100% 35%, 85% 70%, 50% 100%, 15% 70%, 0% 35%);
+  border-radius: 0;
 }
 
 .face {
   position: relative;
   width: 100%;
   height: 100%;
+  border-radius: inherit;
+  transition: all 0.3s ease;
+}
+
+.eye-container {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+}
+
+.eye-container.left {
+  left: 30%;
+  top: 40%;
+  transform: translateX(-50%) translateY(-50%);
+}
+
+.eye-container.right {
+  right: 30%;
+  top: 40%;
+  transform: translateX(50%) translateY(-50%);
 }
 
 .eye {
@@ -42,16 +97,34 @@
   height: 12px;
   background-color: black;
   border-radius: 50%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
 }
 
-.eye.left {
-  left: 30%;
-  top: 40%;
+.eyelid {
+  position: absolute;
+  width: 14px;
+  height: 6px;
+  background-color: #333333;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  opacity: 0;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.eye.right {
-  right: 30%;
-  top: 40%;
+.eyelid.top {
+  top: 0;
+  border-radius: 50% 50% 0 0;
+  transform-origin: bottom center;
+}
+
+.eyelid.bottom {
+  bottom: 0;
+  border-radius: 0 0 50% 50%;
+  transform-origin: top center;
 }
 
 .mouth-container {

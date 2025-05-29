@@ -7,6 +7,30 @@
   height: 100vh;
   overflow: hidden;
   position: relative;
+  border: none;
+  box-shadow: none;
+  background-color: transparent;
+}
+
+.app-title {
+  position: fixed;
+  top: 0.5rem;
+  left: 1rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  z-index: 30;
+  color: #333;
+}
+
+.model-version {
+  position: fixed;
+  top: 2.2rem;
+  left: 1rem;
+  font-size: 0.7rem;
+  font-weight: 300;
+  z-index: 30;
+  color: #666;
+  letter-spacing: 0.05rem;
 }
 
 .controls-container {
@@ -14,9 +38,16 @@
   justify-content: flex-end;
   gap: 0.5rem;
   padding: 0.5rem;
-  background-color: #f9f9f9;
-  border-bottom: 1px solid #eaeaea;
-  z-index: 10;
+  background-color: transparent;
+  border-bottom: none;
+  z-index: 20;
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 100%;
+  max-width: 1000px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .talking-head-container {
@@ -25,9 +56,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative;
+  position: sticky;
+  top: 50px;
   overflow: hidden;
   transition: height 0.3s ease;
+  z-index: 5;
+  margin-top: 40px;
 }
 
 .resize-handle {
@@ -36,37 +70,34 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #f0f0f0;
-  border-top: 1px solid #ddd;
-  border-bottom: 1px solid #ddd;
+  background-color: transparent;
+  border: none;
   cursor: grab;
   user-select: none;
-  position: relative;
+  position: sticky;
+  top: calc(50px + var(--head-height, 300px));
   z-index: 5;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .resize-handle:hover {
-  background-color: #e0e0e0;
+  opacity: 1;
 }
 
 .resize-handle-line {
-  width: 40px;
-  height: 2px;
-  background-color: #aaa;
+  width: 60px;
+  height: 3px;
+  background-color: white;
   border-radius: 2px;
 }
 
 .resize-handle-dots {
-  display: flex;
-  gap: 4px;
-  margin-top: 2px;
+  display: none;
 }
 
 .resize-dot {
-  width: 4px;
-  height: 4px;
-  background-color: #aaa;
-  border-radius: 50%;
+  display: none;
 }
 
 .chat-container {
@@ -77,13 +108,14 @@
   gap: 1rem;
   overflow: hidden;
   min-height: 200px;
+  position: relative;
 }
 
 .chat-messages {
   flex: 1;
   padding: 1rem;
-  border-radius: 8px;
-  background-color: #f9f9f9;
+  border-radius: 0;
+  background-color: transparent;
   overflow-y: auto;
   height: 100%;
   margin-bottom: 1rem;
@@ -92,27 +124,32 @@
 .chat-message {
   padding: 0.75rem 1rem;
   margin-bottom: 0.5rem;
-  border-radius: 8px;
+  border-radius: 18px;
+  display: inline-block;
   max-width: 80%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67);
 }
 
 .chat-message.ai-message .card {
   background-color: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   max-width: 100%;
   margin: 0;
   padding: 0;
 }
 
 .user-message {
-  background-color: #e2f0ff;
   margin-left: auto;
   text-align: right;
+  /* Background color will be set dynamically based on theme */
+  transform-origin: bottom right;
 }
 
 .ai-message {
-  background-color: #f0f0f0;
   margin-right: auto;
+  /* Background color will be set dynamically based on theme */
+  transform-origin: bottom left;
 }
 
 /* Make card messages wider */
@@ -124,12 +161,15 @@
 
 .input-container {
   display: flex;
-  gap: 0.5rem;
   padding: 1rem;
-  background-color: #f9f9f9;
-  border-top: 1px solid #eaeaea;
-  position: sticky;
-  bottom: 0;
+  background-color: transparent;
+  border-top: none;
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 2rem);
+  max-width: 968px;
   z-index: 10;
 }
 
@@ -137,8 +177,38 @@
   flex: 1;
   resize: none;
   max-height: 120px;
+  padding: 1.2rem 1.5rem;
+  padding-right: 3.8rem;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid #eaeaea;
+  border-radius: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.chat-input:focus {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  border-color: #c8c8c8;
+  transform: translateY(-2px);
 }
 
 .send-button {
-  align-self: flex-end;
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.send-button:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }

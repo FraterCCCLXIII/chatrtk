@@ -1,12 +1,30 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff } from "lucide-react";
+import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2 } from "lucide-react";
+import { Smiley, Robot } from "@phosphor-icons/react";
+import { PersonIcon } from "@radix-ui/react-icons";
+import { 
+  AnimatedMessage, 
+  AnimatedCard, 
+  AnimatedDiv, 
+  MotionDiv, 
+  MotionButton, 
+  MotionTextarea,
+  useFloatingAnimation,
+  useFadeIn,
+  useSlideIn,
+  use3DRotation
+} from '../animations';
 import TalkingHead from '../TalkingHead/TalkingHead';
 import ApiKeyModal from '../ApiKeyModal/ApiKeyModal';
+import FaceSelectorModal, { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
+import { HeadSelectorModal, HeadTheme } from '../HeadSelectorModal/HeadSelectorModal';
+import { AnimatedHeadSelectorModal, AnimatedHeadTheme } from '../AnimatedHeadSelectorModal/AnimatedHeadSelectorModal';
+import FacialRigEditor, { HeadShape, FaceRigConfig } from '../FacialRigEditor';
 import './ChatTalkingHead.css';
 import { useToast } from "@/hooks/use-toast";
 import { ChatMessage, TextMessage, CardMessage } from "@/lib/types";
@@ -56,13 +74,95 @@ const ChatTalkingHead: React.FC = () => {
     model: 'gpt-4o',
     endpoint: ''
   });
+  const [isFaceSelectorOpen, setIsFaceSelectorOpen] = useState(false);
+  const [isHeadSelectorOpen, setIsHeadSelectorOpen] = useState(false);
+  const [isAnimatedHeadSelectorOpen, setIsAnimatedHeadSelectorOpen] = useState(false);
+  const [currentAnimatedHeadTheme, setCurrentAnimatedHeadTheme] = useState<AnimatedHeadTheme>({
+    id: 'rtk-100',
+    name: 'RTK-100',
+    description: 'The original talking head',
+    config: {
+      head: {
+        x: 0,
+        y: 0,
+        width: 220,
+        height: 160,
+        fillColor: '#5daa77',
+        strokeColor: '#333333',
+        strokeWidth: 8,
+        borderRadius: '20px'
+      },
+      leftEye: {
+        x: 30,
+        y: 40,
+        width: 12,
+        height: 12,
+        fillColor: '#000000',
+        strokeColor: 'transparent',
+        strokeWidth: 0,
+        borderRadius: '50%'
+      },
+      rightEye: {
+        x: 70,
+        y: 40,
+        width: 12,
+        height: 12,
+        fillColor: '#000000',
+        strokeColor: 'transparent',
+        strokeWidth: 0,
+        borderRadius: '50%'
+      },
+      mouth: {
+        x: 50,
+        y: 60,
+        width: 60,
+        height: 30,
+        fillColor: '#5daa77',
+        strokeColor: '#333333',
+        strokeWidth: 1,
+        borderRadius: '15px'
+      }
+    }
+  });
+  const [isFacialRigEditorOpen, setIsFacialRigEditorOpen] = useState(false);
+  const [currentFaceTheme, setCurrentFaceTheme] = useState<FaceTheme>({
+    id: 'default',
+    name: 'Minty',
+    description: 'The classic mint green face',
+    previewColor: '#5ddbaf',
+    screenColor: '#e2ffe5',
+    faceColor: '#5daa77',
+    tongueColor: '#ff7d9d',
+  });
+  const [currentHeadShape, setCurrentHeadShape] = useState<HeadShape>({
+    id: 'rectangle',
+    name: 'Rectangle',
+    shape: 'rectangle',
+  });
   const { toast } = useToast();
 
-  // Load API settings from localStorage on initial render
+  // Load API settings, face theme, and head shape from localStorage on initial render
   useEffect(() => {
     const savedSettings = localStorage.getItem('apiSettings');
     if (savedSettings) {
       setApiSettings(JSON.parse(savedSettings));
+    }
+    
+    const savedFaceTheme = localStorage.getItem('faceTheme');
+    if (savedFaceTheme) {
+      const theme = JSON.parse(savedFaceTheme);
+      setCurrentFaceTheme(theme);
+      
+      // Set initial background color
+      document.body.style.backgroundColor = theme.screenColor;
+    } else {
+      // Set default background color
+      document.body.style.backgroundColor = currentFaceTheme.screenColor;
+    }
+    
+    const savedHeadShape = localStorage.getItem('headShape');
+    if (savedHeadShape) {
+      setCurrentHeadShape(JSON.parse(savedHeadShape));
     }
   }, []);
 
@@ -92,6 +192,114 @@ const ChatTalkingHead: React.FC = () => {
     const newSettings = { provider, apiKey, model, endpoint };
     setApiSettings(newSettings);
     localStorage.setItem('apiSettings', JSON.stringify(newSettings));
+  };
+  
+  // Save face theme
+  const handleSelectFace = (faceTheme: FaceTheme) => {
+    setCurrentFaceTheme(faceTheme);
+    localStorage.setItem('faceTheme', JSON.stringify(faceTheme));
+    
+    // Update the talking head container background color
+    const container = document.querySelector('.talking-head-container');
+    if (container) {
+      (container as HTMLElement).style.backgroundColor = faceTheme.previewColor;
+    }
+    
+    // Dispatch a custom event to notify theme change
+    window.dispatchEvent(new Event('storage'));
+    
+    // Update document body background color
+    document.body.style.backgroundColor = faceTheme.previewColor;
+  };
+  
+  // Save head theme
+  const handleSelectHead = (headTheme: HeadTheme) => {
+    // Update the face theme with the head theme colors
+    const updatedFaceTheme: FaceTheme = {
+      ...currentFaceTheme,
+      id: headTheme.id,
+      name: headTheme.name,
+      description: headTheme.description,
+      previewColor: headTheme.previewColor,
+      screenColor: headTheme.screenColor,
+      faceColor: headTheme.faceColor,
+      tongueColor: headTheme.tongueColor
+    };
+    
+    // Update the head shape
+    const updatedHeadShape: HeadShape = headTheme.headShape;
+    
+    // Save the updated face theme and head shape
+    setCurrentFaceTheme(updatedFaceTheme);
+    setCurrentHeadShape(updatedHeadShape);
+    
+    // Save to localStorage
+    localStorage.setItem('faceTheme', JSON.stringify(updatedFaceTheme));
+    localStorage.setItem('headShape', JSON.stringify(updatedHeadShape));
+    
+    // Update the talking head container background color
+    const container = document.querySelector('.talking-head-container');
+    if (container) {
+      (container as HTMLElement).style.backgroundColor = headTheme.previewColor;
+    }
+    
+    // Dispatch a custom event to notify theme change
+    window.dispatchEvent(new Event('storage'));
+    
+    // Update document body background color
+    document.body.style.backgroundColor = headTheme.previewColor;
+    
+    toast({
+      title: "Head Theme Updated",
+      description: `Now using the ${headTheme.name} theme.`,
+    });
+  };
+  
+  // Save animated head theme
+  const handleSelectAnimatedHead = (theme: AnimatedHeadTheme) => {
+    setCurrentAnimatedHeadTheme(theme);
+    
+    // Save to localStorage
+    localStorage.setItem('animatedHeadTheme', JSON.stringify(theme));
+    
+    // Show toast notification
+    toast({
+      title: `${theme.name} head selected`,
+      description: `The ${theme.name} head style has been applied.`,
+      duration: 3000
+    });
+  };
+  
+  // Save facial rig changes
+  const handleSaveFacialRigChanges = (faceTheme: FaceTheme, headShape: HeadShape, rigConfig?: Partial<FaceRigConfig>) => {
+    setCurrentFaceTheme(faceTheme);
+    setCurrentHeadShape(headShape);
+    
+    // Save to localStorage
+    localStorage.setItem('faceTheme', JSON.stringify(faceTheme));
+    localStorage.setItem('headShape', JSON.stringify(headShape));
+    
+    // Save rig configuration if provided
+    if (rigConfig) {
+      localStorage.setItem('faceRigConfig', JSON.stringify(rigConfig));
+    }
+    
+    // Update the talking head container background color
+    const container = document.querySelector('.talking-head-container');
+    if (container) {
+      (container as HTMLElement).style.backgroundColor = faceTheme.previewColor;
+    }
+    
+    // Dispatch a custom event to notify theme change
+    window.dispatchEvent(new Event('storage'));
+    
+    // Update document body background color
+    document.body.style.backgroundColor = faceTheme.previewColor;
+    
+    toast({
+      title: "Facial Rig Updated",
+      description: "Your customizations have been applied.",
+    });
   };
 
   // Handle card action
@@ -465,47 +673,143 @@ When asked about cards, weather, recipes, or any structured information, respond
     }
   };
 
+  // Set CSS variable for head height
+  useEffect(() => {
+    document.documentElement.style.setProperty('--head-height', `${headHeight}px`);
+  }, [headHeight]);
+
+  // Define message bubble colors based on theme
+  const userMessageStyle = {
+    backgroundColor: `${currentFaceTheme.tongueColor}80`, // 50% opacity
+    borderRadius: '12px 12px 2px 12px',
+  };
+  
+  const aiMessageStyle = {
+    backgroundColor: `${currentFaceTheme.screenColor}cc`, // 80% opacity
+    borderRadius: '12px 12px 12px 2px',
+  };
+
+  // Animation for the app title
+  const titleAnimation = useFadeIn();
+  const floatingAnimation = useFloatingAnimation();
+  
   return (
-    <Card className="chat-talking-head">
+    <div>
+      <MotionDiv 
+        className="app-title"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      >
+        ChatRTK
+      </MotionDiv>
+      <MotionDiv 
+        className="model-version"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.2 }}
+      >
+        RTK-100
+      </MotionDiv>
       <div className="controls-container">
-        <Button 
+        <MotionButton 
           variant="ghost" 
           size="icon" 
           onClick={toggleHead}
           title={showHead ? "Hide talking head" : "Show talking head"}
+          whileHover={{ scale: 1.2, rotate: 5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
           {showHead ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </Button>
-        <Button 
+        </MotionButton>
+        <MotionButton 
           variant="ghost" 
           size="icon" 
           onClick={toggleChat}
           title={showChat ? "Hide chat" : "Show chat"}
+          whileHover={{ scale: 1.2, rotate: -5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
           {showChat ? <MessageSquareOff className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
-        </Button>
-        <Button 
+        </MotionButton>
+        <MotionButton 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => setIsFaceSelectorOpen(true)}
+          title="Change face theme"
+          whileHover={{ scale: 1.2, rotate: 5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+        >
+          <UserCircle2 className="h-4 w-4" />
+        </MotionButton>
+        <MotionButton 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => setIsHeadSelectorOpen(true)}
+          title="Select head theme"
+          whileHover={{ scale: 1.2, rotate: -5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+        >
+          <Smiley className="h-4 w-4" weight="fill" />
+        </MotionButton>
+        <MotionButton 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => setIsAnimatedHeadSelectorOpen(true)}
+          title="Select animated head"
+          whileHover={{ scale: 1.2, rotate: 5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+        >
+          <Robot className="h-4 w-4" weight="fill" />
+        </MotionButton>
+        <MotionButton 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => setIsFacialRigEditorOpen(true)}
+          title="Edit facial rig"
+          whileHover={{ scale: 1.2, rotate: -5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+        >
+          <Edit2 className="h-4 w-4" />
+        </MotionButton>
+        <MotionButton 
           variant="ghost" 
           size="icon" 
           onClick={() => setIsModalOpen(true)}
           title="Settings"
+          whileHover={{ scale: 1.2, rotate: 5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
           <Settings className="h-4 w-4" />
-        </Button>
+        </MotionButton>
       </div>
       
       {showHead && (
         <>
-          <div 
+          <AnimatedDiv 
             className="talking-head-container" 
-            style={{ height: `${headHeight}px` }}
+            style={{ 
+              height: `${headHeight}px`,
+              backgroundColor: currentFaceTheme.previewColor,
+              ...floatingAnimation
+            }}
           >
             <TalkingHead 
               text={currentSpeechText}
               speaking={isSpeaking}
               expression={currentExpression}
+              theme={currentFaceTheme}
+              headShape={currentHeadShape}
+              animatedTheme={currentAnimatedHeadTheme}
             />
-          </div>
+          </AnimatedDiv>
           
           <div 
             className="resize-handle"
@@ -527,47 +831,63 @@ When asked about cards, weather, recipes, or any structured information, respond
           <ScrollArea className="chat-messages">
             {messages.map((message, index) => (
               message.type === 'card' ? (
-                <div 
-                  key={message.id || index} 
-                  className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
+                <AnimatedMessage 
+                  key={message.id || index}
+                  isUser={message.isUser}
+                  delay={index * 0.05}
                 >
-                  <Card className="w-full">
-                    <CardHeader>
-                      <CardTitle>{message.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p>{message.content}</p>
-                    </CardContent>
-                    {message.actions && message.actions.length > 0 && (
-                      <CardFooter className="flex gap-2">
-                        {message.actions.map((action, idx) => (
-                          <Button 
-                            key={idx} 
-                            variant="outline" 
-                            onClick={() => handleCardAction(action.action)}
-                          >
-                            {action.label}
-                          </Button>
-                        ))}
-                      </CardFooter>
-                    )}
-                  </Card>
-                </div>
+                  <div
+                    className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
+                  >
+                    <AnimatedCard>
+                      <Card className="w-full">
+                        <CardHeader>
+                          <CardTitle>{message.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p>{message.content}</p>
+                        </CardContent>
+                        {message.actions && message.actions.length > 0 && (
+                          <CardFooter className="flex gap-2">
+                            {message.actions.map((action, idx) => (
+                              <MotionButton
+                                key={idx}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                                variant="outline" 
+                                onClick={() => handleCardAction(action.action)}
+                              >
+                                {action.label}
+                              </MotionButton>
+                            ))}
+                          </CardFooter>
+                        )}
+                      </Card>
+                    </AnimatedCard>
+                  </div>
+                </AnimatedMessage>
               ) : (
-                <div 
-                  key={message.id || index} 
-                  className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
+                <AnimatedMessage 
+                  key={message.id || index}
+                  isUser={message.isUser}
+                  delay={index * 0.05}
                 >
-                  {message.text}
-                </div>
+                  <div
+                    className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
+                    style={message.isUser ? userMessageStyle : aiMessageStyle}
+                  >
+                    {message.text}
+                  </div>
+                </AnimatedMessage>
               )
             ))}
             {isLoading && (
-              <div className="chat-message ai-message">
+              <div className="chat-message ai-message" style={aiMessageStyle}>
                 <div className="flex space-x-2">
-                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse"></div>
-                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor }}></div>
+                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor, animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor, animationDelay: '0.4s' }}></div>
                 </div>
               </div>
             )}
@@ -575,12 +895,19 @@ When asked about cards, weather, recipes, or any structured information, respond
         </div>
       )}
       
-      <div className="input-container">
-        <Textarea
+      <MotionDiv 
+        className="input-container"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      >
+        <MotionTextarea
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="Type your message..."
           className="chat-input"
+          whileFocus={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
@@ -588,14 +915,19 @@ When asked about cards, weather, recipes, or any structured information, respond
             }
           }}
         />
-        <Button 
+        <MotionButton 
           onClick={handleSendMessage} 
           className="send-button"
           disabled={isLoading}
+          variant="default"
+          size="icon"
+          whileHover={{ scale: 1.1, rotate: 5 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
         >
-          {isLoading ? 'Sending...' : 'Send'}
-        </Button>
-      </div>
+          {isLoading ? '...' : <MessageCircleMore className="h-5 w-5" />}
+        </MotionButton>
+      </MotionDiv>
 
       <ApiKeyModal
         open={isModalOpen}
@@ -606,7 +938,35 @@ When asked about cards, weather, recipes, or any structured information, respond
         currentModel={apiSettings.model}
         currentEndpoint={apiSettings.endpoint}
       />
-    </Card>
+
+      <FaceSelectorModal
+        open={isFaceSelectorOpen}
+        onOpenChange={setIsFaceSelectorOpen}
+        onSelectFace={handleSelectFace}
+        currentFaceTheme={currentFaceTheme.id}
+      />
+      
+      <HeadSelectorModal
+        open={isHeadSelectorOpen}
+        onOpenChange={setIsHeadSelectorOpen}
+        onSelectHead={handleSelectHead}
+      />
+      
+      <AnimatedHeadSelectorModal
+        isOpen={isAnimatedHeadSelectorOpen}
+        onClose={() => setIsAnimatedHeadSelectorOpen(false)}
+        onSelectHead={handleSelectAnimatedHead}
+        currentHeadId={currentAnimatedHeadTheme.id}
+      />
+      
+      <FacialRigEditor
+        open={isFacialRigEditorOpen}
+        onOpenChange={setIsFacialRigEditorOpen}
+        onSave={handleSaveFacialRigChanges}
+        currentFaceTheme={currentFaceTheme}
+        currentHeadShape={currentHeadShape}
+      />
+    </div>
   );
 };
 
