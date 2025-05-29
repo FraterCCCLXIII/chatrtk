@@ -38,7 +38,6 @@ interface ApiSettings {
 }
 
 const ChatTalkingHead: React.FC = () => {
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome-message',
@@ -167,10 +166,13 @@ const ChatTalkingHead: React.FC = () => {
     }
   }, []);
 
-  // Scroll to the top of the messages container when new messages are added
+  // Scroll to the bottom of the messages container when new messages are added
   useEffect(() => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop = 0;
+    // Find the scrollable element inside the ScrollArea
+    const scrollableElement = document.querySelector('.chat-messages .scrollbar-container > div');
+    if (scrollableElement) {
+      // Scroll to the bottom to show the newest message
+      scrollableElement.scrollTop = scrollableElement.scrollHeight;
     }
   }, [messages]);
 
@@ -873,7 +875,7 @@ When asked about cards, weather, recipes, or any structured information, respond
       
       {showChat && (
         <div className="chat-container">
-          <ScrollArea className="chat-messages" ref={messagesContainerRef}>
+          <ScrollArea className="chat-messages">
             {messages.map((message, index) => (
               message.type === 'card' ? (
                 <AnimatedMessage 
