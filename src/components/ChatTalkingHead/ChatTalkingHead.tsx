@@ -837,8 +837,7 @@ When asked about cards, weather, recipes, or any structured information, respond
             className="talking-head-container" 
             style={{ 
               height: `${headHeight}px`,
-              backgroundColor: currentFaceTheme.previewColor,
-              ...floatingAnimation
+              backgroundColor: currentFaceTheme.previewColor
             }}
           >
             <TalkingHead 

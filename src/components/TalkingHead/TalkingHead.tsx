@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import './TalkingHead.css';
 import { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
 import { HeadShape, FaceRigConfig } from '../FacialRigEditor';
+import { useFloatingAnimation, AnimatedDiv } from '../animations';
 
 interface TalkingHeadProps {
   text?: string;
@@ -162,10 +163,15 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
   };
   
   const shape = getCurrentShape();
+  const floatingAnimation = useFloatingAnimation();
 
   return (
     <div className="talking-head">
-      <div className="face-container">
+      <AnimatedDiv 
+        className="face-container"
+        style={{
+          ...floatingAnimation
+        }}>
         <div 
           className={`screen ${currentHeadShape.shape}`}
           style={{ 
