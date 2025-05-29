@@ -131,6 +131,7 @@
   max-width: 80%;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   transition: all 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+  width: auto;
 }
 
 .chat-message.ai-message .card {
@@ -143,17 +144,27 @@
 
 .user-message {
   margin-left: auto;
+  margin-right: 0;
   text-align: right;
   /* Background color will be set dynamically based on theme */
   transform-origin: bottom right;
   align-self: flex-end; /* Right align in flex container */
+  float: right;
+  clear: both;
+  background-color: rgba(255, 255, 255, 0.25) !important; /* Light shade with !important to override inline styles */
+  color: white !important; /* White text for better contrast */
+  width: auto !important; /* Ensure width is based on content */
+  max-width: 80% !important; /* Limit maximum width */
 }
 
 .ai-message {
   margin-right: auto;
+  margin-left: 0;
   /* Background color will be set dynamically based on theme */
   transform-origin: bottom left;
   align-self: flex-start; /* Left align in flex container */
+  float: left;
+  clear: both;
 }
 
 /* Make card messages wider */

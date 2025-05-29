@@ -38,6 +38,7 @@ interface ApiSettings {
 }
 
 const ChatTalkingHead: React.FC = () => {
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome-message',
@@ -165,6 +166,13 @@ const ChatTalkingHead: React.FC = () => {
       setCurrentHeadShape(JSON.parse(savedHeadShape));
     }
   }, []);
+
+  // Scroll to the top of the messages container when new messages are added
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = 0;
+    }
+  }, [messages]);
 
   // Detect when AI is speaking and set the current text
   useEffect(() => {
@@ -865,7 +873,7 @@ When asked about cards, weather, recipes, or any structured information, respond
       
       {showChat && (
         <div className="chat-container">
-          <ScrollArea className="chat-messages">
+          <ScrollArea className="chat-messages" ref={messagesContainerRef}>
             {messages.map((message, index) => (
               message.type === 'card' ? (
                 <AnimatedMessage 
