@@ -10,6 +10,9 @@ export default defineConfig(({ mode }) => ({
     port: 12001,
     cors: true,
     strictPort: true,
+    hmr: {
+      host: "localhost",
+    },
     headers: {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
