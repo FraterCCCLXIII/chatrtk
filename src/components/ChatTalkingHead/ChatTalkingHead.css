@@ -10,6 +10,7 @@
   border: none;
   box-shadow: none;
   background-color: transparent;
+  padding-bottom: 80px; /* Add padding to prevent content from being hidden behind input */
 }
 
 .app-title {
@@ -46,8 +47,9 @@
   right: 0;
   width: 100%;
   max-width: 1000px;
-  left: 50%;
-  transform: translateX(-50%);
+  margin: 0 auto;
+  left: 0;
+  right: 0;
 }
 
 .talking-head-container {
@@ -109,6 +111,9 @@
   overflow: hidden;
   min-height: 200px;
   position: relative;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 600px; /* Match the input container max-width */
 }
 
 .chat-messages {
@@ -122,6 +127,7 @@
   display: flex;
   flex-direction: column;
   scroll-behavior: smooth; /* Add smooth scrolling */
+  width: 100%;
 }
 
 .chat-message {
@@ -204,21 +210,20 @@
   background-color: transparent;
   border-top: none;
   position: fixed;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 1rem;
+  left: 0;
+  right: 0;
   margin: 0 auto;
   width: 100%;
-  max-width: 600px; /* Reduced max-width for better centering */
+  max-width: 600px; /* Consistent width with message container */
   z-index: 10;
   justify-content: center; /* Center the input horizontally */
   align-items: center; /* Center vertically */
-  /* Ensure it's centered on the page */
-  right: 0;
+  box-sizing: border-box;
 }
 
 .chat-input {
-  flex: 0 1 auto; /* Don't grow, but allow shrinking */
+  flex: 1; /* Take up available space */
   resize: none;
   max-height: 120px;
   width: 100%; /* Full width of the container */
@@ -230,6 +235,7 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   font-size: 1rem;
+  margin: 0 auto; /* Center the input */
 }
 
 .chat-input:focus {
