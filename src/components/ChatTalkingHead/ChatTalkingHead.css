@@ -186,7 +186,7 @@
   transform: translateX(-50%);
   margin: 0 auto;
   width: 100%;
-  max-width: 968px;
+  max-width: 600px; /* Reduced max-width for better centering */
   z-index: 10;
   justify-content: center; /* Center the input horizontally */
   align-items: center; /* Center vertically */
@@ -196,7 +196,7 @@
   flex: 0 1 auto; /* Don't grow, but allow shrinking */
   resize: none;
   max-height: 120px;
-  width: 60%; /* Reduced width for better centering */
+  width: 100%; /* Full width of the container */
   padding: 1.2rem 1.5rem;
   padding-right: 4.5rem; /* Increased to make room for the send button */
   background-color: rgba(255, 255, 255, 0.95);
@@ -215,7 +215,7 @@
 
 .send-button {
   position: absolute; /* Position absolutely within the input container */
-  right: calc(20% + 1rem); /* Position relative to the right edge of the container, adjusted for new input width */
+  right: 1.5rem; /* Position from the right edge of the input */
   bottom: 1.5rem; /* Position from bottom */
   border-radius: 50%;
   width: 44px;
