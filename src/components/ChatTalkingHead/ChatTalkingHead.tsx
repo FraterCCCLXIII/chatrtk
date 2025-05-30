@@ -1047,30 +1047,6 @@ When asked about cards, weather, recipes, or any structured information, respond
   const toggleHead = () => setShowHead(!showHead);
   const toggleChat = () => setShowChat(!showChat);
 
-  // Detect expression from text content
-  const detectExpression = (content: string): 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking' => {
-    const lowerContent = content.toLowerCase();
-    
-    if (lowerContent.includes('happy') || lowerContent.includes('glad') || lowerContent.includes('wonderful') || 
-        lowerContent.includes('excellent') || lowerContent.includes('great')) {
-      return 'happy';
-    } else if (lowerContent.includes('sad') || lowerContent.includes('sorry') || lowerContent.includes('unfortunate') || 
-               lowerContent.includes('regret')) {
-      return 'sad';
-    } else if (lowerContent.includes('wow') || lowerContent.includes('amazing') || lowerContent.includes('surprising') || 
-               lowerContent.includes('unexpected') || lowerContent.includes('interesting')) {
-      return 'surprised';
-    } else if (lowerContent.includes('angry') || lowerContent.includes('frustrating') || lowerContent.includes('upset') || 
-               lowerContent.includes('annoying')) {
-      return 'angry';
-    } else if (lowerContent.includes('think') || lowerContent.includes('consider') || lowerContent.includes('perhaps') || 
-               lowerContent.includes('maybe') || lowerContent.includes('possibly')) {
-      return 'thinking';
-    } else {
-      return 'neutral';
-    }
-  };
-
   // Set CSS variable for head height
   useEffect(() => {
     document.documentElement.style.setProperty('--head-height', `${headHeight}px`);
