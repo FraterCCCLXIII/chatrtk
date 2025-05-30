@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles } from "lucide-react";
+import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff } from "lucide-react";
 import { Smiley, Robot } from "@phosphor-icons/react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { 
@@ -26,6 +26,8 @@ import './ChatTalkingHead.css';
 import { useToast } from "@/hooks/use-toast";
 import { ChatMessage, TextMessage, CardMessage } from "@/lib/types";
 import { parseAIResponse, detectExpression } from "@/lib/aiParser";
+import { setupTalkify, getTalkifyPlayer } from '@/lib/talkify-setup';
+import type { TtsPlayer } from '@/types/talkify';
 
 type Expression = 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
 
@@ -78,6 +80,17 @@ const ChatTalkingHead: React.FC = () => {
   const [showCaptions, setShowCaptions] = useState(false);
   const [captionText, setCaptionText] = useState('');
   const [captionOpacity, setCaptionOpacity] = useState(0);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+  const [ttsPlayer, setTtsPlayer] = useState<TtsPlayer | null>(null);
+  const [isTtsReady, setIsTtsReady] = useState(false);
+
+  // Add voice configuration state
+  const [voiceSettings, setVoiceSettings] = useState({
+    rate: 1.0,
+    pitch: 1.0,
+    volume: 1.0,
+    voice: 'en-US' // Default voice
+  });
 
   // Load API settings, face theme, and head shape from localStorage on initial render
   useEffect(() => {
@@ -104,13 +117,59 @@ const ChatTalkingHead: React.FC = () => {
     }
   }, []);
 
+  // Initialize Talkify
+  useEffect(() => {
+    setupTalkify().then(() => {
+      setTtsPlayer(getTalkifyPlayer());
+      setIsTtsReady(true);
+    }).catch(error => {
+      console.error('Failed to initialize Talkify:', error);
+      toast({
+        title: "TTS Error",
+        description: "Failed to initialize text-to-speech. Please refresh the page.",
+        variant: "destructive",
+      });
+    });
+  }, []);
+
   // We've removed the auto-scroll effect as requested
   // This allows the user to manually scroll through the messages
 
-  // Detect when AI is speaking and set the current text
+  // Update speakText function
+  const speakText = async (text: string) => {
+    if (!ttsPlayer || !isTtsReady) {
+      console.error('TTS not ready');
+      return;
+    }
+
+    try {
+      // Configure voice settings
+      ttsPlayer.rate = voiceSettings.rate;
+      ttsPlayer.pitch = voiceSettings.pitch;
+      ttsPlayer.volume = voiceSettings.volume;
+      ttsPlayer.voice = voiceSettings.voice;
+
+      // Play the text
+      await ttsPlayer.playText(text);
+    } catch (error) {
+      console.error('Error speaking text:', error);
+      toast({
+        title: "TTS Error",
+        description: "Failed to speak text. Please check your browser's audio settings.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Add voice settings update function
+  const updateVoiceSettings = (newSettings: Partial<typeof voiceSettings>) => {
+    setVoiceSettings(prev => ({ ...prev, ...newSettings }));
+  };
+
+  // Update the useEffect that handles speaking
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
-    if (!lastMessage || lastMessage.isUser || isSpeaking) return;
+    if (!lastMessage || lastMessage.isUser || isSpeaking || !isVoiceEnabled) return;
     
     // Only animate for text messages
     if (lastMessage.type === 'text') {
@@ -118,15 +177,12 @@ const ChatTalkingHead: React.FC = () => {
       setCurrentExpression(lastMessage.expression || 'neutral');
       setIsSpeaking(true);
 
-      // Auto-stop talking after a delay based on message length
-      const speakingTime = Math.max(2000, lastMessage.text.length * 50);
-      const timer = setTimeout(() => {
+      // Speak the text using Talkify
+      speakText(lastMessage.text).finally(() => {
         setIsSpeaking(false);
-      }, speakingTime);
-
-      return () => clearTimeout(timer);
+      });
     }
-  }, [messages]);
+  }, [messages, isVoiceEnabled, voiceSettings]);
 
   // Update caption text when AI is speaking
   useEffect(() => {
@@ -642,6 +698,15 @@ When asked about cards, weather, recipes, or any structured information, respond
     scrollToBottom();
   }, [messages]);
 
+  // Add voice toggle handler
+  const toggleVoice = () => {
+    setIsVoiceEnabled(!isVoiceEnabled);
+    // If voice is being disabled, stop any ongoing speech
+    if (isVoiceEnabled && isSpeaking) {
+      setIsSpeaking(false);
+    }
+  };
+
   return (
     <div>
       <MotionDiv 
@@ -701,6 +766,15 @@ When asked about cards, weather, recipes, or any structured information, respond
           data-tooltip={showChat ? "Hide Chat" : "Show Chat"}
         >
           {showChat ? <MessageSquareOff className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleVoice}
+          className="hover:scale-105 active:scale-95 transition-transform"
+          data-tooltip={isVoiceEnabled ? "Disable Voice" : "Enable Voice"}
+        >
+          {isVoiceEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
         </Button>
         <Button
           variant="ghost"
@@ -875,6 +949,8 @@ When asked about cards, weather, recipes, or any structured information, respond
         currentApiKey={apiSettings.apiKey}
         currentModel={apiSettings.model}
         currentEndpoint={apiSettings.endpoint}
+        voiceSettings={voiceSettings}
+        onVoiceSettingsChange={updateVoiceSettings}
       />
 
       <FaceSelectorModal

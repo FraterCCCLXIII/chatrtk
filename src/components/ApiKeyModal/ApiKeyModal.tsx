@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,15 +18,24 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { Slider } from "@/components/ui/slider";
+import { getAvailableVoices } from '@/lib/talkify-setup';
 
 export interface ApiKeyModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (provider: string, apiKey: string, modelName: string, endpoint?: string) => void;
-  currentProvider?: string;
-  currentApiKey?: string;
-  currentModel?: string;
+  onSave: (provider: string, apiKey: string, model: string, endpoint?: string) => void;
+  currentProvider: string;
+  currentApiKey: string;
+  currentModel: string;
   currentEndpoint?: string;
+  voiceSettings?: {
+    rate: number;
+    pitch: number;
+    volume: number;
+    voice: string;
+  };
+  onVoiceSettingsChange?: (settings: Partial<ApiKeyModalProps['voiceSettings']>) => void;
 }
 
 type ModelOption = {
@@ -43,12 +51,28 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
   currentApiKey = '',
   currentModel = '',
   currentEndpoint = '',
+  voiceSettings,
+  onVoiceSettingsChange,
 }) => {
   const [provider, setProvider] = useState(currentProvider);
   const [apiKey, setApiKey] = useState(currentApiKey);
   const [model, setModel] = useState(currentModel);
   const [endpoint, setEndpoint] = useState(currentEndpoint);
   const { toast } = useToast();
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  // Load available voices
+  useEffect(() => {
+    const voices = getAvailableVoices();
+    if (voices.length > 0) {
+      setAvailableVoices(voices);
+    } else {
+      // If voices aren't loaded yet, wait for them
+      window.speechSynthesis.onvoiceschanged = () => {
+        setAvailableVoices(getAvailableVoices());
+      };
+    }
+  }, []);
 
   const getDefaultModel = (provider: string): string => {
     switch (provider) {
@@ -184,6 +208,67 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({
               />
             </div>
           )}
+        </div>
+
+        <div className="space-y-4 mt-4">
+          <h3 className="text-lg font-medium">Voice Settings</h3>
+          
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="voice">Voice</Label>
+              <Select
+                value={voiceSettings?.voice || ''}
+                onValueChange={(value) => onVoiceSettingsChange?.({ voice: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a voice" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableVoices.map((voice) => (
+                    <SelectItem key={voice.name} value={voice.name}>
+                      {voice.name} ({voice.lang})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="rate">Speech Rate</Label>
+              <Slider
+                id="rate"
+                min={0.5}
+                max={2}
+                step={0.1}
+                value={[voiceSettings?.rate || 1]}
+                onValueChange={([value]) => onVoiceSettingsChange?.({ rate: value })}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="pitch">Pitch</Label>
+              <Slider
+                id="pitch"
+                min={0.5}
+                max={2}
+                step={0.1}
+                value={[voiceSettings?.pitch || 1]}
+                onValueChange={([value]) => onVoiceSettingsChange?.({ pitch: value })}
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="volume">Volume</Label>
+              <Slider
+                id="volume"
+                min={0}
+                max={1}
+                step={0.1}
+                value={[voiceSettings?.volume || 1]}
+                onValueChange={([value]) => onVoiceSettingsChange?.({ volume: value })}
+              />
+            </div>
+          </div>
         </div>
 
         <DialogFooter>
