@@ -17,6 +17,9 @@ export interface FaceTheme {
   screenColor: string;
   faceColor: string;
   tongueColor: string;
+  eyeColor?: string;
+  strokeColor?: string;
+  showStroke?: boolean;
 }
 
 export interface FaceSelectorModalProps {
@@ -44,6 +47,9 @@ const FaceSelectorModal: React.FC<FaceSelectorModalProps> = ({
       screenColor: '#e2ffe5',
       faceColor: '#5daa77',
       tongueColor: '#ff7d9d',
+      eyeColor: '#000000',
+      strokeColor: '#333333',
+      showStroke: true
     },
     {
       id: 'blueberry',
@@ -53,6 +59,9 @@ const FaceSelectorModal: React.FC<FaceSelectorModalProps> = ({
       screenColor: '#e2f0ff',
       faceColor: '#5d7daa',
       tongueColor: '#ff9d7d',
+      eyeColor: '#000000',
+      strokeColor: '#333333',
+      showStroke: true
     },
     {
       id: 'sunset',
@@ -62,6 +71,9 @@ const FaceSelectorModal: React.FC<FaceSelectorModalProps> = ({
       screenColor: '#fff0e2',
       faceColor: '#e67d45',
       tongueColor: '#ff5d7d',
+      eyeColor: '#000000',
+      strokeColor: '#333333',
+      showStroke: true
     },
     {
       id: 'bubblegum',
@@ -71,6 +83,9 @@ const FaceSelectorModal: React.FC<FaceSelectorModalProps> = ({
       screenColor: '#ffe2f5',
       faceColor: '#e45daa',
       tongueColor: '#5ddbaf',
+      eyeColor: '#000000',
+      strokeColor: '#333333',
+      showStroke: true
     },
     {
       id: 'lavender',
@@ -80,6 +95,9 @@ const FaceSelectorModal: React.FC<FaceSelectorModalProps> = ({
       screenColor: '#f0e2ff',
       faceColor: '#7d5daa',
       tongueColor: '#5ddbff',
+      eyeColor: '#000000',
+      strokeColor: '#333333',
+      showStroke: true
     },
   ];
 

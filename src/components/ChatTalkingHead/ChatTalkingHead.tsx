@@ -65,6 +65,9 @@ const ChatTalkingHead: React.FC = () => {
     screenColor: '#e2ffe5',
     faceColor: '#5daa77',
     tongueColor: '#ff7d9d',
+    eyeColor: '#000000',
+    strokeColor: '#333333',
+    showStroke: true
   });
   const [currentHeadShape, setCurrentHeadShape] = useState<HeadShape>({
     id: 'rectangle',

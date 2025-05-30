@@ -40,6 +40,9 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
     screenColor: '#e2ffe5',
     faceColor: '#5daa77',
     tongueColor: '#ff7d9d',
+    eyeColor: '#000000',
+    strokeColor: '#333333',
+    showStroke: true
   };
   
   // Default head shape
@@ -51,6 +54,14 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
 
   const currentTheme = theme || defaultTheme;
   const currentHeadShape = headShape || defaultHeadShape;
+
+  // Ensure theme properties are properly set
+  const effectiveTheme = {
+    ...currentTheme,
+    eyeColor: currentTheme.eyeColor || '#000000',
+    strokeColor: currentTheme.strokeColor || '#333333',
+    showStroke: currentTheme.showStroke !== false
+  };
 
   // Phoneme definitions with mouth shapes
   const phonemes = {
@@ -211,31 +222,161 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
         style={{
           ...floatingAnimation
         }}>
-        <div 
-          className={`screen ${currentHeadShape.shape}`}
-          style={{ 
-            backgroundColor: config?.head?.fillColor || currentTheme.screenColor,
-            borderRadius: config?.head?.borderRadius || 
-                         (currentHeadShape.shape === 'circle' ? '50%' : 
-                         currentHeadShape.shape === 'rectangle' ? '10px' : '0'),
-            border: `${config?.head?.strokeWidth || 8}px solid ${config?.head?.strokeColor || '#333333'}`,
-            boxShadow: `0 4px 8px rgba(0,0,0,0.2)`
-          }}
-        >
+        {currentHeadShape.shape !== 'none' ? (
           <div 
-            className="face"
-            style={{
-              backgroundColor: config?.head?.fillColor || currentTheme.screenColor,
-              border: config?.head?.strokeWidth ? `${config.head.strokeWidth}px solid ${config.head.strokeColor}` : 'none',
-              borderRadius: config?.head?.borderRadius || 'inherit'
-            }}>
+            className={`screen ${currentHeadShape.shape}`}
+            style={{ 
+              backgroundColor: config?.head?.fillColor || effectiveTheme.screenColor,
+              borderRadius: config?.head?.borderRadius || 
+                           (currentHeadShape.shape === 'circle' ? '50%' : 
+                           currentHeadShape.shape === 'square' ? '20px' :
+                           currentHeadShape.shape === 'rectangle' ? '30px' : '0'),
+              border: effectiveTheme.showStroke ? 
+                     `${config?.head?.strokeWidth || 8}px solid ${config?.head?.strokeColor || effectiveTheme.strokeColor}` : 
+                     'none',
+              boxShadow: effectiveTheme.showStroke ? '0 4px 8px rgba(0,0,0,0.2)' : 'none'
+            }}
+          >
+            <div 
+              className="face"
+              style={{
+                backgroundColor: config?.head?.fillColor || effectiveTheme.screenColor,
+                border: effectiveTheme.showStroke && config?.head?.strokeWidth ? 
+                       `${config.head.strokeWidth}px solid ${config.head.strokeColor || effectiveTheme.strokeColor}` : 
+                       'none',
+                borderRadius: config?.head?.borderRadius || 'inherit'
+              }}>
+              <div className="eye-container left">
+                <div 
+                  className="eye left"
+                  style={{
+                    width: `${config?.leftEye?.width || 12}px`,
+                    height: `${config?.leftEye?.height || 12}px`,
+                    backgroundColor: config?.leftEye?.fillColor || effectiveTheme.eyeColor,
+                    border: config?.leftEye?.strokeWidth ? `${config.leftEye.strokeWidth}px solid ${config.leftEye.strokeColor}` : 'none',
+                    borderRadius: config?.leftEye?.borderRadius || '50%',
+                    transform: config?.leftEye?.rotation ? `rotate(${config.leftEye.rotation}deg)` : 'none',
+                    opacity: config?.leftEye?.opacity !== undefined ? config.leftEye.opacity : 1
+                  }}
+                ></div>
+                <div 
+                  className="eyelid top left"
+                  style={{
+                    width: `${config?.leftTopEyelid?.width || 14}px`,
+                    height: `${config?.leftTopEyelid?.height || 6}px`,
+                    backgroundColor: config?.leftTopEyelid?.fillColor || '#333333',
+                    border: config?.leftTopEyelid?.strokeWidth ? `${config.leftTopEyelid.strokeWidth}px solid ${config.leftTopEyelid.strokeColor}` : 'none',
+                    borderRadius: config?.leftTopEyelid?.borderRadius || '50% 50% 0 0',
+                    transform: config?.leftTopEyelid?.rotation ? `rotate(${config.leftTopEyelid.rotation}deg)` : 'none',
+                    opacity: config?.leftTopEyelid?.opacity !== undefined ? config.leftTopEyelid.opacity : 0
+                  }}
+                ></div>
+                <div 
+                  className="eyelid bottom left"
+                  style={{
+                    width: `${config?.leftBottomEyelid?.width || 14}px`,
+                    height: `${config?.leftBottomEyelid?.height || 6}px`,
+                    backgroundColor: config?.leftBottomEyelid?.fillColor || '#333333',
+                    border: config?.leftBottomEyelid?.strokeWidth ? `${config.leftBottomEyelid.strokeWidth}px solid ${config.leftBottomEyelid.strokeColor}` : 'none',
+                    borderRadius: config?.leftBottomEyelid?.borderRadius || '0 0 50% 50%',
+                    transform: config?.leftBottomEyelid?.rotation ? `rotate(${config.leftBottomEyelid.rotation}deg)` : 'none',
+                    opacity: config?.leftBottomEyelid?.opacity !== undefined ? config.leftBottomEyelid.opacity : 0
+                  }}
+                ></div>
+              </div>
+              <div className="eye-container right">
+                <div 
+                  className="eye right"
+                  style={{
+                    width: `${config?.rightEye?.width || 12}px`,
+                    height: `${config?.rightEye?.height || 12}px`,
+                    backgroundColor: config?.rightEye?.fillColor || effectiveTheme.eyeColor,
+                    border: config?.rightEye?.strokeWidth ? `${config.rightEye.strokeWidth}px solid ${config.rightEye.strokeColor}` : 'none',
+                    borderRadius: config?.rightEye?.borderRadius || '50%',
+                    transform: config?.rightEye?.rotation ? `rotate(${config.rightEye.rotation}deg)` : 'none',
+                    opacity: config?.rightEye?.opacity !== undefined ? config.rightEye.opacity : 1
+                  }}
+                ></div>
+                <div 
+                  className="eyelid top right"
+                  style={{
+                    width: `${config?.rightTopEyelid?.width || 14}px`,
+                    height: `${config?.rightTopEyelid?.height || 6}px`,
+                    backgroundColor: config?.rightTopEyelid?.fillColor || '#333333',
+                    border: config?.rightTopEyelid?.strokeWidth ? `${config.rightTopEyelid.strokeWidth}px solid ${config.rightTopEyelid.strokeColor}` : 'none',
+                    borderRadius: config?.rightTopEyelid?.borderRadius || '50% 50% 0 0',
+                    transform: config?.rightTopEyelid?.rotation ? `rotate(${config.rightTopEyelid.rotation}deg)` : 'none',
+                    opacity: config?.rightTopEyelid?.opacity !== undefined ? config.rightTopEyelid.opacity : 0
+                  }}
+                ></div>
+                <div 
+                  className="eyelid bottom right"
+                  style={{
+                    width: `${config?.rightBottomEyelid?.width || 14}px`,
+                    height: `${config?.rightBottomEyelid?.height || 6}px`,
+                    backgroundColor: config?.rightBottomEyelid?.fillColor || '#333333',
+                    border: config?.rightBottomEyelid?.strokeWidth ? `${config.rightBottomEyelid.strokeWidth}px solid ${config.rightBottomEyelid.strokeColor}` : 'none',
+                    borderRadius: config?.rightBottomEyelid?.borderRadius || '0 0 50% 50%',
+                    transform: config?.rightBottomEyelid?.rotation ? `rotate(${config.rightBottomEyelid.rotation}deg)` : 'none',
+                    opacity: config?.rightBottomEyelid?.opacity !== undefined ? config.rightBottomEyelid.opacity : 0
+                  }}
+                ></div>
+              </div>
+              <div className="mouth-container">
+                <div 
+                  className="mouth"
+                  style={{ 
+                    width: `${shape.width}px`, 
+                    height: `${shape.height}px`, 
+                    borderRadius: config?.mouth?.borderRadius || shape.borderRadius,
+                    backgroundColor: config?.mouth?.fillColor || effectiveTheme.faceColor,
+                    border: config?.mouth?.strokeWidth ? `${config.mouth.strokeWidth}px solid ${config.mouth.strokeColor}` : 'none'
+                  }}
+                >
+                  <div className="mouth-inner">
+                    <div 
+                      className="teeth-top"
+                      style={{ 
+                        '--teeth-width': shape.teethWidth,
+                        '--teeth-top-y': `${shape.teethTopY}px`,
+                        backgroundColor: config?.topTeeth?.fillColor || 'white',
+                        border: config?.topTeeth?.strokeWidth ? `${config.topTeeth.strokeWidth}px solid ${config.topTeeth.strokeColor}` : '1px solid #ddd'
+                      } as React.CSSProperties}
+                    ></div>
+                    <div 
+                      className="tongue"
+                      style={{
+                        '--tongue-width': `${shape.tongueWidth}px`,
+                        '--tongue-height': `${shape.tongueHeight}px`,
+                        '--tongue-bottom': `${shape.tongueBottom}px`,
+                        backgroundColor: config?.tongue?.fillColor || effectiveTheme.tongueColor,
+                        border: config?.tongue?.strokeWidth ? `${config.tongue.strokeWidth}px solid ${config.tongue.strokeColor}` : 'none',
+                        borderRadius: config?.tongue?.borderRadius || '15px 15px 5px 5px'
+                      } as React.CSSProperties}
+                    ></div>
+                    <div 
+                      className="teeth-bottom"
+                      style={{ 
+                        '--teeth-width': shape.teethWidth,
+                        '--teeth-bottom-y': `${shape.teethBottomY}px`,
+                        backgroundColor: config?.bottomTeeth?.fillColor || 'white',
+                        border: config?.bottomTeeth?.strokeWidth ? `${config.bottomTeeth.strokeWidth}px solid ${config.bottomTeeth.strokeColor}` : '1px solid #ddd'
+                      } as React.CSSProperties}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="face" style={{ backgroundColor: 'transparent' }}>
             <div className="eye-container left">
               <div 
                 className="eye left"
                 style={{
                   width: `${config?.leftEye?.width || 12}px`,
                   height: `${config?.leftEye?.height || 12}px`,
-                  backgroundColor: config?.leftEye?.fillColor || 'black',
+                  backgroundColor: config?.leftEye?.fillColor || effectiveTheme.eyeColor,
                   border: config?.leftEye?.strokeWidth ? `${config.leftEye.strokeWidth}px solid ${config.leftEye.strokeColor}` : 'none',
                   borderRadius: config?.leftEye?.borderRadius || '50%',
                   transform: config?.leftEye?.rotation ? `rotate(${config.leftEye.rotation}deg)` : 'none',
@@ -273,7 +414,7 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
                 style={{
                   width: `${config?.rightEye?.width || 12}px`,
                   height: `${config?.rightEye?.height || 12}px`,
-                  backgroundColor: config?.rightEye?.fillColor || 'black',
+                  backgroundColor: config?.rightEye?.fillColor || effectiveTheme.eyeColor,
                   border: config?.rightEye?.strokeWidth ? `${config.rightEye.strokeWidth}px solid ${config.rightEye.strokeColor}` : 'none',
                   borderRadius: config?.rightEye?.borderRadius || '50%',
                   transform: config?.rightEye?.rotation ? `rotate(${config.rightEye.rotation}deg)` : 'none',
@@ -312,7 +453,7 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
                   width: `${shape.width}px`, 
                   height: `${shape.height}px`, 
                   borderRadius: config?.mouth?.borderRadius || shape.borderRadius,
-                  backgroundColor: config?.mouth?.fillColor || currentTheme.faceColor,
+                  backgroundColor: config?.mouth?.fillColor || effectiveTheme.faceColor,
                   border: config?.mouth?.strokeWidth ? `${config.mouth.strokeWidth}px solid ${config.mouth.strokeColor}` : 'none'
                 }}
               >
@@ -332,7 +473,7 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
                       '--tongue-width': `${shape.tongueWidth}px`,
                       '--tongue-height': `${shape.tongueHeight}px`,
                       '--tongue-bottom': `${shape.tongueBottom}px`,
-                      backgroundColor: config?.tongue?.fillColor || currentTheme.tongueColor,
+                      backgroundColor: config?.tongue?.fillColor || effectiveTheme.tongueColor,
                       border: config?.tongue?.strokeWidth ? `${config.tongue.strokeWidth}px solid ${config.tongue.strokeColor}` : 'none',
                       borderRadius: config?.tongue?.borderRadius || '15px 15px 5px 5px'
                     } as React.CSSProperties}
@@ -350,7 +491,7 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        )}
       </AnimatedDiv>
     </div>
   );

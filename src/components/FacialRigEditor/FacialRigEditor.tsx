@@ -33,7 +33,7 @@ import { Input } from "@/components/ui/input";
 export interface HeadShape {
   id: string;
   name: string;
-  shape: 'rectangle' | 'circle' | 'triangle' | 'star' | 'heart';
+  shape: 'none' | 'square' | 'circle' | 'rectangle';
 }
 
 export interface ElementStyle {
@@ -80,38 +80,41 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
   onSave,
 }) => {
   const { toast } = useToast();
-  const [selectedTheme, setSelectedTheme] = useState<FaceTheme>({...currentFaceTheme});
+  const [selectedTheme, setSelectedTheme] = useState<FaceTheme>({
+    ...currentFaceTheme,
+    eyeColor: currentFaceTheme.eyeColor || '#000000',
+    strokeColor: currentFaceTheme.strokeColor || '#333333',
+    showStroke: currentFaceTheme.showStroke !== false
+  });
   const [previewColor, setPreviewColor] = useState(currentFaceTheme.previewColor);
   const [screenColor, setScreenColor] = useState(currentFaceTheme.screenColor);
   const [faceColor, setFaceColor] = useState(currentFaceTheme.faceColor);
   const [tongueColor, setTongueColor] = useState(currentFaceTheme.tongueColor);
+  const [eyeColor, setEyeColor] = useState(currentFaceTheme.eyeColor || '#000000');
+  const [strokeColor, setStrokeColor] = useState(currentFaceTheme.strokeColor || '#333333');
+  const [showStroke, setShowStroke] = useState(currentFaceTheme.showStroke !== false);
   
   // Head shape options
   const headShapes: HeadShape[] = [
     {
-      id: 'rectangle',
-      name: 'Boxy',
-      shape: 'rectangle',
+      id: 'none',
+      name: 'No Shape',
+      shape: 'none',
+    },
+    {
+      id: 'square',
+      name: 'Square (Rounded)',
+      shape: 'square',
     },
     {
       id: 'circle',
-      name: 'Roundy',
+      name: 'Circle',
       shape: 'circle',
     },
     {
-      id: 'triangle',
-      name: 'Pointy',
-      shape: 'triangle',
-    },
-    {
-      id: 'star',
-      name: 'Starry',
-      shape: 'star',
-    },
-    {
-      id: 'heart',
-      name: 'Hearty',
-      shape: 'heart',
+      id: 'rectangle',
+      name: 'Rectangle (Rounded)',
+      shape: 'rectangle',
     },
   ];
   
@@ -270,6 +273,9 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
       screenColor,
       faceColor,
       tongueColor,
+      eyeColor,
+      strokeColor,
+      showStroke
     };
     
     // Create rig configuration
@@ -758,7 +764,9 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
         fillColor: faceColor,
         strokeColor: '#333333',
         strokeWidth: 8,
-        borderRadius: shape.shape === 'circle' ? '50%' : '20px'
+        borderRadius: shape.shape === 'circle' ? '50%' : 
+                     shape.shape === 'square' ? '20px' :
+                     shape.shape === 'rectangle' ? '30px' : '0'
       };
       
       setHeadStyle(baseStyle);
@@ -780,53 +788,40 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
   // Update theme color handlers
   const handlePreviewColorChange = (color: string) => {
     setPreviewColor(color);
+    setSelectedTheme(prev => ({ ...prev, previewColor: color }));
   };
 
   const handleScreenColorChange = (color: string) => {
     setScreenColor(color);
-    // Update head style to match screen color
-    setHeadStyle({
-      ...headStyle,
-      fillColor: color,
-      strokeColor: '#333333'
-    });
+    setSelectedTheme(prev => ({ ...prev, screenColor: color }));
   };
 
   const handleFaceColorChange = (color: string) => {
     setFaceColor(color);
-    // Update all face elements to use the new color
-    setHeadStyle({
-      ...headStyle,
-      fillColor: color
-    });
-    setMouthStyle({
-      ...mouthStyle,
-      fillColor: color
-    });
-    setLeftTopEyelidStyle({
-      ...leftTopEyelidStyle,
-      fillColor: color
-    });
-    setLeftBottomEyelidStyle({
-      ...leftBottomEyelidStyle,
-      fillColor: color
-    });
-    setRightTopEyelidStyle({
-      ...rightTopEyelidStyle,
-      fillColor: color
-    });
-    setRightBottomEyelidStyle({
-      ...rightBottomEyelidStyle,
-      fillColor: color
-    });
+    setSelectedTheme(prev => ({ ...prev, faceColor: color }));
   };
 
   const handleTongueColorChange = (color: string) => {
     setTongueColor(color);
-    setTongueStyle({
-      ...tongueStyle,
-      fillColor: color
-    });
+    setSelectedTheme(prev => ({ ...prev, tongueColor: color }));
+  };
+
+  // Update eye color handler
+  const handleEyeColorChange = (color: string) => {
+    setEyeColor(color);
+    setSelectedTheme(prev => ({ ...prev, eyeColor: color }));
+  };
+
+  // Update stroke color handler
+  const handleStrokeColorChange = (color: string) => {
+    setStrokeColor(color);
+    setSelectedTheme(prev => ({ ...prev, strokeColor: color }));
+  };
+
+  // Update stroke visibility handler
+  const handleShowStrokeChange = (checked: boolean) => {
+    setShowStroke(checked);
+    setSelectedTheme(prev => ({ ...prev, showStroke: checked }));
   };
 
   return (
@@ -886,18 +881,10 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
               </div>
             </div>
             
-            <div className="flex-1 flex items-center justify-center p-8" style={{ backgroundColor: previewColor }}>
+            <div className="flex-1 flex items-center justify-center p-8" style={{ backgroundColor: selectedTheme.previewColor }}>
               <div className="w-96 h-96">
                 <TalkingHead 
-                  theme={{
-                    id: selectedTheme.id,
-                    name: selectedTheme.name,
-                    description: selectedTheme.description,
-                    previewColor: previewColor,
-                    screenColor: screenColor,
-                    faceColor: faceColor,
-                    tongueColor: tongueColor,
-                  }}
+                  theme={selectedTheme}
                   headShape={selectedHeadShape}
                   expression={currentExpression as any}
                   text={currentPhoneme ? `Example of ${currentPhoneme} sound` : undefined}
@@ -910,7 +897,6 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
           {/* Right Drawer - Inspector */}
           <div className="w-80 bg-slate-100 p-4 overflow-y-auto border-l">
             <h2 className="text-xl font-bold mb-4">Inspector</h2>
-            
             {/* Head Shape Dropdown */}
             <div className="mb-6">
               <h3 className="text-lg font-medium mb-2">Head Shape</h3>
@@ -926,11 +912,10 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                     <SelectItem key={shape.id} value={shape.id}>
                       <div className="flex items-center gap-2">
                         <span className="text-lg">
-                          {shape.shape === 'rectangle' && '▭'}
+                          {shape.shape === 'none' && '○'}
+                          {shape.shape === 'square' && '▭'}
                           {shape.shape === 'circle' && '⬤'}
-                          {shape.shape === 'triangle' && '▲'}
-                          {shape.shape === 'star' && '★'}
-                          {shape.shape === 'heart' && '❤'}
+                          {shape.shape === 'rectangle' && '▭'}
                         </span>
                         <span>{shape.name}</span>
                       </div>
@@ -939,69 +924,6 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Element Style Controls */}
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-2">Element Controls</h3>
-              <Accordion type="multiple" className="w-full">
-                <ElementStyleControls 
-                  title="Head" 
-                  style={headStyle} 
-                  onChange={setHeadStyle} 
-                />
-                <ElementStyleControls 
-                  title="Left Eye" 
-                  style={leftEyeStyle} 
-                  onChange={setLeftEyeStyle} 
-                />
-                <ElementStyleControls 
-                  title="Left Top Eyelid" 
-                  style={leftTopEyelidStyle} 
-                  onChange={setLeftTopEyelidStyle} 
-                />
-                <ElementStyleControls 
-                  title="Left Bottom Eyelid" 
-                  style={leftBottomEyelidStyle} 
-                  onChange={setLeftBottomEyelidStyle} 
-                />
-                <ElementStyleControls 
-                  title="Right Eye" 
-                  style={rightEyeStyle} 
-                  onChange={setRightEyeStyle} 
-                />
-                <ElementStyleControls 
-                  title="Right Top Eyelid" 
-                  style={rightTopEyelidStyle} 
-                  onChange={setRightTopEyelidStyle} 
-                />
-                <ElementStyleControls 
-                  title="Right Bottom Eyelid" 
-                  style={rightBottomEyelidStyle} 
-                  onChange={setRightBottomEyelidStyle} 
-                />
-                <ElementStyleControls 
-                  title="Mouth" 
-                  style={mouthStyle} 
-                  onChange={setMouthStyle} 
-                />
-                <ElementStyleControls 
-                  title="Top Teeth" 
-                  style={topTeethStyle} 
-                  onChange={setTopTeethStyle} 
-                />
-                <ElementStyleControls 
-                  title="Bottom Teeth" 
-                  style={bottomTeethStyle} 
-                  onChange={setBottomTeethStyle} 
-                />
-                <ElementStyleControls 
-                  title="Tongue" 
-                  style={tongueStyle} 
-                  onChange={setTongueStyle} 
-                />
-              </Accordion>
-            </div>
-
             {/* Theme Colors */}
             <div className="mb-6">
               <h3 className="text-lg font-medium mb-2">Theme Colors</h3>
@@ -1011,50 +933,80 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                     <Label htmlFor="preview-color">Background</Label>
                     <input 
                       type="color" 
-                      value={previewColor} 
+                      value={selectedTheme.previewColor} 
                       onChange={(e) => handlePreviewColorChange(e.target.value)}
                       id="preview-color"
                       className="w-10 h-6"
                     />
                   </div>
                 </div>
-                
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <Label htmlFor="screen-color">Screen</Label>
+                    <Label htmlFor="screen-color">Face</Label>
                     <input 
                       type="color" 
-                      value={screenColor} 
+                      value={selectedTheme.screenColor} 
                       onChange={(e) => handleScreenColorChange(e.target.value)}
                       id="screen-color"
                       className="w-10 h-6"
                     />
                   </div>
                 </div>
-                
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <Label htmlFor="face-color">Face</Label>
+                    <Label htmlFor="face-color">Mouth</Label>
                     <input 
                       type="color" 
-                      value={faceColor} 
+                      value={selectedTheme.faceColor} 
                       onChange={(e) => handleFaceColorChange(e.target.value)}
                       id="face-color"
                       className="w-10 h-6"
                     />
                   </div>
                 </div>
-                
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="eye-color">Eyes</Label>
+                    <input 
+                      type="color" 
+                      value={selectedTheme.eyeColor || '#000000'} 
+                      onChange={(e) => handleEyeColorChange(e.target.value)}
+                      id="eye-color"
+                      className="w-10 h-6"
+                    />
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <Label htmlFor="tongue-color">Tongue</Label>
                     <input 
                       type="color" 
-                      value={tongueColor} 
+                      value={selectedTheme.tongueColor} 
                       onChange={(e) => handleTongueColorChange(e.target.value)}
                       id="tongue-color"
                       className="w-10 h-6"
                     />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="stroke-color">Face Stroke</Label>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="color" 
+                        value={selectedTheme.strokeColor || '#333333'} 
+                        onChange={(e) => handleStrokeColorChange(e.target.value)}
+                        id="stroke-color"
+                        className="w-10 h-6"
+                        disabled={!selectedTheme.showStroke}
+                      />
+                      <input
+                        type="checkbox"
+                        checked={selectedTheme.showStroke}
+                        onChange={(e) => handleShowStrokeChange(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
