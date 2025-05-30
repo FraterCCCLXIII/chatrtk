@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff } from "lucide-react";
+import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus } from "lucide-react";
 import { Smiley, Robot } from "@phosphor-icons/react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { 
@@ -28,6 +28,10 @@ import { ChatMessage, TextMessage, CardMessage } from "@/lib/types";
 import { parseAIResponse, detectExpression } from "@/lib/aiParser";
 import { setupTalkify, getTalkifyPlayer } from '@/lib/talkify-setup';
 import type { TtsPlayer } from '@/types/talkify';
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { RTK_ALPHA, managePersonality, getThoughtToExpress } from '@/lib/ai-personality';
+import type { AIPersonality, Thought } from '@/lib/types';
 
 type Expression = 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
 
@@ -83,6 +87,11 @@ const ChatTalkingHead: React.FC = () => {
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const [ttsPlayer, setTtsPlayer] = useState<TtsPlayer | null>(null);
   const [isTtsReady, setIsTtsReady] = useState(false);
+  const [verbosityLevel, setVerbosityLevel] = useState(0); // 0-100 scale
+  const [isVerbosityOpen, setIsVerbosityOpen] = useState(false);
+  const verbosityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [personality, setPersonality] = useState<AIPersonality>(RTK_ALPHA);
+  const [lastThoughtTime, setLastThoughtTime] = useState(0);
 
   // Add voice configuration state
   const [voiceSettings, setVoiceSettings] = useState({
@@ -707,6 +716,74 @@ When asked about cards, weather, recipes, or any structured information, respond
     }
   };
 
+  // Add verbosity effect with personality-driven thoughts
+  useEffect(() => {
+    if (verbosityLevel > 0 && isVoiceEnabled) {
+      // Clear any existing timer
+      if (verbosityTimerRef.current) {
+        clearTimeout(verbosityTimerRef.current);
+      }
+
+      // Calculate interval based on verbosity level (inverse relationship)
+      const interval = Math.max(1000, 10000 - (verbosityLevel * 90)); // 1-10 seconds
+
+      const generatePersonalityMessage = () => {
+        // Get recent messages for context
+        const recentMessages = messages.slice(-5).map(m => 
+          m.type === 'text' ? m.text : m.type === 'card' ? m.content : ''
+        ).filter(Boolean);
+
+        // Update personality with current context
+        const updatedPersonality = managePersonality(
+          personality,
+          recentMessages.join(' '),
+          recentMessages
+        );
+        setPersonality(updatedPersonality);
+
+        // Get a thought to express
+        const thought = getThoughtToExpress(updatedPersonality);
+        
+        if (thought && Date.now() - lastThoughtTime > 5000) { // Minimum 5 seconds between thoughts
+          const newMessage: ChatMessage = {
+            id: `ai-${Date.now()}`,
+            type: 'text',
+            text: thought.content,
+            isUser: false,
+            expression: detectExpression(thought.content)
+          };
+
+          setMessages(prev => [...prev, newMessage]);
+          setLastThoughtTime(Date.now());
+        }
+      };
+
+      // Set up the timer for personality-driven messages
+      verbosityTimerRef.current = setInterval(generatePersonalityMessage, interval);
+
+      return () => {
+        if (verbosityTimerRef.current) {
+          clearTimeout(verbosityTimerRef.current);
+        }
+      };
+    } else if (verbosityTimerRef.current) {
+      clearTimeout(verbosityTimerRef.current);
+    }
+  }, [verbosityLevel, isVoiceEnabled, messages, personality, lastThoughtTime]);
+
+  // Update personality when receiving user messages
+  useEffect(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.isUser && lastMessage.type === 'text') {
+      const updatedPersonality = managePersonality(
+        personality,
+        lastMessage.text,
+        messages.slice(-5).map(m => m.type === 'text' ? m.text : '')
+      );
+      setPersonality(updatedPersonality);
+    }
+  }, [messages]);
+
   return (
     <div>
       <MotionDiv 
@@ -803,6 +880,45 @@ When asked about cards, weather, recipes, or any structured information, respond
         >
           <Subtitles className={`h-4 w-4 ${showCaptions ? 'text-primary' : ''}`} />
         </Button>
+        <div className="relative">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsVerbosityOpen(!isVerbosityOpen)}
+            className={`hover:scale-105 active:scale-95 transition-transform ${verbosityLevel > 0 ? 'text-primary' : ''}`}
+            data-tooltip="Chat Verbosity"
+          >
+            <MessageSquarePlus className="h-5 w-5" />
+          </Button>
+          {isVerbosityOpen && (
+            <div className="absolute right-0 top-full mt-2 p-4 bg-white rounded-lg shadow-lg border w-64 z-50">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="verbosity">Chat Verbosity</Label>
+                  <span className="text-sm text-muted-foreground">{verbosityLevel}%</span>
+                </div>
+                <Slider
+                  id="verbosity"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={[verbosityLevel]}
+                  onValueChange={([value]) => setVerbosityLevel(value)}
+                  className="w-full"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {verbosityLevel === 0 
+                    ? "AI will only respond to your messages"
+                    : verbosityLevel < 30 
+                    ? "AI will occasionally initiate conversation"
+                    : verbosityLevel < 70 
+                    ? "AI will regularly engage in conversation"
+                    : "AI will be very chatty and initiate frequent conversations"}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
       
       {showHead && (
@@ -949,8 +1065,6 @@ When asked about cards, weather, recipes, or any structured information, respond
         currentApiKey={apiSettings.apiKey}
         currentModel={apiSettings.model}
         currentEndpoint={apiSettings.endpoint}
-        voiceSettings={voiceSettings}
-        onVoiceSettingsChange={updateVoiceSettings}
       />
 
       <FaceSelectorModal
@@ -966,6 +1080,8 @@ When asked about cards, weather, recipes, or any structured information, respond
         onSave={handleSaveFacialRigChanges}
         currentFaceTheme={currentFaceTheme}
         currentHeadShape={currentHeadShape}
+        voiceSettings={voiceSettings}
+        onVoiceSettingsChange={updateVoiceSettings}
       />
     </div>
   );

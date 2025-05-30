@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
+import { getAvailableVoices } from '@/lib/talkify-setup';
 
 export interface HeadShape {
   id: string;
@@ -70,6 +71,13 @@ export interface FacialRigEditorProps {
   currentFaceTheme: FaceTheme;
   currentHeadShape?: HeadShape;
   onSave: (faceTheme: FaceTheme, headShape: HeadShape, rigConfig?: Partial<FaceRigConfig>) => void;
+  voiceSettings?: {
+    rate: number;
+    pitch: number;
+    volume: number;
+    voice: string;
+  };
+  onVoiceSettingsChange?: (settings: Partial<FacialRigEditorProps['voiceSettings']>) => void;
 }
 
 const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
@@ -78,6 +86,8 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
   currentFaceTheme,
   currentHeadShape,
   onSave,
+  voiceSettings,
+  onVoiceSettingsChange,
 }) => {
   const { toast } = useToast();
   const [selectedTheme, setSelectedTheme] = useState<FaceTheme>({
@@ -93,6 +103,7 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
   const [eyeColor, setEyeColor] = useState(currentFaceTheme.eyeColor || '#000000');
   const [strokeColor, setStrokeColor] = useState(currentFaceTheme.strokeColor || '#333333');
   const [showStroke, setShowStroke] = useState(currentFaceTheme.showStroke !== false);
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   
   // Head shape options
   const headShapes: HeadShape[] = [
@@ -264,6 +275,46 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
   const [topTeethStyle, setTopTeethStyle] = useState<ElementStyle>(defaultTopTeethStyle);
   const [bottomTeethStyle, setBottomTeethStyle] = useState<ElementStyle>(defaultBottomTeethStyle);
   const [tongueStyle, setTongueStyle] = useState<ElementStyle>(defaultTongueStyle);
+
+  // Load available voices
+  useEffect(() => {
+    let mounted = true;
+
+    const loadVoices = () => {
+      // Get voices and filter out any that might be empty or invalid
+      const voices = window.speechSynthesis.getVoices().filter(voice => 
+        voice && voice.name && voice.lang
+      );
+
+      if (voices.length > 0 && mounted) {
+        console.log('Loaded voices:', voices.map(v => `${v.name} (${v.lang})`));
+        setAvailableVoices(voices);
+      }
+    };
+
+    // Try to load voices immediately
+    loadVoices();
+
+    // If no voices are available yet, wait for them
+    if (availableVoices.length === 0) {
+      // Some browsers need a small delay before voices are available
+      const timeoutId = setTimeout(loadVoices, 100);
+
+      // Also listen for the voiceschanged event
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+
+      return () => {
+        mounted = false;
+        clearTimeout(timeoutId);
+        window.speechSynthesis.onvoiceschanged = null;
+      };
+    }
+
+    return () => {
+      mounted = false;
+      window.speechSynthesis.onvoiceschanged = null;
+    };
+  }, []);
 
   const handleSave = () => {
     // Create updated theme
@@ -1007,6 +1058,89 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                         className="w-4 h-4"
                       />
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Voice Settings */}
+            <div className="mt-8 border-t pt-6">
+              <h3 className="text-lg font-medium mb-4">Voice Settings</h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="voice">Voice</Label>
+                  <Select
+                    value={voiceSettings?.voice || ''}
+                    onValueChange={(value) => onVoiceSettingsChange?.({ voice: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={availableVoices.length === 0 ? "Loading voices..." : "Select a voice"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableVoices.length === 0 ? (
+                        <SelectItem value="" disabled>Loading voices...</SelectItem>
+                      ) : (
+                        availableVoices.map((voice) => (
+                          <SelectItem key={voice.name} value={voice.name}>
+                            {voice.name} ({voice.lang})
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="rate">Speech Rate</Label>
+                  <div className="flex items-center gap-2">
+                    <Slider
+                      id="rate"
+                      min={0.5}
+                      max={2}
+                      step={0.1}
+                      value={[voiceSettings?.rate || 1]}
+                      onValueChange={([value]) => onVoiceSettingsChange?.({ rate: value })}
+                      className="flex-1"
+                    />
+                    <span className="text-sm w-12 text-right">
+                      {voiceSettings?.rate || 1}x
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="pitch">Pitch</Label>
+                  <div className="flex items-center gap-2">
+                    <Slider
+                      id="pitch"
+                      min={0.5}
+                      max={2}
+                      step={0.1}
+                      value={[voiceSettings?.pitch || 1]}
+                      onValueChange={([value]) => onVoiceSettingsChange?.({ pitch: value })}
+                      className="flex-1"
+                    />
+                    <span className="text-sm w-12 text-right">
+                      {voiceSettings?.pitch || 1}x
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="volume">Volume</Label>
+                  <div className="flex items-center gap-2">
+                    <Slider
+                      id="volume"
+                      min={0}
+                      max={1}
+                      step={0.1}
+                      value={[voiceSettings?.volume || 1]}
+                      onValueChange={([value]) => onVoiceSettingsChange?.({ volume: value })}
+                      className="flex-1"
+                    />
+                    <span className="text-sm w-12 text-right">
+                      {Math.round((voiceSettings?.volume || 1) * 100)}%
+                    </span>
                   </div>
                 </div>
               </div>
