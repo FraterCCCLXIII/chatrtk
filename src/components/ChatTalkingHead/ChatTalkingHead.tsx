@@ -32,6 +32,8 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { RTK_ALPHA, managePersonality, getThoughtToExpress } from '@/lib/ai-personality';
 import type { AIPersonality, Thought } from '@/lib/types';
+import LoadingScreen from '../LoadingScreen/LoadingScreen';
+import { AnimatePresence } from 'framer-motion';
 
 type Expression = 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
 
@@ -97,7 +99,8 @@ const ChatTalkingHead: React.FC = () => {
   const [currentSpeechText, setCurrentSpeechText] = useState('');
   const [currentExpression, setCurrentExpression] = useState<'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking'>('happy');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAIResponding, setIsAIResponding] = useState(false);
   const [showHead, setShowHead] = useState(true);
   const [showChat, setShowChat] = useState(true);
   const [headHeight, setHeadHeight] = useState(300); // Initial height in pixels
@@ -605,7 +608,7 @@ const ChatTalkingHead: React.FC = () => {
     }
   };
 
-  // Update handleSendMessage to stop AI speech
+  // Update handleSendMessage to use isAIResponding
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
 
@@ -625,7 +628,8 @@ const ChatTalkingHead: React.FC = () => {
     const userInput = inputText;
     setInputText('');
 
-    setIsLoading(true);
+    // Set loading state for AI response
+    setIsAIResponding(true);
 
     try {
       // Check if API key is configured - if not, use simulator without showing modal
@@ -651,7 +655,7 @@ const ChatTalkingHead: React.FC = () => {
       const response = mockGenerateResponse(userInput);
       setMessages(prev => [...prev, response]);
     } finally {
-      setIsLoading(false);
+      setIsAIResponding(false);
     }
   };
 
@@ -1119,6 +1123,12 @@ When asked about cards, weather, recipes, or any structured information, respond
 
   return (
     <div>
+      <AnimatePresence>
+        {isLoading && (
+          <LoadingScreen onLoadingComplete={() => setIsLoading(false)} />
+        )}
+      </AnimatePresence>
+      
       <MotionDiv 
         className="app-title"
         initial={{ opacity: 0, x: -20 }}
@@ -1343,7 +1353,7 @@ When asked about cards, weather, recipes, or any structured information, respond
                 </AnimatedMessage>
               )
             ))}
-            {isLoading && (
+            {isAIResponding && (
               <div id="loading-message" className="chat-message ai-message" style={aiMessageStyle}>
                 <div className="flex space-x-2">
                   <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor }}></div>
@@ -1368,7 +1378,7 @@ When asked about cards, weather, recipes, or any structured information, respond
             variant="ghost"
             size="icon"
             onClick={toggleVoiceInput}
-            className={`mr-2 ${isListening ? 'text-red-500 animate-pulse' : ''}`}
+            className={`audio-control-button ${isListening ? 'active' : ''}`}
             title={isListening ? "Stop Voice Input" : "Start Voice Input"}
           >
             {isListening ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
@@ -1377,16 +1387,16 @@ When asked about cards, weather, recipes, or any structured information, respond
             variant="ghost"
             size="icon"
             onClick={toggleAlwaysListening}
-            className={`mr-2 ${isAlwaysListening ? 'text-primary animate-pulse' : ''}`}
+            className={`audio-control-button ${isAlwaysListening ? 'active' : ''}`}
             title={isAlwaysListening ? "Disable Always Listen" : "Enable Always Listen"}
           >
-            <Radio className={`h-5 w-5 ${isAlwaysListening ? 'text-primary' : ''}`} />
+            <Radio className="h-5 w-5" />
           </Button>
           <MotionTextarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder={isListening ? "Listening..." : "Type your message..."}
-            className="chat-input"
+            className="chat-input translate-y-[2px]"
             whileFocus={{ scale: 1.01 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             onKeyDown={(e) => {
@@ -1399,11 +1409,11 @@ When asked about cards, weather, recipes, or any structured information, respond
           <Button 
             onClick={handleSendMessage} 
             className="send-button"
-            disabled={isLoading}
+            disabled={isAIResponding}
             variant="default"
             size="icon"
           >
-            {isLoading ? '...' : <MessageCircleMore className="h-5 w-5" />}
+            {isAIResponding ? '...' : <MessageCircleMore className="h-5 w-5" />}
           </Button>
         </div>
         {isListening && transcript && (
