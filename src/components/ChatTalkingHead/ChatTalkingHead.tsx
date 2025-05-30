@@ -42,6 +42,53 @@ interface ApiSettings {
   endpoint?: string;
 }
 
+// Add TypeScript declarations for the Web Speech API
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResult;
+  length: number;
+}
+
+interface SpeechRecognitionResult {
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+  length: number;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognitionError extends Event {
+  error: string;
+  message: string;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onstart: () => void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: SpeechRecognitionError) => void;
+  onend: () => void;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
+
 const ChatTalkingHead: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -92,6 +139,11 @@ const ChatTalkingHead: React.FC = () => {
   const verbosityTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [personality, setPersonality] = useState<AIPersonality>(RTK_ALPHA);
   const [lastThoughtTime, setLastThoughtTime] = useState(0);
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const finalTranscriptRef = useRef('');
 
   // Add voice configuration state
   const [voiceSettings, setVoiceSettings] = useState({
@@ -141,6 +193,135 @@ const ChatTalkingHead: React.FC = () => {
     });
   }, []);
 
+  // Initialize speech recognition
+  useEffect(() => {
+    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onstart = () => {
+        console.log('Speech recognition started');
+        finalTranscriptRef.current = '';
+        setIsListening(true);
+      };
+
+      recognitionRef.current.onresult = (event) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        // Update the displayed transcript
+        setTranscript(interimTranscript || finalTranscript);
+        
+        // Store the final transcript
+        if (finalTranscript) {
+          finalTranscriptRef.current = finalTranscript;
+          // Send message immediately when we get a final transcript
+          const messageToSend = finalTranscript.trim();
+          if (messageToSend) {
+            // Add user message
+            const userMessage: TextMessage = {
+              id: `user-${Date.now()}`,
+              type: 'text',
+              text: messageToSend,
+              isUser: true
+            };
+            setMessages(prev => [...prev, userMessage]);
+            
+            // Clear the input and transcript
+            setInputText('');
+            setTranscript('');
+            finalTranscriptRef.current = '';
+            
+            // Generate AI response
+            setIsLoading(true);
+            generateAIResponse(messageToSend)
+              .then(response => {
+                setMessages(prev => [...prev, response]);
+              })
+              .catch(error => {
+                console.error('Error generating response:', error);
+                toast({
+                  title: "Error",
+                  description: "Failed to get response. Using simulator mode instead.",
+                  variant: "destructive",
+                });
+                const response = mockGenerateResponse(messageToSend);
+                setMessages(prev => [...prev, response]);
+              })
+              .finally(() => {
+                setIsLoading(false);
+              });
+          }
+        }
+      };
+
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        toast({
+          title: "Speech Recognition Error",
+          description: event.error,
+          variant: "destructive",
+        });
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        console.log('Speech recognition ended');
+        setIsListening(false);
+      };
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  // Toggle voice input
+  const toggleVoiceInput = () => {
+    if (!recognitionRef.current) {
+      toast({
+        title: "Voice Input Not Available",
+        description: "Speech recognition is not supported in your browser.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isListening) {
+      console.log('Stopping speech recognition');
+      recognitionRef.current.stop();
+      setIsListening(false);
+      setTranscript('');
+      finalTranscriptRef.current = '';
+    } else {
+      console.log('Starting speech recognition');
+      try {
+        recognitionRef.current.start();
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        toast({
+          title: "Error Starting Voice Input",
+          description: "Please try again or check your microphone permissions.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   // We've removed the auto-scroll effect as requested
   // This allows the user to manually scroll through the messages
 
@@ -160,6 +341,11 @@ const ChatTalkingHead: React.FC = () => {
 
       // Play the text
       await ttsPlayer.playText(text);
+      
+      // After TTS finishes, send the message
+      if (text.trim()) {
+        handleSendMessage();
+      }
     } catch (error) {
       console.error('Error speaking text:', error);
       toast({
@@ -1031,10 +1217,19 @@ When asked about cards, weather, recipes, or any structured information, respond
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
       >
         <div className="chat-input-wrapper">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleVoiceInput}
+            className={`mr-2 ${isListening ? 'text-red-500 animate-pulse' : ''}`}
+            title={isListening ? "Stop Voice Input" : "Start Voice Input"}
+          >
+            {isListening ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+          </Button>
           <MotionTextarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="Type your message..."
+            placeholder={isListening ? "Listening..." : "Type your message..."}
             className="chat-input"
             whileFocus={{ scale: 1.01 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -1055,6 +1250,16 @@ When asked about cards, weather, recipes, or any structured information, respond
             {isLoading ? '...' : <MessageCircleMore className="h-5 w-5" />}
           </Button>
         </div>
+        {isListening && transcript && (
+          <div className="absolute bottom-full mb-2 left-0 right-0 text-center text-sm text-muted-foreground">
+            {transcript}
+            {finalTranscriptRef.current && (
+              <div className="text-xs text-primary mt-1">
+                (Final transcript: {finalTranscriptRef.current})
+              </div>
+            )}
+          </div>
+        )}
       </MotionDiv>
 
       <ApiKeyModal
