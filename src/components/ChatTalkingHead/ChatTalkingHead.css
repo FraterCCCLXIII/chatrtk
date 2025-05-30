@@ -429,6 +429,8 @@
   color: #ffffff !important;
   transition: all 0.2s ease-in-out !important;
   position: relative !important;
+  border: none !important;
+  cursor: pointer !important;
 }
 
 .send-button:hover {
@@ -438,6 +440,18 @@
 
 .send-button:active {
   transform: scale(0.95) !important;
+}
+
+.send-button:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
+.send-button svg {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  pointer-events: none !important;
 }
 
 .send-button .loading-spinner {
@@ -578,69 +592,14 @@
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
+  transition: opacity 0.2s ease;
   pointer-events: none;
   margin-bottom: 4px;
+  z-index: 1000;
+  transform-origin: center bottom;
 }
 
 [data-tooltip]:hover:before {
   opacity: 1;
   visibility: visible;
-}
-
-/* Audio control button styles */
-.audio-control-button {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: #666;
-}
-
-.audio-control-button:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  color: #000;
-}
-
-.audio-control-button.active {
-  color: var(--primary-color, #5ddbaf);
-  background-color: rgba(93, 219, 175, 0.1);
-}
-
-/* Send button styles */
-.send-button {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  background: var(--primary-color, #5ddbaf);
-  border: none;
-  cursor: pointer;
-  color: white;
-}
-
-.send-button:hover {
-  transform: scale(1.05);
-  background: var(--primary-color-dark, #4bc99a);
-}
-
-.send-button:active {
-  transform: scale(0.95);
-}
-
-.send-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
 }

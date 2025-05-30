@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus, Radio, X, FileText, Gamepad2 } from "lucide-react";
+import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus, Radio, X, FileText, Gamepad2, Keyboard } from "lucide-react";
 import { Smiley, Robot } from "@phosphor-icons/react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { 
@@ -40,6 +40,8 @@ import { detectBrowserLanguage, setLanguagePreference, Language } from '@/lib/la
 import LanguageSelector from '../LanguageSelector/LanguageSelector';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getTranslation } from '@/lib/translations';
+import HotkeysModal from '../HotkeysModal/HotkeysModal';
+import { useHotkeys } from '@/hooks/useHotkeys';
 
 type Expression = 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
 
@@ -161,6 +163,9 @@ const ChatTalkingHead: React.FC = () => {
   const [isProjectInfoOpen, setIsProjectInfoOpen] = useState(false);
   const [isGamesOpen, setIsGamesOpen] = useState(false);
   const { currentLanguage, setCurrentLanguage } = useLanguage();
+  const [isHotkeysOpen, setIsHotkeysOpen] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const inputFocusRef = useRef(false);
 
   // Add voice configuration state
   const [voiceSettings, setVoiceSettings] = useState({
@@ -169,6 +174,82 @@ const ChatTalkingHead: React.FC = () => {
     volume: 1.0,
     voice: 'en-US' // Default voice
   });
+
+  // Handle keyboard events globally
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if the active element is an input or textarea
+      const activeElement = document.activeElement;
+      const isInputElement = activeElement instanceof HTMLInputElement || 
+                           activeElement instanceof HTMLTextAreaElement ||
+                           activeElement?.getAttribute('contenteditable') === 'true';
+
+      // If we're in an input element, don't handle hotkeys
+      if (isInputElement) {
+        return;
+      }
+
+      // Handle hotkeys
+      switch (e.key.toLowerCase()) {
+        case 'k':
+          setIsHotkeysOpen(true);
+          break;
+        case 'h':
+          setShowHead(!showHead);
+          break;
+        case 'c':
+          setShowChat(!showChat);
+          break;
+        case 'f':
+          setIsFaceSelectorOpen(true);
+          break;
+        case 'e':
+          setIsFacialRigEditorOpen(true);
+          break;
+        case 's':
+          setIsModalOpen(true);
+          break;
+        case 'g':
+          setIsGamesOpen(true);
+          break;
+        case 'i':
+          setIsProjectInfoOpen(true);
+          break;
+        case 'v':
+          toggleVoice();
+          break;
+        case 'm':
+          toggleVoiceInput();
+          break;
+        case 'a':
+          toggleAlwaysListening();
+          break;
+        case 'l':
+          const languageButton = document.querySelector('[data-tooltip*="Change Language"]');
+          if (languageButton instanceof HTMLElement) {
+            languageButton.click();
+          }
+          break;
+        case ' ':
+          if (isAIResponding || isAISpeaking) {
+            e.preventDefault();
+            stopAllAI();
+          } else if (messages.length > 0) {
+            const lastMessage = messages[messages.length - 1];
+            if (!lastMessage.isUser && lastMessage.type === 'text') {
+              e.preventDefault();
+              generateAIResponse(lastMessage.text).then(response => {
+                setMessages(prev => [...prev, response]);
+              });
+            }
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showHead, showChat, isAIResponding, isAISpeaking, messages]);
 
   // Load API settings, face theme, and head shape from localStorage on initial render
   useEffect(() => {
@@ -266,14 +347,13 @@ const ChatTalkingHead: React.FC = () => {
             // it's probably the AI's speech being picked up
             const similarity = calculateSimilarity(messageToSend, lastAIMessage);
             if (similarity < 0.8) { // Only process if similarity is less than 80%
-              // Add user message
+              // Add user message using functional update
               const userMessage: TextMessage = {
                 id: `user-${Date.now()}`,
                 type: 'text',
                 text: messageToSend,
                 isUser: true
               };
-              setMessages(prev => [...prev, userMessage]);
               
               // Clear the input and transcript
               setInputText('');
@@ -284,7 +364,7 @@ const ChatTalkingHead: React.FC = () => {
               setIsAIResponding(true);
               generateAIResponse(messageToSend)
                 .then(response => {
-                  setMessages(prev => [...prev, response]);
+                  setMessages(prev => [...prev, userMessage, response]);
                 })
                 .catch(error => {
                   console.error('Error generating response:', error);
@@ -294,13 +374,11 @@ const ChatTalkingHead: React.FC = () => {
                     variant: "destructive",
                   });
                   const response = mockGenerateResponse(messageToSend);
-                  setMessages(prev => [...prev, response]);
+                  setMessages(prev => [...prev, userMessage, response]);
                 })
                 .finally(() => {
                   setIsAIResponding(false);
                 });
-            } else {
-              console.log('Filtered out likely AI speech:', messageToSend);
             }
           }
         }
@@ -630,14 +708,13 @@ const ChatTalkingHead: React.FC = () => {
     // Stop any ongoing AI speech
     stopAISpeech();
 
-    // Add user message
+    // Add user message using functional update
     const userMessage: TextMessage = {
       id: `user-${Date.now()}`,
       type: 'text',
       text: inputText,
       isUser: true
     };
-    setMessages([...messages, userMessage]);
     
     // Store the input and clear it
     const userInput = inputText;
@@ -647,6 +724,9 @@ const ChatTalkingHead: React.FC = () => {
     setIsAIResponding(true);
 
     try {
+      // Update messages with user message first
+      setMessages(prev => [...prev, userMessage]);
+
       // Check if API key is configured - if not, use simulator without showing modal
       if (!apiSettings.apiKey) {
         // Add a small delay to simulate processing
@@ -1198,7 +1278,7 @@ When asked about cards, weather, recipes, or any structured information, respond
           size="icon"
           onClick={() => setIsProjectInfoOpen(true)}
           className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={getTranslation('aboutRTK', currentLanguage)}
+          data-tooltip={`${getTranslation('aboutRTK', currentLanguage)} [i]`}
         >
           <FileText className="h-5 w-5" />
         </Button>
@@ -1207,7 +1287,7 @@ When asked about cards, weather, recipes, or any structured information, respond
           size="icon"
           onClick={() => setIsFaceSelectorOpen(true)}
           className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={getTranslation('changeFace', currentLanguage)}
+          data-tooltip={`${getTranslation('changeFace', currentLanguage)} [f]`}
         >
           <Smiley className="h-5 w-5" />
         </Button>
@@ -1216,7 +1296,7 @@ When asked about cards, weather, recipes, or any structured information, respond
           size="icon"
           onClick={() => setShowHead(!showHead)}
           className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={showHead ? getTranslation('hideHead', currentLanguage) : getTranslation('showHead', currentLanguage)}
+          data-tooltip={`${showHead ? getTranslation('hideHead', currentLanguage) : getTranslation('showHead', currentLanguage)} [h]`}
         >
           {showHead ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
         </Button>
@@ -1225,7 +1305,7 @@ When asked about cards, weather, recipes, or any structured information, respond
           size="icon"
           onClick={() => setShowChat(!showChat)}
           className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={showChat ? getTranslation('hideChat', currentLanguage) : getTranslation('showChat', currentLanguage)}
+          data-tooltip={`${showChat ? getTranslation('hideChat', currentLanguage) : getTranslation('showChat', currentLanguage)} [c]`}
         >
           {showChat ? <MessageSquareOff className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
         </Button>
@@ -1234,7 +1314,7 @@ When asked about cards, weather, recipes, or any structured information, respond
           size="icon"
           onClick={toggleVoice}
           className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={isVoiceEnabled ? getTranslation('disableVoice', currentLanguage) : getTranslation('enableVoice', currentLanguage)}
+          data-tooltip={`${isVoiceEnabled ? getTranslation('disableVoice', currentLanguage) : getTranslation('enableVoice', currentLanguage)} [v]`}
         >
           {isVoiceEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
         </Button>
@@ -1243,7 +1323,7 @@ When asked about cards, weather, recipes, or any structured information, respond
           size="icon"
           onClick={() => setIsModalOpen(true)}
           className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={getTranslation('settings', currentLanguage)}
+          data-tooltip={`${getTranslation('settings', currentLanguage)} [s]`}
         >
           <Settings className="h-5 w-5" />
         </Button>
@@ -1252,7 +1332,7 @@ When asked about cards, weather, recipes, or any structured information, respond
           size="icon"
           onClick={() => setIsFacialRigEditorOpen(true)}
           className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={getTranslation('editFacialRig', currentLanguage)}
+          data-tooltip={`${getTranslation('editFacialRig', currentLanguage)} [e]`}
         >
           <Edit2 className="h-4 w-4" />
         </Button>
@@ -1261,7 +1341,7 @@ When asked about cards, weather, recipes, or any structured information, respond
           size="icon"
           onClick={() => setShowCaptions(!showCaptions)}
           className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={showCaptions ? getTranslation('hideCaptions', currentLanguage) : getTranslation('showCaptions', currentLanguage)}
+          data-tooltip={`${showCaptions ? getTranslation('hideCaptions', currentLanguage) : getTranslation('showCaptions', currentLanguage)} [t]`}
         >
           <Subtitles className={`h-4 w-4 ${showCaptions ? 'text-primary' : ''}`} />
         </Button>
@@ -1270,7 +1350,7 @@ When asked about cards, weather, recipes, or any structured information, respond
           size="icon"
           onClick={() => setIsGamesOpen(true)}
           className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={getTranslation('rtkArcade', currentLanguage)}
+          data-tooltip={`${getTranslation('rtkArcade', currentLanguage)} [g]`}
         >
           <Gamepad2 className="h-5 w-5" />
         </Button>
@@ -1280,7 +1360,7 @@ When asked about cards, weather, recipes, or any structured information, respond
             size="icon"
             onClick={() => setIsVerbosityOpen(!isVerbosityOpen)}
             className={`hover:scale-105 active:scale-95 transition-transform ${verbosityLevel > 0 ? 'text-primary' : ''}`}
-            data-tooltip={getTranslation('chatVerbosity', currentLanguage)}
+            data-tooltip={`${getTranslation('chatVerbosity', currentLanguage)} [b]`}
           >
             <MessageSquarePlus className="h-5 w-5" />
           </Button>
@@ -1313,6 +1393,15 @@ When asked about cards, weather, recipes, or any structured information, respond
             </div>
           )}
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsHotkeysOpen(true)}
+          className="hover:scale-105 active:scale-95 transition-transform"
+          data-tooltip={`${getTranslation('showHotkeys', currentLanguage)} [k]`}
+        >
+          <Keyboard className="h-5 w-5" />
+        </Button>
         <LanguageSelector
           currentLanguage={currentLanguage}
           onLanguageChange={handleLanguageChange}
@@ -1433,7 +1522,7 @@ When asked about cards, weather, recipes, or any structured information, respond
             <button 
               className="stop-button"
               onClick={stopAllAI}
-              title={getTranslation('stopAI', currentLanguage)}
+              title={`${getTranslation('stopAI', currentLanguage)} (Space)`}
             >
               <X className="h-5 w-5" />
             </button>
@@ -1443,7 +1532,7 @@ When asked about cards, weather, recipes, or any structured information, respond
             size="icon"
             onClick={toggleVoiceInput}
             className={`audio-control-button ${isListening ? 'active' : ''}`}
-            data-tooltip={isListening ? getTranslation('stopVoiceInput', currentLanguage) : getTranslation('startVoiceInput', currentLanguage)}
+            data-tooltip={`${isListening ? getTranslation('stopVoiceInput', currentLanguage) : getTranslation('startVoiceInput', currentLanguage)} [m]`}
           >
             {isListening ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
           </Button>
@@ -1452,7 +1541,7 @@ When asked about cards, weather, recipes, or any structured information, respond
             size="icon"
             onClick={toggleAlwaysListening}
             className={`audio-control-button ${isAlwaysListening ? 'active' : ''}`}
-            data-tooltip={isAlwaysListening ? getTranslation('disableAlwaysListen', currentLanguage) : getTranslation('enableAlwaysListen', currentLanguage)}
+            data-tooltip={`${isAlwaysListening ? getTranslation('disableAlwaysListen', currentLanguage) : getTranslation('enableAlwaysListen', currentLanguage)} [a]`}
           >
             <Radio className="h-5 w-5" />
           </Button>
@@ -1474,9 +1563,7 @@ When asked about cards, weather, recipes, or any structured information, respond
             onClick={handleSendMessage} 
             className="send-button"
             disabled={isAIResponding}
-            variant="default"
-            size="icon"
-            data-tooltip={isAIResponding ? getTranslation('aiIsResponding', currentLanguage) : getTranslation('sendMessage', currentLanguage)}
+            data-tooltip={isAIResponding ? getTranslation('aiIsResponding', currentLanguage) : `${getTranslation('sendMessage', currentLanguage)} [Enter]`}
           >
             {isAIResponding ? (
               <div className="loading-spinner" />
@@ -1532,6 +1619,11 @@ When asked about cards, weather, recipes, or any structured information, respond
       <GamesModal
         open={isGamesOpen}
         onOpenChange={setIsGamesOpen}
+      />
+
+      <HotkeysModal
+        open={isHotkeysOpen}
+        onOpenChange={setIsHotkeysOpen}
       />
     </div>
   );
