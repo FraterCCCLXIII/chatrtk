@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import './TalkingHead.css';
 import { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
@@ -26,9 +25,11 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
 }) => {
   const [currentPhoneme, setCurrentPhoneme] = useState('rest');
   const [currentExpression, setCurrentExpression] = useState(expression);
+  const [isBlinking, setIsBlinking] = useState(false);
   const speakingRef = useRef(false);
   const phonemeIndexRef = useRef(0);
   const timerRef = useRef<number | null>(null);
+  const blinkTimerRef = useRef<number | null>(null);
 
   // Default theme
   const defaultTheme: FaceTheme = {
@@ -165,8 +166,46 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
   const shape = getCurrentShape();
   const floatingAnimation = useFloatingAnimation();
 
+  // Function to trigger a blink
+  const triggerBlink = () => {
+    setIsBlinking(true);
+    setTimeout(() => setIsBlinking(false), 300); // Match the animation duration
+  };
+
+  // Set up periodic blinking
+  useEffect(() => {
+    const startBlinking = () => {
+      // Clear any existing blink timer
+      if (blinkTimerRef.current) {
+        window.clearTimeout(blinkTimerRef.current);
+      }
+
+      // Function to schedule next blink
+      const scheduleNextBlink = () => {
+        // Random time between 2 and 4 seconds
+        const nextBlinkTime = Math.random() * 2000 + 2000;
+        blinkTimerRef.current = window.setTimeout(() => {
+          triggerBlink();
+          scheduleNextBlink();
+        }, nextBlinkTime);
+      };
+
+      // Start the blinking cycle
+      scheduleNextBlink();
+    };
+
+    startBlinking();
+
+    // Cleanup
+    return () => {
+      if (blinkTimerRef.current) {
+        window.clearTimeout(blinkTimerRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <div className="talking-head">
+    <div className={`talking-head ${isBlinking ? 'blinking' : ''}`}>
       <AnimatedDiv 
         className="face-container"
         style={{
@@ -175,7 +214,7 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
         <div 
           className={`screen ${currentHeadShape.shape}`}
           style={{ 
-            backgroundColor: currentTheme.screenColor,
+            backgroundColor: config?.head?.fillColor || currentTheme.screenColor,
             borderRadius: config?.head?.borderRadius || 
                          (currentHeadShape.shape === 'circle' ? '50%' : 
                          currentHeadShape.shape === 'rectangle' ? '10px' : '0'),
@@ -186,7 +225,9 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
           <div 
             className="face"
             style={{
-              backgroundColor: config?.head?.fillColor || currentTheme.screenColor
+              backgroundColor: config?.head?.fillColor || currentTheme.screenColor,
+              border: config?.head?.strokeWidth ? `${config.head.strokeWidth}px solid ${config.head.strokeColor}` : 'none',
+              borderRadius: config?.head?.borderRadius || 'inherit'
             }}>
             <div className="eye-container left">
               <div 
@@ -195,6 +236,7 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
                   width: `${config?.leftEye?.width || 12}px`,
                   height: `${config?.leftEye?.height || 12}px`,
                   backgroundColor: config?.leftEye?.fillColor || 'black',
+                  border: config?.leftEye?.strokeWidth ? `${config.leftEye.strokeWidth}px solid ${config.leftEye.strokeColor}` : 'none',
                   borderRadius: config?.leftEye?.borderRadius || '50%',
                   transform: config?.leftEye?.rotation ? `rotate(${config.leftEye.rotation}deg)` : 'none',
                   opacity: config?.leftEye?.opacity !== undefined ? config.leftEye.opacity : 1
@@ -206,6 +248,7 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
                   width: `${config?.leftTopEyelid?.width || 14}px`,
                   height: `${config?.leftTopEyelid?.height || 6}px`,
                   backgroundColor: config?.leftTopEyelid?.fillColor || '#333333',
+                  border: config?.leftTopEyelid?.strokeWidth ? `${config.leftTopEyelid.strokeWidth}px solid ${config.leftTopEyelid.strokeColor}` : 'none',
                   borderRadius: config?.leftTopEyelid?.borderRadius || '50% 50% 0 0',
                   transform: config?.leftTopEyelid?.rotation ? `rotate(${config.leftTopEyelid.rotation}deg)` : 'none',
                   opacity: config?.leftTopEyelid?.opacity !== undefined ? config.leftTopEyelid.opacity : 0
@@ -217,6 +260,7 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
                   width: `${config?.leftBottomEyelid?.width || 14}px`,
                   height: `${config?.leftBottomEyelid?.height || 6}px`,
                   backgroundColor: config?.leftBottomEyelid?.fillColor || '#333333',
+                  border: config?.leftBottomEyelid?.strokeWidth ? `${config.leftBottomEyelid.strokeWidth}px solid ${config.leftBottomEyelid.strokeColor}` : 'none',
                   borderRadius: config?.leftBottomEyelid?.borderRadius || '0 0 50% 50%',
                   transform: config?.leftBottomEyelid?.rotation ? `rotate(${config.leftBottomEyelid.rotation}deg)` : 'none',
                   opacity: config?.leftBottomEyelid?.opacity !== undefined ? config.leftBottomEyelid.opacity : 0
@@ -230,6 +274,7 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
                   width: `${config?.rightEye?.width || 12}px`,
                   height: `${config?.rightEye?.height || 12}px`,
                   backgroundColor: config?.rightEye?.fillColor || 'black',
+                  border: config?.rightEye?.strokeWidth ? `${config.rightEye.strokeWidth}px solid ${config.rightEye.strokeColor}` : 'none',
                   borderRadius: config?.rightEye?.borderRadius || '50%',
                   transform: config?.rightEye?.rotation ? `rotate(${config.rightEye.rotation}deg)` : 'none',
                   opacity: config?.rightEye?.opacity !== undefined ? config.rightEye.opacity : 1
@@ -241,6 +286,7 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
                   width: `${config?.rightTopEyelid?.width || 14}px`,
                   height: `${config?.rightTopEyelid?.height || 6}px`,
                   backgroundColor: config?.rightTopEyelid?.fillColor || '#333333',
+                  border: config?.rightTopEyelid?.strokeWidth ? `${config.rightTopEyelid.strokeWidth}px solid ${config.rightTopEyelid.strokeColor}` : 'none',
                   borderRadius: config?.rightTopEyelid?.borderRadius || '50% 50% 0 0',
                   transform: config?.rightTopEyelid?.rotation ? `rotate(${config.rightTopEyelid.rotation}deg)` : 'none',
                   opacity: config?.rightTopEyelid?.opacity !== undefined ? config.rightTopEyelid.opacity : 0
@@ -252,6 +298,7 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
                   width: `${config?.rightBottomEyelid?.width || 14}px`,
                   height: `${config?.rightBottomEyelid?.height || 6}px`,
                   backgroundColor: config?.rightBottomEyelid?.fillColor || '#333333',
+                  border: config?.rightBottomEyelid?.strokeWidth ? `${config.rightBottomEyelid.strokeWidth}px solid ${config.rightBottomEyelid.strokeColor}` : 'none',
                   borderRadius: config?.rightBottomEyelid?.borderRadius || '0 0 50% 50%',
                   transform: config?.rightBottomEyelid?.rotation ? `rotate(${config.rightBottomEyelid.rotation}deg)` : 'none',
                   opacity: config?.rightBottomEyelid?.opacity !== undefined ? config.rightBottomEyelid.opacity : 0
@@ -274,7 +321,9 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
                     className="teeth-top"
                     style={{ 
                       '--teeth-width': shape.teethWidth,
-                      '--teeth-top-y': `${shape.teethTopY}px`
+                      '--teeth-top-y': `${shape.teethTopY}px`,
+                      backgroundColor: config?.topTeeth?.fillColor || 'white',
+                      border: config?.topTeeth?.strokeWidth ? `${config.topTeeth.strokeWidth}px solid ${config.topTeeth.strokeColor}` : '1px solid #ddd'
                     } as React.CSSProperties}
                   ></div>
                   <div 
@@ -283,14 +332,18 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
                       '--tongue-width': `${shape.tongueWidth}px`,
                       '--tongue-height': `${shape.tongueHeight}px`,
                       '--tongue-bottom': `${shape.tongueBottom}px`,
-                      backgroundColor: currentTheme.tongueColor
+                      backgroundColor: config?.tongue?.fillColor || currentTheme.tongueColor,
+                      border: config?.tongue?.strokeWidth ? `${config.tongue.strokeWidth}px solid ${config.tongue.strokeColor}` : 'none',
+                      borderRadius: config?.tongue?.borderRadius || '15px 15px 5px 5px'
                     } as React.CSSProperties}
                   ></div>
                   <div 
                     className="teeth-bottom"
                     style={{ 
                       '--teeth-width': shape.teethWidth,
-                      '--teeth-bottom-y': `${shape.teethBottomY}px` 
+                      '--teeth-bottom-y': `${shape.teethBottomY}px`,
+                      backgroundColor: config?.bottomTeeth?.fillColor || 'white',
+                      border: config?.bottomTeeth?.strokeWidth ? `${config.bottomTeeth.strokeWidth}px solid ${config.bottomTeeth.strokeColor}` : '1px solid #ddd'
                     } as React.CSSProperties}
                   ></div>
                 </div>
@@ -298,11 +351,6 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
             </div>
           </div>
         </div>
-        {text && (
-          <div className="message" style={{ opacity: speaking ? 1 : 0 }}>
-            {text}
-          </div>
-        )}
       </AnimatedDiv>
     </div>
   );

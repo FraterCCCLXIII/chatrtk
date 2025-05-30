@@ -327,6 +327,146 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
   const [currentExpression, setCurrentExpression] = useState('happy');
   const [currentPhoneme, setCurrentPhoneme] = useState('');
   
+  // Update expression handler
+  const handleExpressionChange = (expression: string) => {
+    setCurrentExpression(expression);
+    
+    // Update mouth and eye styles based on expression
+    switch (expression) {
+      case 'happy':
+        setMouthStyle({
+          ...mouthStyle,
+          height: 20,
+          borderRadius: '0 0 30px 30px',
+          y: 65
+        });
+        setLeftEyeStyle({...leftEyeStyle, height: 8, y: 38});
+        setRightEyeStyle({...rightEyeStyle, height: 8, y: 38});
+        break;
+      case 'sad':
+        setMouthStyle({
+          ...mouthStyle,
+          height: 20,
+          borderRadius: '30px 30px 0 0',
+          y: 70
+        });
+        setLeftEyeStyle({...leftEyeStyle, height: 12, y: 42});
+        setRightEyeStyle({...rightEyeStyle, height: 12, y: 42});
+        break;
+      case 'surprised':
+        setMouthStyle({
+          ...mouthStyle,
+          height: 30,
+          borderRadius: '50%',
+          y: 60
+        });
+        setLeftEyeStyle({...leftEyeStyle, height: 16, y: 35});
+        setRightEyeStyle({...rightEyeStyle, height: 16, y: 35});
+        break;
+      case 'angry':
+        setMouthStyle({
+          ...mouthStyle,
+          height: 15,
+          borderRadius: '0',
+          y: 65
+        });
+        setLeftEyeStyle({...leftEyeStyle, height: 8, y: 38});
+        setRightEyeStyle({...rightEyeStyle, height: 8, y: 38});
+        break;
+      case 'thinking':
+        setMouthStyle({
+          ...mouthStyle,
+          height: 25,
+          borderRadius: '15px',
+          y: 65
+        });
+        setLeftEyeStyle({...leftEyeStyle, height: 12, y: 40});
+        setRightEyeStyle({...rightEyeStyle, height: 12, y: 40});
+        break;
+      default: // neutral
+        setMouthStyle({
+          ...mouthStyle,
+          height: 30,
+          borderRadius: '15px',
+          y: 60
+        });
+        setLeftEyeStyle({...leftEyeStyle, height: 12, y: 40});
+        setRightEyeStyle({...rightEyeStyle, height: 12, y: 40});
+    }
+  };
+
+  // Update phoneme handler
+  const handlePhonemeChange = (phoneme: string) => {
+    setCurrentPhoneme(phoneme);
+    
+    // Update mouth and teeth styles based on phoneme
+    switch (phoneme) {
+      case 'A':
+        setMouthStyle({...mouthStyle, height: 40, y: 55});
+        setTopTeethStyle({...topTeethStyle, y: -10});
+        setBottomTeethStyle({...bottomTeethStyle, y: 10});
+        setTongueStyle({...tongueStyle, height: 20, y: 0});
+        break;
+      case 'E':
+        setMouthStyle({...mouthStyle, height: 25, y: 60});
+        setTopTeethStyle({...topTeethStyle, y: -8});
+        setBottomTeethStyle({...bottomTeethStyle, y: 8});
+        setTongueStyle({...tongueStyle, height: 15, y: 2});
+        break;
+      case 'I':
+        setMouthStyle({...mouthStyle, height: 20, y: 62});
+        setTopTeethStyle({...topTeethStyle, y: -6});
+        setBottomTeethStyle({...bottomTeethStyle, y: 6});
+        setTongueStyle({...tongueStyle, height: 12, y: 4});
+        break;
+      case 'O':
+        setMouthStyle({...mouthStyle, height: 35, y: 58, borderRadius: '50%'});
+        setTopTeethStyle({...topTeethStyle, y: -12});
+        setBottomTeethStyle({...bottomTeethStyle, y: 12});
+        setTongueStyle({...tongueStyle, height: 18, y: -2});
+        break;
+      case 'U':
+        setMouthStyle({...mouthStyle, height: 30, y: 60, borderRadius: '40%'});
+        setTopTeethStyle({...topTeethStyle, y: -10});
+        setBottomTeethStyle({...bottomTeethStyle, y: 10});
+        setTongueStyle({...tongueStyle, height: 15, y: 0});
+        break;
+      case 'M':
+      case 'B':
+      case 'P':
+        setMouthStyle({...mouthStyle, height: 15, y: 65});
+        setTopTeethStyle({...topTeethStyle, y: -4});
+        setBottomTeethStyle({...bottomTeethStyle, y: 4});
+        setTongueStyle({...tongueStyle, height: 10, y: 6});
+        break;
+      case 'F':
+      case 'V':
+        setMouthStyle({...mouthStyle, height: 20, y: 63});
+        setTopTeethStyle({...topTeethStyle, y: -6});
+        setBottomTeethStyle({...bottomTeethStyle, y: 6});
+        setTongueStyle({...tongueStyle, height: 12, y: 4});
+        break;
+      case 'L':
+        setMouthStyle({...mouthStyle, height: 25, y: 61});
+        setTopTeethStyle({...topTeethStyle, y: -8});
+        setBottomTeethStyle({...bottomTeethStyle, y: 8});
+        setTongueStyle({...tongueStyle, height: 20, y: 0});
+        break;
+      case 'T':
+        setMouthStyle({...mouthStyle, height: 22, y: 62});
+        setTopTeethStyle({...topTeethStyle, y: -7});
+        setBottomTeethStyle({...bottomTeethStyle, y: 7});
+        setTongueStyle({...tongueStyle, height: 15, y: 2});
+        break;
+      default:
+        // Reset to neutral mouth position
+        setMouthStyle({...mouthStyle, height: 30, y: 60, borderRadius: '15px'});
+        setTopTeethStyle({...topTeethStyle, y: -6});
+        setBottomTeethStyle({...bottomTeethStyle, y: 6});
+        setTongueStyle({...tongueStyle, height: 12, y: 0});
+    }
+  };
+
   // Helper component for element style controls
   const ElementStyleControls = ({ 
     title, 
@@ -337,6 +477,43 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
     style: ElementStyle; 
     onChange: (style: ElementStyle) => void 
   }) => {
+    // Convert percentage to pixels for position controls
+    const convertToPixels = (value: number, max: number) => {
+      return Math.round((value / 100) * max);
+    };
+
+    // Convert pixels to percentage for position controls
+    const convertToPercentage = (value: number, max: number) => {
+      return Math.round((value / max) * 100);
+    };
+
+    // Get max dimensions based on element type
+    const getMaxDimensions = () => {
+      switch (title.toLowerCase()) {
+        case 'head':
+          return { width: 280, height: 280 };
+        case 'left eye':
+        case 'right eye':
+          return { width: 24, height: 24 };
+        case 'left top eyelid':
+        case 'left bottom eyelid':
+        case 'right top eyelid':
+        case 'right bottom eyelid':
+          return { width: 14, height: 6 };
+        case 'mouth':
+          return { width: 80, height: 40 };
+        case 'top teeth':
+        case 'bottom teeth':
+          return { width: 110, height: 12 };
+        case 'tongue':
+          return { width: 30, height: 12 };
+        default:
+          return { width: 100, height: 100 };
+      }
+    };
+
+    const maxDims = getMaxDimensions();
+
     return (
       <AccordionItem value={title.toLowerCase().replace(/\s+/g, '-')}>
         <AccordionTrigger className="text-base font-medium">{title}</AccordionTrigger>
@@ -345,12 +522,12 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
             {/* Position Controls */}
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Label htmlFor={`${title}-x`}>X Position (%)</Label>
+                <Label htmlFor={`${title}-x`}>X Position (px)</Label>
                 <div className="flex items-center gap-2">
                   <Slider 
                     id={`${title}-x`}
                     min={0} 
-                    max={100} 
+                    max={maxDims.width} 
                     step={1} 
                     value={[style.x]} 
                     onValueChange={(value) => onChange({...style, x: value[0]})}
@@ -361,16 +538,18 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                     value={style.x} 
                     onChange={(e) => onChange({...style, x: Number(e.target.value)})}
                     className="w-16"
+                    min={0}
+                    max={maxDims.width}
                   />
                 </div>
               </div>
               <div className="space-y-1">
-                <Label htmlFor={`${title}-y`}>Y Position (%)</Label>
+                <Label htmlFor={`${title}-y`}>Y Position (px)</Label>
                 <div className="flex items-center gap-2">
                   <Slider 
                     id={`${title}-y`}
                     min={0} 
-                    max={100} 
+                    max={maxDims.height} 
                     step={1} 
                     value={[style.y]} 
                     onValueChange={(value) => onChange({...style, y: value[0]})}
@@ -381,6 +560,8 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                     value={style.y} 
                     onChange={(e) => onChange({...style, y: Number(e.target.value)})}
                     className="w-16"
+                    min={0}
+                    max={maxDims.height}
                   />
                 </div>
               </div>
@@ -394,7 +575,7 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                   <Slider 
                     id={`${title}-width`}
                     min={1} 
-                    max={300} 
+                    max={maxDims.width * 2} 
                     step={1} 
                     value={[style.width]} 
                     onValueChange={(value) => onChange({...style, width: value[0]})}
@@ -405,6 +586,8 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                     value={style.width} 
                     onChange={(e) => onChange({...style, width: Number(e.target.value)})}
                     className="w-16"
+                    min={1}
+                    max={maxDims.width * 2}
                   />
                 </div>
               </div>
@@ -414,7 +597,7 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                   <Slider 
                     id={`${title}-height`}
                     min={1} 
-                    max={300} 
+                    max={maxDims.height * 2} 
                     step={1} 
                     value={[style.height]} 
                     onValueChange={(value) => onChange({...style, height: value[0]})}
@@ -425,6 +608,8 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                     value={style.height} 
                     onChange={(e) => onChange({...style, height: Number(e.target.value)})}
                     className="w-16"
+                    min={1}
+                    max={maxDims.height * 2}
                   />
                 </div>
               </div>
@@ -558,6 +743,92 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
     );
   };
 
+  // Update head shape change handler
+  const handleHeadShapeChange = (shapeId: string) => {
+    const shape = headShapes.find(s => s.id === shapeId);
+    if (shape) {
+      setSelectedHeadShape(shape);
+      
+      // Reset element positions based on new head shape
+      const baseStyle = {
+        x: 0,
+        y: 0,
+        width: 220,
+        height: 160,
+        fillColor: faceColor,
+        strokeColor: '#333333',
+        strokeWidth: 8,
+        borderRadius: shape.shape === 'circle' ? '50%' : '20px'
+      };
+      
+      setHeadStyle(baseStyle);
+      
+      // Reset other elements to their default positions
+      setLeftEyeStyle(defaultLeftEyeStyle);
+      setRightEyeStyle(defaultRightEyeStyle);
+      setLeftTopEyelidStyle(defaultLeftTopEyelidStyle);
+      setLeftBottomEyelidStyle(defaultLeftBottomEyelidStyle);
+      setRightTopEyelidStyle(defaultRightTopEyelidStyle);
+      setRightBottomEyelidStyle(defaultRightBottomEyelidStyle);
+      setMouthStyle(defaultMouthStyle);
+      setTopTeethStyle(defaultTopTeethStyle);
+      setBottomTeethStyle(defaultBottomTeethStyle);
+      setTongueStyle(defaultTongueStyle);
+    }
+  };
+
+  // Update theme color handlers
+  const handlePreviewColorChange = (color: string) => {
+    setPreviewColor(color);
+  };
+
+  const handleScreenColorChange = (color: string) => {
+    setScreenColor(color);
+    // Update head style to match screen color
+    setHeadStyle({
+      ...headStyle,
+      fillColor: color,
+      strokeColor: '#333333'
+    });
+  };
+
+  const handleFaceColorChange = (color: string) => {
+    setFaceColor(color);
+    // Update all face elements to use the new color
+    setHeadStyle({
+      ...headStyle,
+      fillColor: color
+    });
+    setMouthStyle({
+      ...mouthStyle,
+      fillColor: color
+    });
+    setLeftTopEyelidStyle({
+      ...leftTopEyelidStyle,
+      fillColor: color
+    });
+    setLeftBottomEyelidStyle({
+      ...leftBottomEyelidStyle,
+      fillColor: color
+    });
+    setRightTopEyelidStyle({
+      ...rightTopEyelidStyle,
+      fillColor: color
+    });
+    setRightBottomEyelidStyle({
+      ...rightBottomEyelidStyle,
+      fillColor: color
+    });
+  };
+
+  const handleTongueColorChange = (color: string) => {
+    setTongueColor(color);
+    setTongueStyle({
+      ...tongueStyle,
+      fillColor: color
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent className="max-w-full w-screen h-screen max-h-screen p-0 overflow-hidden">
@@ -575,7 +846,7 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                     key={exp.id}
                     variant={currentExpression === exp.id ? "default" : "outline"}
                     className="w-full justify-start"
-                    onClick={() => setCurrentExpression(exp.id)}
+                    onClick={() => handleExpressionChange(exp.id)}
                   >
                     {exp.name}
                   </Button>
@@ -592,7 +863,7 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                     key={phoneme.id}
                     variant={currentPhoneme === phoneme.id ? "default" : "outline"}
                     className="w-full"
-                    onClick={() => setCurrentPhoneme(phoneme.id)}
+                    onClick={() => handlePhonemeChange(phoneme.id)}
                   >
                     {phoneme.name}
                   </Button>
@@ -645,10 +916,7 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
               <h3 className="text-lg font-medium mb-2">Head Shape</h3>
               <Select 
                 value={selectedHeadShape.id}
-                onValueChange={(value) => {
-                  const shape = headShapes.find(s => s.id === value);
-                  if (shape) setSelectedHeadShape(shape);
-                }}
+                onValueChange={handleHeadShapeChange}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a head shape" />
@@ -744,7 +1012,7 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                     <input 
                       type="color" 
                       value={previewColor} 
-                      onChange={(e) => setPreviewColor(e.target.value)}
+                      onChange={(e) => handlePreviewColorChange(e.target.value)}
                       id="preview-color"
                       className="w-10 h-6"
                     />
@@ -757,10 +1025,7 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                     <input 
                       type="color" 
                       value={screenColor} 
-                      onChange={(e) => {
-                        setScreenColor(e.target.value);
-                        setHeadStyle({...headStyle, fillColor: e.target.value});
-                      }}
+                      onChange={(e) => handleScreenColorChange(e.target.value)}
                       id="screen-color"
                       className="w-10 h-6"
                     />
@@ -773,10 +1038,7 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                     <input 
                       type="color" 
                       value={faceColor} 
-                      onChange={(e) => {
-                        setFaceColor(e.target.value);
-                        setMouthStyle({...mouthStyle, fillColor: e.target.value});
-                      }}
+                      onChange={(e) => handleFaceColorChange(e.target.value)}
                       id="face-color"
                       className="w-10 h-6"
                     />
@@ -789,10 +1051,7 @@ const FacialRigEditor: React.FC<FacialRigEditorProps> = ({
                     <input 
                       type="color" 
                       value={tongueColor} 
-                      onChange={(e) => {
-                        setTongueColor(e.target.value);
-                        setTongueStyle({...tongueStyle, fillColor: e.target.value});
-                      }}
+                      onChange={(e) => handleTongueColorChange(e.target.value)}
                       id="tongue-color"
                       className="w-10 h-6"
                     />

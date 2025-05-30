@@ -1,4 +1,3 @@
-
 :root {
   --body-bg-color: #e2ffe5; /* Default background color */
 }
@@ -9,18 +8,17 @@
   max-width: 1000px;
   margin: 0 auto;
   height: 100vh;
-  overflow: visible; /* Changed from hidden to visible */
+  overflow: hidden;
   position: relative;
   border: none;
   box-shadow: none;
   background-color: transparent;
-  padding-bottom: 0; /* Removed padding as we're using absolute positioning */
 }
 
 .app-title {
   position: fixed;
-  top: 0.5rem;
-  left: 1rem;
+  top: 0.75rem;
+  left: 1.5rem;
   font-size: 1.2rem;
   font-weight: 600;
   z-index: 30;
@@ -32,13 +30,14 @@
 
 .rtk-logo {
   fill: currentColor;
-  margin-right: 0.25rem;
+  width: 2rem;
+  height: 2rem;
 }
 
 .model-version {
   position: fixed;
-  top: 2.2rem;
-  left: 1rem;
+  top: 2.5rem;
+  left: 1.5rem;
   font-size: 0.7rem;
   font-weight: 300;
   z-index: 30;
@@ -49,19 +48,60 @@
 .controls-container {
   display: flex;
   justify-content: flex-end;
-  gap: 0.5rem;
-  padding: 0.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
   background-color: transparent;
   border-bottom: none;
   z-index: 20;
   position: fixed;
   top: 0;
   right: 0;
-  width: 100%;
-  max-width: 1000px;
-  margin: 0 auto;
+  width: auto;
+  min-width: 200px;
+  margin: 0;
+  left: auto;
+  transform: none;
+}
+
+.controls-container button {
+  @apply p-2 rounded-lg transition-colors relative;
+  @apply hover:bg-black/5 active:bg-black/10;
+  @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.controls-container button::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: -30px;
   left: 50%;
   transform: translateX(-50%);
+  background-color: white;
+  color: #333;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+}
+
+.controls-container button:hover::after {
+  opacity: 1;
+  visibility: visible;
+  bottom: -35px;
+}
+
+.controls-container button svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #333;
 }
 
 .talking-head-container {
@@ -70,10 +110,13 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  position: sticky;
-  top: 50px;
-  overflow: hidden;
-  transition: height 0.3s ease;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--head-height, 300px);
+  overflow: visible;
+  transition: none;
   z-index: 5;
   margin-top: 40px;
 }
@@ -88,11 +131,13 @@
   border: none;
   cursor: grab;
   user-select: none;
-  position: sticky;
-  top: calc(50px + var(--head-height, 300px));
+  position: fixed;
+  top: calc(var(--head-height, 300px) + 40px);
+  left: 0;
+  right: 0;
   z-index: 5;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  opacity: 1;
+  transition: none;
 }
 
 .resize-handle:hover {
@@ -102,7 +147,7 @@
 .resize-handle-line {
   width: 60px;
   height: 3px;
-  background-color: white;
+  background-color: rgba(255, 255, 255, 0.5);
   border-radius: 2px;
 }
 
@@ -117,104 +162,195 @@
 .chat-container {
   display: flex;
   flex-direction: column;
-  padding: 1rem;
-  padding-bottom: 100px; /* Reduced padding */
-  gap: 1rem;
-  overflow: hidden;
-  min-height: 200px;
-  position: fixed; /* Changed from absolute to fixed */
-  top: 0;
+  position: fixed;
+  top: calc(var(--head-height, 300px) + 56px);
   left: 0;
   right: 0;
+  bottom: 80px; /* Restore original bottom spacing */
   margin: 0 auto;
   width: 100%;
-  max-width: 600px; /* Match the input container max-width */
-  height: 100vh; /* Full viewport height */
-  z-index: 10; /* Ensure it's above other elements but below the input */
+  max-width: 600px;
+  z-index: 10;
+  background-color: transparent;
 }
 
 .chat-messages {
-  padding: 1rem;
-  border-radius: 0;
-  background-color: transparent;
+  flex: 1;
   overflow-y: auto;
-  height: calc(100vh - 100px); /* Set a fixed height that leaves space for the input */
-  margin-bottom: 0; /* Remove margin as we're using fixed positioning */
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  scroll-behavior: auto; /* No smooth scrolling */
+  gap: 1rem;
+  scroll-behavior: smooth;
+  height: 100%;
   width: 100%;
-  padding-bottom: 20px; /* Reduced padding */
-  position: fixed; /* Fixed position */
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 100px; /* Space for input container */
-  z-index: 11; /* Higher than chat-container but lower than input-container */
-  max-width: 600px; /* Match the input container max-width */
-  margin-left: auto;
-  margin-right: auto;
+  position: relative;
+  background-color: transparent;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 0;
+}
+
+.chat-messages::before,
+.chat-messages::after {
+  display: none;
 }
 
 .chat-message {
-  padding: 0.75rem 1rem;
-  margin-bottom: 1.5rem;
-  margin-top: 1rem;
-  border-radius: 18px;
-  display: inline-block;
-  max-width: 600px; /* Match the input container max-width */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s cubic-bezier(0.17, 0.67, 0.83, 0.67);
-  width: auto;
   position: relative;
-  scroll-margin-top: 100px; /* Ensures proper scrolling position */
+  z-index: 25;
+  margin-bottom: 0.5rem; /* Restore original margin */
+  padding: 1rem 1.25rem;
+  margin: 0;
+  border-radius: 1rem;
+  display: block;
+  max-width: 85%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+  scroll-margin-top: 1.5rem;
+  word-wrap: break-word;
+  line-height: 1.5;
+  clear: both;
 }
-
-/* Completely removed message address pills */
 
 .chat-message.ai-message .card {
   background-color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   max-width: 100%;
   margin: 0;
   padding: 0;
-  border-radius: 18px;
+  border-radius: 1rem;
   overflow: hidden;
 }
 
 .user-message {
   margin-left: auto;
   margin-right: 0;
-  text-align: right;
-  /* Background color will be set dynamically based on theme */
+  text-align: left;
   transform-origin: bottom right;
-  align-self: flex-end; /* Right align in flex container */
+  align-self: flex-end;
   float: right;
   clear: both;
-  background-color: rgba(255, 255, 255, 0.25) !important; /* Light shade with !important to override inline styles */
-  color: white !important; /* White text for better contrast */
-  width: auto !important; /* Ensure width is based on content */
-  max-width: 600px !important; /* Match the input container max-width */
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  width: auto !important;
+  max-width: 85% !important;
+  border-radius: 1rem 1rem 0.25rem 1rem;
 }
 
 .ai-message {
   margin-right: auto;
   margin-left: 0;
-  /* Background color will be set dynamically based on theme */
   transform-origin: bottom left;
-  align-self: flex-start; /* Left align in flex container */
+  align-self: flex-start;
   float: left;
   clear: both;
+  border-radius: 1rem 1rem 1rem 0.25rem;
 }
 
-/* Make card messages wider */
+/* Card message styling */
 .ai-message:has(.card) {
-  max-width: 600px; /* Match the input container max-width */
+  position: relative;
+  z-index: 25;
+  margin-bottom: 0.5rem; /* Restore original margin */
+  max-width: 100%;
   padding: 0;
   margin: 0;
   background-color: transparent;
   box-shadow: none;
   border-radius: 0;
+  display: block;
+  clear: both;
+  position: relative;
+  z-index: 25; /* Higher than input container */
+  align-self: flex-start;
+  float: left;
+  transform-origin: bottom left;
+}
+
+.ai-message:has(.card) .card {
+  @apply w-full bg-white rounded-xl shadow-sm border border-border/40;
+  margin: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 0;
+  max-width: 85%;
+  border-radius: 1rem 1rem 1rem 0.25rem;
+}
+
+/* Update card header styles */
+.ai-message:has(.card) .card-header,
+.card-header {
+  @apply flex flex-col space-y-1.5 p-6;
+  margin: 0;
+  border-bottom: 1px solid hsl(var(--border) / 0.4);
+  position: relative;
+  z-index: 0;
+  background-color: white;
+}
+
+.ai-message:has(.card) .card-header .card-title,
+.card-header .card-title {
+  @apply text-2xl font-semibold leading-none tracking-tight;
+  margin: 0;
+  display: block;
+}
+
+.ai-message:has(.card) .card-content {
+  @apply p-6 py-4 flex-1;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ai-message:has(.card) .card-content p {
+  @apply text-foreground/80 leading-relaxed m-0;
+  white-space: pre-wrap;
+}
+
+.ai-message:has(.card) .card-footer {
+  @apply p-6 pt-4 border-t border-border/40 flex flex-wrap gap-3 items-center;
+  margin: 0;
+  min-height: 3rem;
+}
+
+.ai-message:has(.card) .card-footer button {
+  @apply px-4 py-2 rounded-lg text-sm font-medium transition-colors;
+  @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  min-width: 100px;
+}
+
+.ai-message:has(.card) .card-footer button[data-variant="outline"] {
+  @apply bg-transparent border border-input hover:bg-accent hover:text-accent-foreground;
+  @apply text-foreground;
+}
+
+/* Loading message styling */
+#loading-message {
+  @apply p-4 rounded-xl bg-muted/50;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+}
+
+#loading-message .flex {
+  @apply gap-2;
+}
+
+#loading-message .w-2 {
+  @apply h-2 rounded-full bg-primary/60 animate-pulse;
+}
+
+#loading-message .w-2:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+#loading-message .w-2:nth-child(3) {
+  animation-delay: 0.4s;
 }
 
 .input-container {
@@ -223,64 +359,134 @@
   background-color: transparent;
   border-top: none;
   position: fixed;
-  bottom: 1rem;
+  bottom: 0;
   left: 0;
   right: 0;
-  margin: 0 auto; /* Center horizontally */
+  margin: 0 auto;
   width: 100%;
-  max-width: 600px; /* Consistent width with message container */
-  z-index: 30; /* Higher z-index to ensure it's above messages and chat container */
-  justify-content: center; /* Center the input horizontally */
-  align-items: flex-end; /* Align items to the bottom */
+  max-width: 600px;
+  z-index: 20;
+  justify-content: center;
+  align-items: flex-end;
   box-sizing: border-box;
-  /* No background gradient */
-  background: transparent;
-  padding-top: 0.5rem; /* Reduced padding */
+  background: transparent; /* Remove white background */
+  @apply pb-12;
+  padding-top: 0.5rem;
+  padding-bottom: calc(env(safe-area-inset-bottom, 2rem) + 3rem);
+}
+
+.input-container::before {
+  display: none;
+}
+
+.chat-input-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  background-color: hsl(var(--background) / 0.95);
+  @apply border border-input rounded-2xl shadow-sm;
+  @apply focus-within:ring-1 focus-within:ring-ring/20 focus-within:ring-offset-0 focus-within:border-input/80;
+  padding-right: 3rem; /* Add padding for the send button */
 }
 
 .chat-input {
-  flex: 1; /* Take up available space */
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: none;
   resize: none;
-  min-height: 56px; /* Fixed minimum height */
-  max-height: 120px;
-  width: 100%; /* Full width of the container */
-  padding: 1rem 1.5rem;
-  padding-right: 4.5rem; /* Increased to make room for the send button */
-  background-color: rgba(255, 255, 255, 0.95);
-  border: 1px solid #eaeaea;
-  border-radius: 24px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
-  font-size: 1rem;
-  margin: 0 auto; /* Center the input */
+  font-size: 14px;
+  line-height: 20px;
   display: flex;
   align-items: center;
-  line-height: 1.5;
+  background-color: transparent;
 }
 
+.chat-input::placeholder {
+  line-height: 20px;
+  vertical-align: middle;
+}
+
+/* Remove focus outline from textarea */
 .chat-input:focus {
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
-  border-color: #c8c8c8;
-  transform: translateY(-2px);
+  outline: none;
+  box-shadow: none;
 }
 
 .send-button {
-  position: absolute; /* Position absolutely within the input container */
-  right: 1.5rem; /* Position from the right edge of the input */
-  bottom: 1.5rem; /* Position from bottom */
-  border-radius: 50%;
-  width: 44px;
-  height: 44px;
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  @apply w-10 h-10 rounded-full;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  @apply bg-primary text-primary-foreground shadow-sm;
   transition: all 0.2s ease;
-  margin-bottom: 6px; /* Add margin to align with text input */
+  margin: 0;
+  @apply hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+  z-index: 10;
+  transform-origin: center;
 }
 
 .send-button:hover {
-  transform: scale(1.05) translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  @apply shadow-md;
+  transform: translateY(-50%) scale(1.05);
+  transform-origin: center;
+}
+
+.send-button:active {
+  transform: translateY(-50%) scale(0.95);
+  transform-origin: center;
+}
+
+/* Update input container spacer to use theme background */
+.input-container::after {
+  content: '';
+  position: absolute;
+  bottom: -3rem;
+  left: 0;
+  right: 0;
+  height: 3rem;
+  background: hsl(var(--background));
+  z-index: -1;
+}
+
+/* Update last message margin */
+.chat-message:last-child,
+.ai-message:has(.card):last-child {
+  margin-bottom: 0.5rem; /* Restore original margin */
+}
+
+.bg-card {
+  background-color: hsl(var(--card));
+  margin-bottom: 1rem;
+}
+
+.captions-container {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 600px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.captions-text {
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  white-space: pre-line;
+  max-height: 2.8em; /* Two lines of text */
+  overflow: hidden;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }

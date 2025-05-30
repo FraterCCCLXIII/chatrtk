@@ -108,15 +108,15 @@ export const AnimatedMessage: React.FC<{
         const inputRect = inputContainer.getBoundingClientRect();
         const distanceToInput = inputRect.top - messageRect.bottom;
         
-        // Start fading when message is within 100px of the input container
-        if (distanceToInput < 100 && distanceToInput > -50) {
+        // Start fading when message is within 150px of the input container
+        if (distanceToInput < 150 && distanceToInput > -100) {
           // Calculate scale and opacity based on distance
-          const newScale = Math.max(0.7, 1 - (0.3 * (1 - distanceToInput / 100)));
-          const newOpacity = Math.max(0.3, distanceToInput / 100);
+          const newScale = Math.max(0.8, 1 - (0.2 * (1 - distanceToInput / 150)));
+          const newOpacity = Math.max(0.4, distanceToInput / 150);
           
           setScale(newScale);
           setOpacity(newOpacity);
-        } else if (distanceToInput <= -50) {
+        } else if (distanceToInput <= -100) {
           // Hide completely when too far into the input container
           setIsVisible(false);
         } else {
@@ -128,18 +128,25 @@ export const AnimatedMessage: React.FC<{
       }
     };
 
-    // Check position on scroll
+    // Check position on scroll and resize
     const scrollArea = document.querySelector('.chat-messages');
     if (scrollArea) {
       scrollArea.addEventListener('scroll', checkPosition);
+      window.addEventListener('resize', checkPosition);
     }
 
     // Initial check
     checkPosition();
 
+    // Auto-scroll to bottom when new message is added
+    if (scrollArea) {
+      scrollArea.scrollTop = scrollArea.scrollHeight;
+    }
+
     return () => {
       if (scrollArea) {
         scrollArea.removeEventListener('scroll', checkPosition);
+        window.removeEventListener('resize', checkPosition);
       }
     };
   }, [ref]);
@@ -153,11 +160,13 @@ export const AnimatedMessage: React.FC<{
         hidden: { 
           opacity: 0,
           scale: 0.8,
+          y: 20,
           x: isUser ? 20 : -20
         },
         visible: { 
           opacity: 1,
           scale: 1,
+          y: 0,
           x: 0,
           transition: {
             type: "spring",
@@ -170,7 +179,9 @@ export const AnimatedMessage: React.FC<{
       style={{
         scale,
         opacity,
-        transition: "scale 0.2s ease-out, opacity 0.2s ease-out"
+        transition: "scale 0.2s ease-out, opacity 0.2s ease-out",
+        position: 'relative',
+        zIndex: 1
       }}
     >
       {children}
@@ -181,7 +192,8 @@ export const AnimatedMessage: React.FC<{
 // 3D Card component with hover effect
 export const AnimatedCard: React.FC<{
   children: React.ReactNode;
-}> = ({ children }) => {
+  delay?: number;
+}> = ({ children, delay = 0 }) => {
   return (
     <MotionDiv
       initial={{ opacity: 0, y: 20 }}
@@ -189,15 +201,17 @@ export const AnimatedCard: React.FC<{
       transition={{
         type: "spring",
         stiffness: 300,
-        damping: 20
+        damping: 20,
+        delay: delay,
       }}
-      whileHover={{
-        scale: 1.02,
-        rotateY: 5,
-        boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-        transition: { duration: 0.2 }
+      style={{
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
+        marginBottom: 0,
+        willChange: 'transform, opacity'
       }}
-      style={{ transformStyle: "preserve-3d", perspective: "1000px" }}
     >
       {children}
     </MotionDiv>

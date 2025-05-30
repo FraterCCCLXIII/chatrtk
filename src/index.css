@@ -97,7 +97,14 @@
 
   body {
     @apply bg-background text-foreground;
-    height: 200vh; /* Make the body taller than the viewport to enable scrolling */
-    overflow-y: auto; /* Enable vertical scrolling */
+    min-height: 100vh;
+    overflow: hidden; /* Prevent body scrolling */
+    position: relative; /* For proper stacking context */
+  }
+
+  #root {
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
   }
 }
