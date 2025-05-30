@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus } from "lucide-react";
+import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus, Radio } from "lucide-react";
 import { Smiley, Robot } from "@phosphor-icons/react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { 
@@ -144,6 +144,8 @@ const ChatTalkingHead: React.FC = () => {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const finalTranscriptRef = useRef('');
+  const [isAlwaysListening, setIsAlwaysListening] = useState(false);
+  const alwaysListenTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Add voice configuration state
   const [voiceSettings, setVoiceSettings] = useState({
@@ -198,7 +200,7 @@ const ChatTalkingHead: React.FC = () => {
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
+      recognitionRef.current.continuous = isAlwaysListening; // Set continuous based on mode
       recognitionRef.current.interimResults = true;
       recognitionRef.current.lang = 'en-US';
 
@@ -280,15 +282,78 @@ const ChatTalkingHead: React.FC = () => {
       recognitionRef.current.onend = () => {
         console.log('Speech recognition ended');
         setIsListening(false);
+        
+        // If in always listening mode, restart recognition after a short delay
+        if (isAlwaysListening) {
+          if (alwaysListenTimeoutRef.current) {
+            clearTimeout(alwaysListenTimeoutRef.current);
+          }
+          alwaysListenTimeoutRef.current = setTimeout(() => {
+            try {
+              recognitionRef.current?.start();
+            } catch (error) {
+              console.error('Error restarting speech recognition:', error);
+            }
+          }, 1000);
+        }
       };
     }
 
     return () => {
+      if (alwaysListenTimeoutRef.current) {
+        clearTimeout(alwaysListenTimeoutRef.current);
+      }
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
     };
-  }, []);
+  }, [isAlwaysListening]); // Add isAlwaysListening as dependency
+
+  // Toggle always listening mode
+  const toggleAlwaysListening = () => {
+    if (!recognitionRef.current) {
+      toast({
+        title: "Voice Input Not Available",
+        description: "Speech recognition is not supported in your browser.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newMode = !isAlwaysListening;
+    setIsAlwaysListening(newMode);
+
+    if (newMode) {
+      // Start listening
+      try {
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.start();
+        toast({
+          title: "Always Listen Mode",
+          description: "Voice recognition is now always active. Speak naturally to send messages.",
+        });
+      } catch (error) {
+        console.error('Error starting always listen mode:', error);
+        toast({
+          title: "Error Starting Voice Input",
+          description: "Please try again or check your microphone permissions.",
+          variant: "destructive",
+        });
+        setIsAlwaysListening(false);
+      }
+    } else {
+      // Stop listening
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.stop();
+      if (alwaysListenTimeoutRef.current) {
+        clearTimeout(alwaysListenTimeoutRef.current);
+      }
+      toast({
+        title: "Always Listen Mode",
+        description: "Voice recognition is now manual. Click the mic button to speak.",
+      });
+    }
+  };
 
   // Toggle voice input
   const toggleVoiceInput = () => {
@@ -1225,6 +1290,15 @@ When asked about cards, weather, recipes, or any structured information, respond
             title={isListening ? "Stop Voice Input" : "Start Voice Input"}
           >
             {isListening ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleAlwaysListening}
+            className={`mr-2 ${isAlwaysListening ? 'text-primary animate-pulse' : ''}`}
+            title={isAlwaysListening ? "Disable Always Listen" : "Enable Always Listen"}
+          >
+            <Radio className={`h-5 w-5 ${isAlwaysListening ? 'text-primary' : ''}`} />
           </Button>
           <MotionTextarea
             value={inputText}
