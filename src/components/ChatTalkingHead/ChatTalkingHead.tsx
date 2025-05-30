@@ -146,6 +146,9 @@ const ChatTalkingHead: React.FC = () => {
   const finalTranscriptRef = useRef('');
   const [isAlwaysListening, setIsAlwaysListening] = useState(false);
   const alwaysListenTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [lastAIMessage, setLastAIMessage] = useState('');
+  const [isAISpeaking, setIsAISpeaking] = useState(false);
+  const aiSpeechTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Add voice configuration state
   const [voiceSettings, setVoiceSettings] = useState({
@@ -200,7 +203,7 @@ const ChatTalkingHead: React.FC = () => {
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = isAlwaysListening; // Set continuous based on mode
+      recognitionRef.current.continuous = isAlwaysListening;
       recognitionRef.current.interimResults = true;
       recognitionRef.current.lang = 'en-US';
 
@@ -208,6 +211,8 @@ const ChatTalkingHead: React.FC = () => {
         console.log('Speech recognition started');
         finalTranscriptRef.current = '';
         setIsListening(true);
+        // Stop AI speech when user starts speaking
+        stopAISpeech();
       };
 
       recognitionRef.current.onresult = (event) => {
@@ -226,45 +231,59 @@ const ChatTalkingHead: React.FC = () => {
         // Update the displayed transcript
         setTranscript(interimTranscript || finalTranscript);
         
+        // If we have any transcript (even interim), stop AI speech
+        if (interimTranscript || finalTranscript) {
+          stopAISpeech();
+        }
+        
         // Store the final transcript
         if (finalTranscript) {
           finalTranscriptRef.current = finalTranscript;
           // Send message immediately when we get a final transcript
           const messageToSend = finalTranscript.trim();
-          if (messageToSend) {
-            // Add user message
-            const userMessage: TextMessage = {
-              id: `user-${Date.now()}`,
-              type: 'text',
-              text: messageToSend,
-              isUser: true
-            };
-            setMessages(prev => [...prev, userMessage]);
-            
-            // Clear the input and transcript
-            setInputText('');
-            setTranscript('');
-            finalTranscriptRef.current = '';
-            
-            // Generate AI response
-            setIsLoading(true);
-            generateAIResponse(messageToSend)
-              .then(response => {
-                setMessages(prev => [...prev, response]);
-              })
-              .catch(error => {
-                console.error('Error generating response:', error);
-                toast({
-                  title: "Error",
-                  description: "Failed to get response. Using simulator mode instead.",
-                  variant: "destructive",
+          
+          // Check if this is likely AI speech being picked up
+          if (messageToSend && !isAISpeaking) {
+            // Simple similarity check - if the transcript is very similar to the last AI message,
+            // it's probably the AI's speech being picked up
+            const similarity = calculateSimilarity(messageToSend, lastAIMessage);
+            if (similarity < 0.8) { // Only process if similarity is less than 80%
+              // Add user message
+              const userMessage: TextMessage = {
+                id: `user-${Date.now()}`,
+                type: 'text',
+                text: messageToSend,
+                isUser: true
+              };
+              setMessages(prev => [...prev, userMessage]);
+              
+              // Clear the input and transcript
+              setInputText('');
+              setTranscript('');
+              finalTranscriptRef.current = '';
+              
+              // Generate AI response
+              setIsLoading(true);
+              generateAIResponse(messageToSend)
+                .then(response => {
+                  setMessages(prev => [...prev, response]);
+                })
+                .catch(error => {
+                  console.error('Error generating response:', error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to get response. Using simulator mode instead.",
+                    variant: "destructive",
+                  });
+                  const response = mockGenerateResponse(messageToSend);
+                  setMessages(prev => [...prev, response]);
+                })
+                .finally(() => {
+                  setIsLoading(false);
                 });
-                const response = mockGenerateResponse(messageToSend);
-                setMessages(prev => [...prev, response]);
-              })
-              .finally(() => {
-                setIsLoading(false);
-              });
+            } else {
+              console.log('Filtered out likely AI speech:', messageToSend);
+            }
           }
         }
       };
@@ -307,7 +326,7 @@ const ChatTalkingHead: React.FC = () => {
         recognitionRef.current.stop();
       }
     };
-  }, [isAlwaysListening]); // Add isAlwaysListening as dependency
+  }, [isAlwaysListening, isAISpeaking, lastAIMessage]);
 
   // Toggle always listening mode
   const toggleAlwaysListening = () => {
@@ -398,6 +417,10 @@ const ChatTalkingHead: React.FC = () => {
     }
 
     try {
+      // Set AI speaking state
+      setIsAISpeaking(true);
+      setLastAIMessage(text);
+
       // Configure voice settings
       ttsPlayer.rate = voiceSettings.rate;
       ttsPlayer.pitch = voiceSettings.pitch;
@@ -418,6 +441,25 @@ const ChatTalkingHead: React.FC = () => {
         description: "Failed to speak text. Please check your browser's audio settings.",
         variant: "destructive",
       });
+    } finally {
+      // Add a small delay before allowing new speech input
+      if (aiSpeechTimeoutRef.current) {
+        clearTimeout(aiSpeechTimeoutRef.current);
+      }
+      aiSpeechTimeoutRef.current = setTimeout(() => {
+        setIsAISpeaking(false);
+      }, 1000);
+    }
+  };
+
+  // Add function to stop AI speech
+  const stopAISpeech = () => {
+    if (ttsPlayer) {
+      ttsPlayer.stop();
+      setIsAISpeaking(false);
+      if (aiSpeechTimeoutRef.current) {
+        clearTimeout(aiSpeechTimeoutRef.current);
+      }
     }
   };
 
@@ -563,9 +605,12 @@ const ChatTalkingHead: React.FC = () => {
     }
   };
 
-  // Handle user message submission
+  // Update handleSendMessage to stop AI speech
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
+
+    // Stop any ongoing AI speech
+    stopAISpeech();
 
     // Add user message
     const userMessage: TextMessage = {
@@ -1034,6 +1079,43 @@ When asked about cards, weather, recipes, or any structured information, respond
       setPersonality(updatedPersonality);
     }
   }, [messages]);
+
+  // Helper function to calculate string similarity
+  const calculateSimilarity = (str1: string, str2: string): number => {
+    if (!str1 || !str2) return 0;
+    
+    // Convert to lowercase and remove punctuation
+    const cleanStr1 = str1.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '');
+    const cleanStr2 = str2.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '');
+    
+    // If strings are identical, return 1
+    if (cleanStr1 === cleanStr2) return 1;
+    
+    // Calculate Levenshtein distance
+    const matrix = Array(cleanStr1.length + 1).fill(null).map(() => 
+      Array(cleanStr2.length + 1).fill(null)
+    );
+    
+    for (let i = 0; i <= cleanStr1.length; i++) matrix[i][0] = i;
+    for (let j = 0; j <= cleanStr2.length; j++) matrix[0][j] = j;
+    
+    for (let i = 1; i <= cleanStr1.length; i++) {
+      for (let j = 1; j <= cleanStr2.length; j++) {
+        const cost = cleanStr1[i - 1] === cleanStr2[j - 1] ? 0 : 1;
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j - 1] + cost
+        );
+      }
+    }
+    
+    const distance = matrix[cleanStr1.length][cleanStr2.length];
+    const maxLength = Math.max(cleanStr1.length, cleanStr2.length);
+    
+    // Return similarity score (1 - normalized distance)
+    return 1 - (distance / maxLength);
+  };
 
   return (
     <div>
