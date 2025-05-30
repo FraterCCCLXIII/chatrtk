@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus, Radio } from "lucide-react";
+import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus, Radio, X, FileText } from "lucide-react";
 import { Smiley, Robot } from "@phosphor-icons/react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { 
@@ -34,6 +34,7 @@ import { RTK_ALPHA, managePersonality, getThoughtToExpress } from '@/lib/ai-pers
 import type { AIPersonality, Thought } from '@/lib/types';
 import LoadingScreen from '../LoadingScreen/LoadingScreen';
 import { AnimatePresence } from 'framer-motion';
+import ProjectInfoModal from '../ProjectInfoModal/ProjectInfoModal';
 
 type Expression = 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
 
@@ -152,6 +153,7 @@ const ChatTalkingHead: React.FC = () => {
   const [lastAIMessage, setLastAIMessage] = useState('');
   const [isAISpeaking, setIsAISpeaking] = useState(false);
   const aiSpeechTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isProjectInfoOpen, setIsProjectInfoOpen] = useState(false);
 
   // Add voice configuration state
   const [voiceSettings, setVoiceSettings] = useState({
@@ -214,7 +216,6 @@ const ChatTalkingHead: React.FC = () => {
         console.log('Speech recognition started');
         finalTranscriptRef.current = '';
         setIsListening(true);
-        // Stop AI speech when user starts speaking
         stopAISpeech();
       };
 
@@ -229,6 +230,13 @@ const ChatTalkingHead: React.FC = () => {
           } else {
             interimTranscript += transcript;
           }
+        }
+
+        // Check for stop words in interim transcript
+        const lowerTranscript = (interimTranscript || finalTranscript).toLowerCase();
+        if (lowerTranscript.includes('stop') || lowerTranscript.includes('quiet')) {
+          stopAllAI();
+          return;
         }
 
         // Update the displayed transcript
@@ -266,7 +274,7 @@ const ChatTalkingHead: React.FC = () => {
               finalTranscriptRef.current = '';
               
               // Generate AI response
-              setIsLoading(true);
+              setIsAIResponding(true);
               generateAIResponse(messageToSend)
                 .then(response => {
                   setMessages(prev => [...prev, response]);
@@ -282,7 +290,7 @@ const ChatTalkingHead: React.FC = () => {
                   setMessages(prev => [...prev, response]);
                 })
                 .finally(() => {
-                  setIsLoading(false);
+                  setIsAIResponding(false);
                 });
             } else {
               console.log('Filtered out likely AI speech:', messageToSend);
@@ -1121,6 +1129,12 @@ When asked about cards, weather, recipes, or any structured information, respond
     return 1 - (distance / maxLength);
   };
 
+  // Add function to stop all AI activity
+  const stopAllAI = () => {
+    stopAISpeech();
+    setIsAIResponding(false);
+  };
+
   return (
     <div>
       <AnimatePresence>
@@ -1160,6 +1174,15 @@ When asked about cards, weather, recipes, or any structured information, respond
         RTK-100
       </MotionDiv>
       <div className="controls-container">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsProjectInfoOpen(true)}
+          className="hover:scale-105 active:scale-95 transition-transform"
+          data-tooltip="About RTK"
+        >
+          <FileText className="h-5 w-5" />
+        </Button>
         <Button
           variant="ghost"
           size="icon"
@@ -1374,12 +1397,21 @@ When asked about cards, weather, recipes, or any structured information, respond
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
       >
         <div className="chat-input-wrapper">
+          {(isAIResponding || isAISpeaking) && (
+            <button 
+              className="stop-button"
+              onClick={stopAllAI}
+              title="Stop AI"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleVoiceInput}
             className={`audio-control-button ${isListening ? 'active' : ''}`}
-            title={isListening ? "Stop Voice Input" : "Start Voice Input"}
+            data-tooltip={isListening ? "Stop Voice Input" : "Start Voice Input"}
           >
             {isListening ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
           </Button>
@@ -1388,7 +1420,7 @@ When asked about cards, weather, recipes, or any structured information, respond
             size="icon"
             onClick={toggleAlwaysListening}
             className={`audio-control-button ${isAlwaysListening ? 'active' : ''}`}
-            title={isAlwaysListening ? "Disable Always Listen" : "Enable Always Listen"}
+            data-tooltip={isAlwaysListening ? "Disable Always Listen" : "Enable Always Listen"}
           >
             <Radio className="h-5 w-5" />
           </Button>
@@ -1412,8 +1444,13 @@ When asked about cards, weather, recipes, or any structured information, respond
             disabled={isAIResponding}
             variant="default"
             size="icon"
+            data-tooltip={isAIResponding ? "AI is responding..." : "Send message"}
           >
-            {isAIResponding ? '...' : <MessageCircleMore className="h-5 w-5" />}
+            {isAIResponding ? (
+              <div className="loading-spinner" />
+            ) : (
+              <MessageCircleMore className="h-5 w-5" />
+            )}
           </Button>
         </div>
         {isListening && transcript && (
@@ -1453,6 +1490,11 @@ When asked about cards, weather, recipes, or any structured information, respond
         currentHeadShape={currentHeadShape}
         voiceSettings={voiceSettings}
         onVoiceSettingsChange={updateVoiceSettings}
+      />
+
+      <ProjectInfoModal
+        open={isProjectInfoOpen}
+        onOpenChange={setIsProjectInfoOpen}
       />
     </div>
   );

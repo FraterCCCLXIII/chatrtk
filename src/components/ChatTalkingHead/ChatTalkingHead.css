@@ -428,6 +428,7 @@
   background-color: #000000 !important;
   color: #ffffff !important;
   transition: all 0.2s ease-in-out !important;
+  position: relative !important;
 }
 
 .send-button:hover {
@@ -437,6 +438,49 @@
 
 .send-button:active {
   transform: scale(0.95) !important;
+}
+
+.send-button .loading-spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid #ffffff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.stop-button {
+  position: absolute;
+  top: -3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background-color: #ff4444;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 30;
+}
+
+.stop-button:hover {
+  transform: translateX(-50%) scale(1.05);
+  background-color: #ff6666;
+}
+
+.stop-button:active {
+  transform: translateX(-50%) scale(0.95);
 }
 
 /* Add styles for the audio control buttons */
@@ -513,4 +557,90 @@
   max-height: 2.8em; /* Two lines of text */
   overflow: hidden;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Tooltip styles */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]:before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+  margin-bottom: 4px;
+}
+
+[data-tooltip]:hover:before {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Audio control button styles */
+.audio-control-button {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #666;
+}
+
+.audio-control-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #000;
+}
+
+.audio-control-button.active {
+  color: var(--primary-color, #5ddbaf);
+  background-color: rgba(93, 219, 175, 0.1);
+}
+
+/* Send button styles */
+.send-button {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: var(--primary-color, #5ddbaf);
+  border: none;
+  cursor: pointer;
+  color: white;
+}
+
+.send-button:hover {
+  transform: scale(1.05);
+  background: var(--primary-color-dark, #4bc99a);
+}
+
+.send-button:active {
+  transform: scale(0.95);
+}
+
+.send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
