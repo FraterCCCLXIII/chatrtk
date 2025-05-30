@@ -223,23 +223,23 @@ const TalkingHead: React.FC<TalkingHeadProps> = ({
           ...floatingAnimation
         }}>
         {currentHeadShape.shape !== 'none' ? (
-          <div 
-            className={`screen ${currentHeadShape.shape}`}
-            style={{ 
+        <div 
+          className={`screen ${currentHeadShape.shape}`}
+          style={{ 
               backgroundColor: config?.head?.fillColor || effectiveTheme.screenColor,
-              borderRadius: config?.head?.borderRadius || 
-                           (currentHeadShape.shape === 'circle' ? '50%' : 
+            borderRadius: config?.head?.borderRadius || 
+                         (currentHeadShape.shape === 'circle' ? '50%' : 
                            currentHeadShape.shape === 'square' ? '20px' :
                            currentHeadShape.shape === 'rectangle' ? '30px' : '0'),
               border: effectiveTheme.showStroke ? 
                      `${config?.head?.strokeWidth || 8}px solid ${config?.head?.strokeColor || effectiveTheme.strokeColor}` : 
                      'none',
               boxShadow: effectiveTheme.showStroke ? '0 4px 8px rgba(0,0,0,0.2)' : 'none'
-            }}
-          >
-            <div 
-              className="face"
-              style={{
+          }}
+        >
+          <div 
+            className="face"
+            style={{
                 backgroundColor: config?.head?.fillColor || effectiveTheme.screenColor,
                 border: effectiveTheme.showStroke && config?.head?.strokeWidth ? 
                        `${config.head.strokeWidth}px solid ${config.head.strokeColor || effectiveTheme.strokeColor}` : 

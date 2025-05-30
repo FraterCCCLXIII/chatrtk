@@ -103,10 +103,10 @@ const FaceSelectorModal: React.FC<FaceSelectorModalProps> = ({
 
   const handleSelectTheme = (theme: FaceTheme) => {
     onSelectFace(theme);
-    toast({
-      title: "Theme Changed",
+      toast({
+        title: "Theme Changed",
       description: `Successfully changed to ${theme.name} theme.`,
-    });
+      });
     onOpenChange(false);
   };
 
@@ -121,15 +121,15 @@ const FaceSelectorModal: React.FC<FaceSelectorModalProps> = ({
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-4 py-4">
-          {faceThemes.map((theme) => (
+            {faceThemes.map((theme) => (
             <Card
               key={theme.id}
               className={`cursor-pointer transition-all hover:scale-105 hover:shadow-lg overflow-hidden ${
                 currentFaceTheme === theme.id ? 'ring-2 ring-primary' : ''
               }`}
               onClick={() => handleSelectTheme(theme)}
-            >
-              <div className="relative">
+                      >
+                        <div className="relative">
                 <div 
                   className="h-24 w-full rounded-lg"
                   style={{ backgroundColor: theme.previewColor }}
@@ -138,13 +138,13 @@ const FaceSelectorModal: React.FC<FaceSelectorModalProps> = ({
                   className="absolute inset-0 flex items-center justify-center opacity-50"
                   style={{ backgroundColor: theme.screenColor }}
                 />
-              </div>
+                          </div>
               <div className="p-3 space-y-1">
                 <h3 className="font-semibold text-sm">{theme.name}</h3>
                 <p className="text-xs text-muted-foreground line-clamp-2">{theme.description}</p>
               </div>
             </Card>
-          ))}
+            ))}
         </div>
       </DialogContent>
     </Dialog>

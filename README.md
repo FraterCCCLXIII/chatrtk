@@ -1,86 +1,134 @@
-# Chatty Face Plugin
+# ChatRTK - Interactive AI Chat Interface
 
-A customizable talking head interface for chat applications.
+ChatRTK is an innovative chat interface that combines expressive facial animations with natural language interaction. The project aims to create a more engaging and human-like experience for AI interactions.
 
-## Project info
-
-**URL**: https://lovable.dev/projects/3e7f9d9f-5bec-40f8-b5ad-e7033b6813bd
+![ChatRTK Demo](demo.gif)
 
 ## Features
 
-- **Animated Talking Head**: A responsive face that animates when speaking
-- **Multiple Head Themes**: Choose from different themes including:
-  - Classic: The original talking head
-  - Blueberry: A cool blue theme
-  - Sunshine: A bright and cheerful yellow theme
-  - Mint Chocolate: A refreshing mint with chocolate accents
-- **Facial Rig Editor**: Customize the appearance and behavior of the talking head
-- **Responsive Design**: Works on desktop and mobile devices
+- 🤖 Interactive talking head with facial expressions
+- 🎨 Customizable appearance themes
+- 💬 Interactive cards with buttons
+- 🌐 Multi-language support (English, Japanese, Chinese, and more)
+- 🎤 Voice input and output capabilities
+- 🎮 RTK Arcade mini-games
+- 🎭 Customizable facial rig
+- 📱 Responsive design
 
-## How can I edit this code?
+## Tech Stack
 
-There are several ways of editing your application.
+- **Frontend Framework**: React with TypeScript
+- **UI Components**: Shadcn UI
+- **Animations**: Framer Motion
+- **State Management**: React Context
+- **Styling**: Tailwind CSS
+- **API Integration**: OpenAI, Claude, DeepSeek, and local models
+- **Voice Processing**: Web Speech API, Piper TTS
+- **Build Tool**: Vite
 
-**Use Lovable**
+## Getting Started
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3e7f9d9f-5bec-40f8-b5ad-e7033b6813bd) and start prompting.
+### Prerequisites
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js 18+ and npm
+- Git
+- (Optional) espeak-ng for local TTS
 
-**Use your preferred IDE**
+### Installation
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Clone the repository:
+```bash
+git clone https://github.com/paulbloch/chatrtk.git
+cd chatrtk
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+2. Install dependencies:
+```bash
+npm install
+```
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Start the development server:
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+4. For local TTS support, install espeak-ng:
+```bash
+# macOS
+brew install espeak-ng
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+# Ubuntu/Debian
+sudo apt-get install espeak-ng
+```
 
-**Use GitHub Codespaces**
+## Current Projects
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. **Language Support**
+   - [x] Basic language switching
+   - [x] UI translations
+   - [ ] Voice model integration for each language
+   - [ ] RTL language support
 
-## What technologies are used for this project?
+2. **Voice Processing**
+   - [x] Basic speech recognition
+   - [x] Text-to-speech integration
+   - [ ] Voice customization
+   - [ ] Emotion-based voice modulation
 
-This project is built with:
+3. **Facial Expressions**
+   - [x] Basic expressions
+   - [x] Custom facial rig
+   - [ ] More complex expressions
+   - [ ] Lip sync improvements
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+4. **RTK Arcade**
+   - [x] Basic game framework
+   - [ ] More mini-games
+   - [ ] Score tracking
+   - [ ] Multiplayer support
 
-## How can I deploy this project?
+## Contributing
 
-Simply open [Lovable](https://lovable.dev/projects/3e7f9d9f-5bec-40f8-b5ad-e7033b6813bd) and click on Share -> Publish.
+We welcome contributions! Here's how you can help:
 
-## Can I connect a custom domain to my Lovable project?
+1. **Bug Reports**: Open an issue with a clear description of the bug
+2. **Feature Requests**: Suggest new features or improvements
+3. **Code Contributions**: Submit pull requests for bug fixes or new features
+4. **Documentation**: Help improve documentation and add examples
+5. **Translations**: Add support for new languages
 
-Yes, you can!
+### Development Guidelines
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- Follow the existing code style
+- Write tests for new features
+- Update documentation as needed
+- Keep commits atomic and well-described
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Getting Help
+
+- Join our [Discord community](https://discord.gg/chatrtk)
+- Check the [documentation](https://docs.chatrtk.com)
+- Open an issue for bugs or questions
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Shadcn UI](https://ui.shadcn.com/) for the beautiful components
+- [Framer Motion](https://www.framer.com/motion/) for animations
+- [Piper TTS](https://github.com/rhasspy/piper) for voice synthesis
+- All our contributors and supporters!
+
+## Support the Project
+
+If you find ChatRTK useful, consider:
+- Starring the repository
+- Contributing code or documentation
+- Sharing with others
+- Sponsoring development
+
+---
+
+Made with ❤️ by the ChatRTK team
