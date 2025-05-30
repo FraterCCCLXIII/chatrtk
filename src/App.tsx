@@ -1,5 +1,4 @@
 import { LanguageProvider } from '@/contexts/LanguageContext';
-import ChatTalkingHead from './components/ChatTalkingHead/ChatTalkingHead';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,7 +13,6 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
       <div className="app">
-        <ChatTalkingHead />
         <Toaster />
         <Sonner />
         <TooltipProvider>
