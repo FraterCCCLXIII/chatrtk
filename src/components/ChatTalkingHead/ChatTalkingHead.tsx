@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus, Radio, X, FileText, Gamepad2, Keyboard } from "lucide-react";
+import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus, Radio, X, FileText, Gamepad2, Keyboard, Send } from "lucide-react";
 import { Smiley, Robot } from "@phosphor-icons/react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { 
@@ -166,6 +166,9 @@ const ChatTalkingHead: React.FC = () => {
   const [isHotkeysOpen, setIsHotkeysOpen] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const inputFocusRef = useRef(false);
+  const [isRecordingEnding, setIsRecordingEnding] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [showSpeechPill, setShowSpeechPill] = useState(false);
 
   // Add voice configuration state
   const [voiceSettings, setVoiceSettings] = useState({
@@ -291,7 +294,124 @@ const ChatTalkingHead: React.FC = () => {
     });
   }, []);
 
-  // Initialize speech recognition
+  // Update the speech recognition error handler
+  const handleSpeechError = (event: SpeechRecognitionError) => {
+    console.error('Speech recognition error:', event.error);
+    
+    // Don't show error toast for expected errors
+    if (event.error === 'aborted' || event.error === 'no-speech') {
+      return;
+    }
+    
+    toast({
+      title: "Speech Recognition Error",
+      description: event.error,
+      variant: "destructive",
+    });
+    
+    setIsListening(false);
+    setShowSpeechPill(false);
+    setIsRecordingEnding(false);
+    setIsSending(false);
+  };
+
+  // Update the speech recognition result handler
+  const handleSpeechResult = (event: SpeechRecognitionEvent) => {
+    let interimTranscript = '';
+    let finalTranscript = '';
+
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript;
+      if (event.results[i].isFinal) {
+        finalTranscript += transcript;
+      } else {
+        interimTranscript += transcript;
+      }
+    }
+
+    // Always update the displayed transcript, even if it's interim
+    const currentTranscript = interimTranscript || finalTranscript;
+    if (currentTranscript) {
+      setTranscript(currentTranscript);
+      setShowSpeechPill(true);
+    }
+
+    // Check for stop words in interim transcript
+    const lowerTranscript = currentTranscript.toLowerCase();
+    if (lowerTranscript.includes('stop') || lowerTranscript.includes('quiet')) {
+      stopAllAI();
+      return;
+    }
+    
+    // If we have any transcript (even interim), stop AI speech
+    if (currentTranscript) {
+      stopAISpeech();
+    }
+    
+    // Store the final transcript
+    if (finalTranscript) {
+      finalTranscriptRef.current = finalTranscript;
+      // Send message immediately when we get a final transcript
+      const messageToSend = finalTranscript.trim();
+      
+      // Check if this is likely AI speech being picked up
+      if (messageToSend && !isAISpeaking) {
+        // Simple similarity check - if the transcript is very similar to the last AI message,
+        // it's probably the AI's speech being picked up
+        const similarity = calculateSimilarity(messageToSend, lastAIMessage);
+        if (similarity < 0.8) { // Only process if similarity is less than 80%
+          // Show recording ending animation first
+          setIsRecordingEnding(true);
+          
+          // Add user message using functional update
+          const userMessage: TextMessage = {
+            id: `user-${Date.now()}`,
+            type: 'text',
+            text: messageToSend,
+            isUser: true
+          };
+          
+          // Clear the input and transcript
+          setInputText('');
+          setTranscript('');
+          finalTranscriptRef.current = '';
+          
+          // After a short delay, show sending animation
+          setTimeout(() => {
+            setIsRecordingEnding(false);
+            setIsSending(true);
+            
+            // Generate AI response
+            setIsAIResponding(true);
+            generateAIResponse(messageToSend)
+              .then(response => {
+                setMessages(prev => [...prev, userMessage, response]);
+              })
+              .catch(error => {
+                console.error('Error generating response:', error);
+                toast({
+                  title: "Error",
+                  description: "Failed to get response. Using simulator mode instead.",
+                  variant: "destructive",
+                });
+                const response = mockGenerateResponse(messageToSend);
+                setMessages(prev => [...prev, userMessage, response]);
+              })
+              .finally(() => {
+                setIsAIResponding(false);
+                // Keep the sending animation visible for a moment
+                setTimeout(() => {
+                  setIsSending(false);
+                  setShowSpeechPill(false);
+                }, 1000);
+              });
+          }, 500);
+        }
+      }
+    }
+  };
+
+  // Update the speech recognition initialization
   useEffect(() => {
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -304,99 +424,36 @@ const ChatTalkingHead: React.FC = () => {
         console.log('Speech recognition started');
         finalTranscriptRef.current = '';
         setIsListening(true);
+        setIsRecordingEnding(false);
+        setIsSending(false);
+        setShowSpeechPill(true);
         stopAISpeech();
       };
 
-      recognitionRef.current.onresult = (event) => {
-        let interimTranscript = '';
-        let finalTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript;
-          } else {
-            interimTranscript += transcript;
-          }
-        }
-
-        // Check for stop words in interim transcript
-        const lowerTranscript = (interimTranscript || finalTranscript).toLowerCase();
-        if (lowerTranscript.includes('stop') || lowerTranscript.includes('quiet')) {
-          stopAllAI();
-          return;
-        }
-
-        // Update the displayed transcript
-        setTranscript(interimTranscript || finalTranscript);
-        
-        // If we have any transcript (even interim), stop AI speech
-        if (interimTranscript || finalTranscript) {
-          stopAISpeech();
-        }
-        
-        // Store the final transcript
-        if (finalTranscript) {
-          finalTranscriptRef.current = finalTranscript;
-          // Send message immediately when we get a final transcript
-          const messageToSend = finalTranscript.trim();
-          
-          // Check if this is likely AI speech being picked up
-          if (messageToSend && !isAISpeaking) {
-            // Simple similarity check - if the transcript is very similar to the last AI message,
-            // it's probably the AI's speech being picked up
-            const similarity = calculateSimilarity(messageToSend, lastAIMessage);
-            if (similarity < 0.8) { // Only process if similarity is less than 80%
-              // Add user message using functional update
-              const userMessage: TextMessage = {
-                id: `user-${Date.now()}`,
-                type: 'text',
-                text: messageToSend,
-                isUser: true
-              };
-              
-              // Clear the input and transcript
-              setInputText('');
-              setTranscript('');
-              finalTranscriptRef.current = '';
-              
-              // Generate AI response
-              setIsAIResponding(true);
-              generateAIResponse(messageToSend)
-                .then(response => {
-                  setMessages(prev => [...prev, userMessage, response]);
-                })
-                .catch(error => {
-                  console.error('Error generating response:', error);
-                  toast({
-                    title: "Error",
-                    description: "Failed to get response. Using simulator mode instead.",
-                    variant: "destructive",
-                  });
-                  const response = mockGenerateResponse(messageToSend);
-                  setMessages(prev => [...prev, userMessage, response]);
-                })
-                .finally(() => {
-                  setIsAIResponding(false);
-                });
-            }
-          }
-        }
-      };
-
-      recognitionRef.current.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        toast({
-          title: "Speech Recognition Error",
-          description: event.error,
-          variant: "destructive",
-        });
-        setIsListening(false);
-      };
+      recognitionRef.current.onresult = handleSpeechResult;
+      recognitionRef.current.onerror = handleSpeechError;
 
       recognitionRef.current.onend = () => {
         console.log('Speech recognition ended');
         setIsListening(false);
+        
+        // If we have a final transcript, show the sending animation
+        if (finalTranscriptRef.current) {
+          setIsRecordingEnding(true);
+          setTimeout(() => {
+            setIsRecordingEnding(false);
+            setIsSending(true);
+            
+            // Keep the speech pill visible during sending
+            setTimeout(() => {
+              setIsSending(false);
+              setShowSpeechPill(false);
+            }, 1000);
+          }, 500);
+        } else {
+          // If no final transcript, just hide the pill
+          setShowSpeechPill(false);
+        }
         
         // If in always listening mode, restart recognition after a short delay
         if (isAlwaysListening) {
@@ -423,146 +480,6 @@ const ChatTalkingHead: React.FC = () => {
       }
     };
   }, [isAlwaysListening, isAISpeaking, lastAIMessage, currentLanguage.code]);
-
-  // Toggle always listening mode
-  const toggleAlwaysListening = () => {
-    if (!recognitionRef.current) {
-      toast({
-        title: "Voice Input Not Available",
-        description: "Speech recognition is not supported in your browser.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newMode = !isAlwaysListening;
-    setIsAlwaysListening(newMode);
-
-    if (newMode) {
-      // Start listening
-      try {
-        recognitionRef.current.continuous = true;
-        recognitionRef.current.start();
-        toast({
-          title: "Always Listen Mode",
-          description: "Voice recognition is now always active. Speak naturally to send messages.",
-        });
-      } catch (error) {
-        console.error('Error starting always listen mode:', error);
-        toast({
-          title: "Error Starting Voice Input",
-          description: "Please try again or check your microphone permissions.",
-          variant: "destructive",
-        });
-        setIsAlwaysListening(false);
-      }
-    } else {
-      // Stop listening
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.stop();
-      if (alwaysListenTimeoutRef.current) {
-        clearTimeout(alwaysListenTimeoutRef.current);
-      }
-      toast({
-        title: "Always Listen Mode",
-        description: "Voice recognition is now manual. Click the mic button to speak.",
-      });
-    }
-  };
-
-  // Toggle voice input
-  const toggleVoiceInput = () => {
-    if (!recognitionRef.current) {
-      toast({
-        title: "Voice Input Not Available",
-        description: "Speech recognition is not supported in your browser.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (isListening) {
-      console.log('Stopping speech recognition');
-      recognitionRef.current.stop();
-      setIsListening(false);
-      setTranscript('');
-      finalTranscriptRef.current = '';
-    } else {
-      console.log('Starting speech recognition');
-      try {
-        recognitionRef.current.start();
-      } catch (error) {
-        console.error('Error starting speech recognition:', error);
-        toast({
-          title: "Error Starting Voice Input",
-          description: "Please try again or check your microphone permissions.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  // We've removed the auto-scroll effect as requested
-  // This allows the user to manually scroll through the messages
-
-  // Update speakText function
-  const speakText = async (text: string) => {
-    if (!ttsPlayer || !isTtsReady) {
-      console.error('TTS not ready');
-      return;
-    }
-
-    try {
-      // Set AI speaking state
-      setIsAISpeaking(true);
-      setLastAIMessage(text);
-
-      // Configure voice settings
-      ttsPlayer.rate = voiceSettings.rate;
-      ttsPlayer.pitch = voiceSettings.pitch;
-      ttsPlayer.volume = voiceSettings.volume;
-      ttsPlayer.voice = voiceSettings.voice;
-
-      // Play the text
-      await ttsPlayer.playText(text);
-      
-      // After TTS finishes, send the message
-      if (text.trim()) {
-        handleSendMessage();
-      }
-    } catch (error) {
-      console.error('Error speaking text:', error);
-      toast({
-        title: "TTS Error",
-        description: "Failed to speak text. Please check your browser's audio settings.",
-        variant: "destructive",
-      });
-    } finally {
-      // Add a small delay before allowing new speech input
-      if (aiSpeechTimeoutRef.current) {
-        clearTimeout(aiSpeechTimeoutRef.current);
-      }
-      aiSpeechTimeoutRef.current = setTimeout(() => {
-        setIsAISpeaking(false);
-      }, 1000);
-    }
-  };
-
-  // Add function to stop AI speech
-  const stopAISpeech = () => {
-    if (ttsPlayer) {
-      ttsPlayer.stop();
-      setIsAISpeaking(false);
-      if (aiSpeechTimeoutRef.current) {
-        clearTimeout(aiSpeechTimeoutRef.current);
-      }
-    }
-  };
-
-  // Add voice settings update function
-  const updateVoiceSettings = (newSettings: Partial<typeof voiceSettings>) => {
-    setVoiceSettings(prev => ({ ...prev, ...newSettings }));
-  };
 
   // Update the useEffect that handles speaking
   useEffect(() => {
@@ -1210,6 +1127,167 @@ When asked about cards, weather, recipes, or any structured information, respond
     }
   };
 
+  // Add function to stop AI speech
+  const stopAISpeech = () => {
+    if (ttsPlayer) {
+      ttsPlayer.stop();
+      setIsAISpeaking(false);
+      if (aiSpeechTimeoutRef.current) {
+        clearTimeout(aiSpeechTimeoutRef.current);
+      }
+    }
+  };
+
+  // Add voice settings update function
+  const updateVoiceSettings = (newSettings: Partial<typeof voiceSettings>) => {
+    setVoiceSettings(prev => ({ ...prev, ...newSettings }));
+  };
+
+  // Update speakText function
+  const speakText = async (text: string) => {
+    if (!ttsPlayer || !isTtsReady) {
+      console.error('TTS not ready');
+      return;
+    }
+
+    try {
+      // Set AI speaking state
+      setIsAISpeaking(true);
+      setLastAIMessage(text);
+
+      // Configure voice settings
+      ttsPlayer.rate = voiceSettings.rate;
+      ttsPlayer.pitch = voiceSettings.pitch;
+      ttsPlayer.volume = voiceSettings.volume;
+      ttsPlayer.voice = voiceSettings.voice;
+
+      // Play the text
+      await ttsPlayer.playText(text);
+      
+      // After TTS finishes, send the message
+      if (text.trim()) {
+        handleSendMessage();
+      }
+    } catch (error) {
+      console.error('Error speaking text:', error);
+      toast({
+        title: "TTS Error",
+        description: "Failed to speak text. Please check your browser's audio settings.",
+        variant: "destructive",
+      });
+    } finally {
+      // Add a small delay before allowing new speech input
+      if (aiSpeechTimeoutRef.current) {
+        clearTimeout(aiSpeechTimeoutRef.current);
+      }
+      aiSpeechTimeoutRef.current = setTimeout(() => {
+        setIsAISpeaking(false);
+      }, 1000);
+    }
+  };
+
+  // Toggle voice input
+  const toggleVoiceInput = () => {
+    if (!recognitionRef.current) {
+      toast({
+        title: "Voice Input Not Available",
+        description: "Speech recognition is not supported in your browser.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // If always listening is active, disable it first
+    if (isAlwaysListening) {
+      setIsAlwaysListening(false);
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      if (alwaysListenTimeoutRef.current) {
+        clearTimeout(alwaysListenTimeoutRef.current);
+      }
+    }
+
+    if (isListening) {
+      console.log('Stopping speech recognition');
+      setIsRecordingEnding(true);
+      recognitionRef.current.stop();
+      setIsListening(false);
+      setTranscript('');
+      finalTranscriptRef.current = '';
+    } else {
+      console.log('Starting speech recognition');
+      try {
+        recognitionRef.current.start();
+        setShowSpeechPill(true);
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+        toast({
+          title: "Error Starting Voice Input",
+          description: "Please try again or check your microphone permissions.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  // Toggle always listening mode
+  const toggleAlwaysListening = () => {
+    if (!recognitionRef.current) {
+      toast({
+        title: "Voice Input Not Available",
+        description: "Speech recognition is not supported in your browser.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newMode = !isAlwaysListening;
+    setIsAlwaysListening(newMode);
+
+    // If currently in manual recording mode, stop it
+    if (isListening) {
+      setIsRecordingEnding(true);
+      recognitionRef.current.stop();
+      setIsListening(false);
+      setTranscript('');
+      finalTranscriptRef.current = '';
+    }
+
+    if (newMode) {
+      // Start listening
+      try {
+        recognitionRef.current.continuous = true;
+        recognitionRef.current.start();
+        setShowSpeechPill(true);
+        toast({
+          title: "Always Listen Mode",
+          description: "Voice recognition is now always active. Speak naturally to send messages.",
+        });
+      } catch (error) {
+        console.error('Error starting always listen mode:', error);
+        toast({
+          title: "Error Starting Voice Input",
+          description: "Please try again or check your microphone permissions.",
+          variant: "destructive",
+        });
+        setIsAlwaysListening(false);
+      }
+    } else {
+      // Stop listening
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.stop();
+      if (alwaysListenTimeoutRef.current) {
+        clearTimeout(alwaysListenTimeoutRef.current);
+      }
+      setShowSpeechPill(false);
+      toast({
+        title: "Always Listen Mode",
+        description: "Voice recognition is now manual. Click the mic button to speak.",
+      });
+    }
+  };
+
   return (
     <div>
       <AnimatePresence>
@@ -1548,13 +1626,30 @@ When asked about cards, weather, recipes, or any structured information, respond
             )}
           </Button>
         </div>
-        {isListening && transcript && (
-          <div className="absolute bottom-full mb-2 left-0 right-0 text-center text-sm text-muted-foreground">
-            {transcript}
-            {finalTranscriptRef.current && (
-              <div className="text-xs text-primary mt-1">
-                (Final transcript: {finalTranscriptRef.current})
-              </div>
+        {(showSpeechPill || isListening) && (
+          <div className={`speech-pill ${showSpeechPill ? 'visible' : ''}`}>
+            <div className="recording-dot" />
+            <span>{transcript || getTranslation('listening', currentLanguage)}</span>
+            {isRecordingEnding ? (
+              <div className="recording-spinner" />
+            ) : isSending ? (
+              <Send className="h-4 w-4 animate-paper-airplane" />
+            ) : (
+              <button 
+                className="cancel-recording"
+                onClick={() => {
+                  if (recognitionRef.current) {
+                    recognitionRef.current.stop();
+                  }
+                  setIsListening(false);
+                  setTranscript('');
+                  finalTranscriptRef.current = '';
+                  setShowSpeechPill(false);
+                }}
+                title={getTranslation('cancelRecording', currentLanguage)}
+              >
+                <X className="h-4 w-4" />
+              </button>
             )}
           </div>
         )}
