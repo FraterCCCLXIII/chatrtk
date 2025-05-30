@@ -1,0 +1,409 @@
+.special-effects-modal {
+  --animation-intensity: 1;
+  --zoom-intensity: 1;
+}
+
+.special-effects-modal .slider-track {
+  background: linear-gradient(
+    to right,
+    hsl(var(--muted)) 0%,
+    hsl(var(--primary)) 100%
+  );
+}
+
+.special-effects-modal .slider-thumb {
+  transition: transform 0.2s ease;
+}
+
+.special-effects-modal .slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.special-effects-modal .intensity-label {
+  transition: color 0.3s ease;
+}
+
+.special-effects-modal .intensity-description {
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+/* UI Animation Classes */
+.ui-animate-subtle {
+  transition-duration: calc(0.2s * var(--animation-intensity));
+}
+
+.ui-animate-medium {
+  transition-duration: calc(0.3s * var(--animation-intensity));
+}
+
+.ui-animate-springy {
+  transition-duration: calc(0.4s * var(--animation-intensity));
+  transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.ui-animate-bouncy {
+  transition-duration: calc(0.5s * var(--animation-intensity));
+  transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Apply animation intensity to UI elements */
+.control-button,
+.send-button {
+  transition: all 0.2s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center;
+  will-change: transform;
+}
+
+.control-button:hover,
+.send-button:hover {
+  transform: scale(calc(1.1 + (0.3 * var(--animation-intensity) * var(--zoom-intensity))));
+  transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.control-button:active,
+.send-button:active {
+  transform: scale(calc(0.9 - (0.1 * var(--animation-intensity))));
+  transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.chat-message {
+  transition: all 0.2s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  transform: scale(1);
+}
+
+.chat-message:hover {
+  transform: scale(calc(1.1 + (0.3 * var(--animation-intensity) * var(--zoom-intensity))));
+  transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.speech-pill {
+  transition: all 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.speech-pill:hover {
+  transform: scale(calc(1.02 + (0.08 * var(--animation-intensity) * var(--zoom-intensity))));
+}
+
+.input-container {
+  transition: all 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.chat-input:focus {
+  transform: scale(calc(1.01 + (0.04 * var(--animation-intensity) * var(--zoom-intensity))));
+  transition: all 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Modal animations */
+.modal-content {
+  transition: transform 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-content:hover {
+  transform: scale(calc(1.01 + (0.02 * var(--animation-intensity) * var(--zoom-intensity))));
+}
+
+/* Card animations */
+.card {
+  transition: all 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card:hover {
+  transform: scale(calc(1.02 + (0.08 * var(--animation-intensity) * var(--zoom-intensity))));
+}
+
+/* Enhanced spring animations at max intensity */
+[data-animation-intensity="1"] .control-button,
+[data-animation-intensity="1"] .send-button {
+  transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+[data-animation-intensity="1"] .chat-message,
+[data-animation-intensity="1"] .card {
+  transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+[data-animation-intensity="1"] .chat-input:focus {
+  transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Maximum zoom effects at 100% zoom intensity */
+[data-zoom-intensity="1"] .control-button:hover,
+[data-zoom-intensity="1"] .send-button:hover {
+  transform: scale(1.4);
+}
+
+[data-zoom-intensity="1"] .control-button:active,
+[data-zoom-intensity="1"] .send-button:active {
+  transform: scale(0.8);
+}
+
+[data-zoom-intensity="1"] .chat-message:hover,
+[data-zoom-intensity="1"] .card:hover,
+[data-zoom-intensity="1"] .speech-pill:hover {
+  transform: scale(1.12);
+}
+
+[data-zoom-intensity="1"] .chat-input:focus {
+  transform: scale(1.06);
+}
+
+/* Disable animations when intensity is 0 */
+[data-animation-intensity="0"] *:not(.talking-head *):not(.kamiji *) {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+/* Modal styles */
+.special-effects-modal {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  width: 24rem;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.intensity-label {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.special-effects-dropdown {
+  position: fixed;
+  top: 4rem;
+  right: 1rem;
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.dropdown-content {
+  background-color: white;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 300px;
+  animation: dropdown-enter 0.2s ease-out;
+}
+
+@keyframes dropdown-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.dropdown-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.dropdown-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.intensity-label {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.intensity-description {
+  font-size: 0.875rem;
+  color: #666;
+  margin: 0;
+}
+
+/* UI Animation Classes */
+.ui-animate-subtle {
+  transition-duration: calc(0.2s * var(--animation-intensity));
+}
+
+.ui-animate-medium {
+  transition-duration: calc(0.3s * var(--animation-intensity));
+}
+
+.ui-animate-springy {
+  transition-duration: calc(0.4s * var(--animation-intensity));
+  transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.ui-animate-bouncy {
+  transition-duration: calc(0.5s * var(--animation-intensity));
+  transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Apply animation intensity to UI elements */
+.control-button {
+  transition: all 0.2s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.control-button:hover {
+  transform: scale(calc(1.05 + (0.15 * var(--animation-intensity) * var(--zoom-intensity))));
+}
+
+.control-button:active {
+  transform: scale(calc(0.95 - (0.05 * var(--animation-intensity))));
+}
+
+.chat-message {
+  transition: all 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.chat-message:hover {
+  transform: scale(calc(1.02 + (0.08 * var(--animation-intensity) * var(--zoom-intensity))));
+}
+
+.speech-pill {
+  transition: all 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.speech-pill:hover {
+  transform: scale(calc(1.02 + (0.08 * var(--animation-intensity) * var(--zoom-intensity))));
+}
+
+.input-container {
+  transition: all 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.chat-input:focus {
+  transform: scale(calc(1.01 + (0.04 * var(--animation-intensity) * var(--zoom-intensity))));
+  transition: all 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.send-button {
+  transition: all 0.2s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.send-button:hover {
+  transform: scale(calc(1.05 + (0.15 * var(--animation-intensity) * var(--zoom-intensity))));
+}
+
+.send-button:active {
+  transform: scale(calc(0.95 - (0.05 * var(--animation-intensity))));
+}
+
+/* Card animations */
+.card {
+  transition: all 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card:hover {
+  transform: scale(calc(1.02 + (0.08 * var(--animation-intensity) * var(--zoom-intensity))));
+}
+
+/* Enhanced spring animations at max intensity */
+[data-animation-intensity="1"] .control-button,
+[data-animation-intensity="1"] .send-button {
+  transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+[data-animation-intensity="1"] .chat-message,
+[data-animation-intensity="1"] .card {
+  transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+[data-animation-intensity="1"] .chat-input:focus {
+  transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Disable animations when intensity is 0 */
+[data-animation-intensity="0"] *:not(.talking-head *):not(.kamiji *) {
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+/* Slider styles */
+.slider-track {
+  background: linear-gradient(
+    to right,
+    hsl(var(--muted)) 0%,
+    hsl(var(--primary)) 100%
+  );
+  transition: all 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.slider-thumb {
+  transition: all 0.2s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.slider-thumb:hover {
+  transform: scale(calc(1.2 * var(--zoom-intensity)));
+}
+
+/* Remove conflicting transitions */
+.chat-bubble {
+  transition: none;
+} 

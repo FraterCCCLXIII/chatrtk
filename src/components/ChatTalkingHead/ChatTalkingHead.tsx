@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus, Radio, X, FileText, Gamepad2, Keyboard, Send } from "lucide-react";
+import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus, Radio, X, FileText, Gamepad2, Keyboard, Send, Sparkles } from "lucide-react";
 import { Smiley, Robot } from "@phosphor-icons/react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { 
@@ -42,6 +42,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { getTranslation } from '@/lib/translations';
 import HotkeysModal from '../HotkeysModal/HotkeysModal';
 import { useHotkeys } from '@/hooks/useHotkeys';
+import SpecialEffectsModal from '../SpecialEffectsModal/SpecialEffectsModal';
 
 type Expression = 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
 
@@ -169,6 +170,9 @@ const ChatTalkingHead: React.FC = () => {
   const [isRecordingEnding, setIsRecordingEnding] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [showSpeechPill, setShowSpeechPill] = useState(false);
+  const [isSpecialEffectsOpen, setIsSpecialEffectsOpen] = useState(false);
+  const [animationIntensity, setAnimationIntensity] = useState(1);
+  const [zoomIntensity, setZoomIntensity] = useState(1);
 
   // Add voice configuration state
   const [voiceSettings, setVoiceSettings] = useState({
@@ -177,6 +181,19 @@ const ChatTalkingHead: React.FC = () => {
     volume: 1.0,
     voice: 'en-US' // Default voice
   });
+
+  // Add this near the top of the component, after other state declarations
+  useEffect(() => {
+    document.documentElement.style.setProperty('--animation-intensity', animationIntensity.toString());
+    document.documentElement.style.setProperty('--zoom-intensity', zoomIntensity.toString());
+    document.documentElement.setAttribute('data-animation-intensity', animationIntensity.toString());
+    
+    // Add UI animation classes to elements
+    const uiElements = document.querySelectorAll('.control-button, .chat-message, .speech-pill, .input-container, .chat-input, .send-button, .modal-content, .card');
+    uiElements.forEach(element => {
+      element.classList.add('ui-animate-springy');
+    });
+  }, [animationIntensity, zoomIntensity]);
 
   // Handle keyboard events globally
   useEffect(() => {
@@ -1456,6 +1473,15 @@ When asked about cards, weather, recipes, or any structured information, respond
         >
           <Keyboard className="h-5 w-5" />
         </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsSpecialEffectsOpen(true)}
+          className="control-button ui-animate-springy"
+          data-tooltip={`${getTranslation('specialEffects', currentLanguage)} [x]`}
+        >
+          <Sparkles className="h-5 w-5" />
+        </Button>
         <LanguageSelector
           currentLanguage={currentLanguage}
           onLanguageChange={handleLanguageChange}
@@ -1543,7 +1569,7 @@ When asked about cards, weather, recipes, or any structured information, respond
                 >
                   <div
                     id={`message-${index}`}
-                    className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
+                    className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'} ui-animate-springy`}
                     style={message.isUser ? userMessageStyle : aiMessageStyle}
                   >
                     {message.text}
@@ -1566,7 +1592,7 @@ When asked about cards, weather, recipes, or any structured information, respond
       )}
       
       <MotionDiv 
-        className="input-container"
+        className="input-container ui-animate-springy"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -1615,7 +1641,7 @@ When asked about cards, weather, recipes, or any structured information, respond
           />
           <Button 
             onClick={handleSendMessage} 
-            className="send-button"
+            className="send-button ui-animate-springy"
             disabled={isAIResponding}
             data-tooltip={isAIResponding ? getTranslation('aiIsResponding', currentLanguage) : `${getTranslation('sendMessage', currentLanguage)} [Enter]`}
           >
@@ -1695,6 +1721,15 @@ When asked about cards, weather, recipes, or any structured information, respond
       <HotkeysModal
         open={isHotkeysOpen}
         onOpenChange={setIsHotkeysOpen}
+      />
+
+      <SpecialEffectsModal
+        open={isSpecialEffectsOpen}
+        onOpenChange={setIsSpecialEffectsOpen}
+        animationIntensity={animationIntensity}
+        onAnimationIntensityChange={setAnimationIntensity}
+        zoomIntensity={zoomIntensity}
+        onZoomIntensityChange={setZoomIntensity}
       />
     </div>
   );

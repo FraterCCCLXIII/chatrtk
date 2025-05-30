@@ -1,3 +1,5 @@
+@import '../SpecialEffectsModal/SpecialEffectsModal.css';
+
 :root {
   --body-bg-color: #e2ffe5; /* Default background color */
 }
@@ -632,7 +634,7 @@
   margin-bottom: 8px;
   opacity: 0;
   visibility: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 50;
   pointer-events: none;
   will-change: transform, opacity;
@@ -752,4 +754,16 @@
     transform: rotate(45deg) translateX(20px) translateY(-20px);
     opacity: 0;
   }
+}
+
+.chat-bubble {
+  transition: transform 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.speech-pill {
+  transition: all 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.control-button {
+  transition: transform 0.2s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
 }
