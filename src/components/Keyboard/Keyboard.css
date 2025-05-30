@@ -1,0 +1,318 @@
+.keyboard-trigger {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.keyboard-trigger:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.keyboard-trigger:active {
+  transform: scale(0.95);
+}
+
+.keyboard-modal {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: box-shadow 0.2s ease;
+}
+
+.keyboard-modal:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.keyboard-header {
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: grab;
+  user-select: none;
+}
+
+.keyboard-header:active {
+  cursor: grabbing;
+}
+
+.keyboard-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.keyboard-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.keyboard-control-button {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.keyboard-control-button:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+.keyboard-tabs {
+  display: flex;
+  gap: 1px;
+  background: #e0e0e0;
+  padding: 4px;
+}
+
+.keyboard-tab {
+  flex: 1;
+  background: #f5f5f5;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.keyboard-tab:hover {
+  background: #e0e0e0;
+}
+
+.keyboard-tab.active {
+  background: white;
+  color: #333;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.keyboard-container {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  overflow: auto;
+}
+
+.keyboard-row {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.keyboard-key {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 8px 12px;
+  min-width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  flex: 1;
+  max-width: calc(100% / 14 - 4px);
+}
+
+.keyboard-key:hover {
+  background: #e0e0e0;
+  transform: translateY(-1px);
+}
+
+.keyboard-key:active {
+  background: #d0d0d0;
+  transform: translateY(1px);
+}
+
+/* Special key sizes */
+.keyboard-key.backspace {
+  max-width: calc(100% / 7 - 4px);
+}
+
+.keyboard-key.tab {
+  max-width: calc(100% / 7 - 4px);
+}
+
+.keyboard-key.caps {
+  max-width: calc(100% / 7 - 4px);
+}
+
+.keyboard-key.enter {
+  max-width: calc(100% / 7 - 4px);
+}
+
+.keyboard-key.shift {
+  max-width: calc(100% / 6 - 4px);
+}
+
+.keyboard-key.space {
+  max-width: calc(100% / 4 - 4px);
+}
+
+.keyboard-key.ctrl,
+.keyboard-key.alt,
+.keyboard-key.win,
+.keyboard-key.menu {
+  max-width: calc(100% / 8 - 4px);
+}
+
+/* Emojis and GIFs styles */
+.emojis-container,
+.gifs-container {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  overflow: auto;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  border-color: #666;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+.emojis-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: 8px;
+  padding: 4px;
+}
+
+.emoji-button {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emoji-button:hover {
+  background: #e0e0e0;
+  transform: scale(1.1);
+}
+
+.gifs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  padding: 4px;
+}
+
+.gif-placeholder {
+  aspect-ratio: 16/9;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gif-placeholder:hover {
+  background: #e0e0e0;
+}
+
+.keyboard-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 20px;
+  height: 20px;
+  cursor: se-resize;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .keyboard-modal {
+    width: 95vw !important;
+    height: auto !important;
+    max-height: 80vh;
+  }
+
+  .keyboard-key {
+    min-width: 30px;
+    height: 36px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .keyboard-key.space {
+    max-width: calc(100% / 3 - 4px);
+  }
+
+  .keyboard-key.shift {
+    max-width: calc(100% / 4 - 4px);
+  }
+
+  .keyboard-key.backspace,
+  .keyboard-key.enter {
+    max-width: calc(100% / 5 - 4px);
+  }
+
+  .emojis-grid {
+    grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+  }
+
+  .emoji-button {
+    width: 36px;
+    height: 36px;
+    font-size: 20px;
+  }
+
+  .gifs-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+} 

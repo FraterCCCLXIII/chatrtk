@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus, Radio, X, FileText, Gamepad2, Keyboard, Send, Sparkles } from "lucide-react";
+import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus, Radio, X, FileText, Gamepad2, Keyboard as KeyboardIcon, Send, Sparkles } from "lucide-react";
 import { Smiley, Robot } from "@phosphor-icons/react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { 
@@ -43,6 +43,7 @@ import { getTranslation } from '@/lib/translations';
 import HotkeysModal from '../HotkeysModal/HotkeysModal';
 import { useHotkeys } from '@/hooks/useHotkeys';
 import SpecialEffectsModal from '../SpecialEffectsModal/SpecialEffectsModal';
+import Keyboard from '../Keyboard/Keyboard';
 
 type Expression = 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
 
@@ -173,6 +174,7 @@ const ChatTalkingHead: React.FC = () => {
   const [isSpecialEffectsOpen, setIsSpecialEffectsOpen] = useState(false);
   const [animationIntensity, setAnimationIntensity] = useState(1);
   const [zoomIntensity, setZoomIntensity] = useState(1);
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   // Add voice configuration state
   const [voiceSettings, setVoiceSettings] = useState({
@@ -1471,7 +1473,7 @@ When asked about cards, weather, recipes, or any structured information, respond
           className="hover:scale-105 active:scale-95 transition-transform"
           data-tooltip={`${getTranslation('showHotkeys', currentLanguage)} [k]`}
         >
-          <Keyboard className="h-5 w-5" />
+          <KeyboardIcon className="h-5 w-5" />
         </Button>
         <Button
           variant="ghost"
@@ -1681,6 +1683,16 @@ When asked about cards, weather, recipes, or any structured information, respond
         )}
       </MotionDiv>
 
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => setIsKeyboardOpen(true)}
+        className="keyboard-trigger"
+        data-tooltip={getTranslation('keyboard', currentLanguage)}
+      >
+        <KeyboardIcon className="h-5 w-5" />
+      </Button>
+
       <ApiKeyModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
@@ -1730,6 +1742,20 @@ When asked about cards, weather, recipes, or any structured information, respond
         onAnimationIntensityChange={setAnimationIntensity}
         zoomIntensity={zoomIntensity}
         onZoomIntensityChange={setZoomIntensity}
+      />
+
+      <Keyboard
+        open={isKeyboardOpen}
+        onOpenChange={setIsKeyboardOpen}
+        onKeyPress={(key: string) => {
+          if (key === 'Enter') {
+            handleSendMessage();
+          } else if (key === 'Backspace') {
+            setInputText(prev => prev.slice(0, -1));
+          } else {
+            setInputText(prev => prev + key);
+          }
+        }}
       />
     </div>
   );
