@@ -3,7 +3,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus, Radio, X, FileText } from "lucide-react";
+import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles, Mic, MicOff, MessageSquarePlus, Radio, X, FileText, Gamepad2 } from "lucide-react";
 import { Smiley, Robot } from "@phosphor-icons/react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { 
@@ -35,6 +35,7 @@ import type { AIPersonality, Thought } from '@/lib/types';
 import LoadingScreen from '../LoadingScreen/LoadingScreen';
 import { AnimatePresence } from 'framer-motion';
 import ProjectInfoModal from '../ProjectInfoModal/ProjectInfoModal';
+import GamesModal from '../GamesModal/GamesModal';
 
 type Expression = 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
 
@@ -154,6 +155,7 @@ const ChatTalkingHead: React.FC = () => {
   const [isAISpeaking, setIsAISpeaking] = useState(false);
   const aiSpeechTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isProjectInfoOpen, setIsProjectInfoOpen] = useState(false);
+  const [isGamesOpen, setIsGamesOpen] = useState(false);
 
   // Add voice configuration state
   const [voiceSettings, setVoiceSettings] = useState({
@@ -1171,7 +1173,7 @@ When asked about cards, weather, recipes, or any structured information, respond
         transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.2 }}
         style={{ color: '#000000' }}
       >
-        RTK-100
+        <span className="text-lg">神字</span> RTK-ALPHA
       </MotionDiv>
       <div className="controls-container">
         <Button
@@ -1245,6 +1247,15 @@ When asked about cards, weather, recipes, or any structured information, respond
           data-tooltip={showCaptions ? "Hide Captions" : "Show Captions"}
         >
           <Subtitles className={`h-4 w-4 ${showCaptions ? 'text-primary' : ''}`} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsGamesOpen(true)}
+          className="hover:scale-105 active:scale-95 transition-transform"
+          data-tooltip="RTK Arcade"
+        >
+          <Gamepad2 className="h-5 w-5" />
         </Button>
         <div className="relative">
           <Button
@@ -1495,6 +1506,11 @@ When asked about cards, weather, recipes, or any structured information, respond
       <ProjectInfoModal
         open={isProjectInfoOpen}
         onOpenChange={setIsProjectInfoOpen}
+      />
+
+      <GamesModal
+        open={isGamesOpen}
+        onOpenChange={setIsGamesOpen}
       />
     </div>
   );
