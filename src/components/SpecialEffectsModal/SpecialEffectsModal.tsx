@@ -1,10 +1,11 @@
 import React, { useRef, useEffect } from 'react';
-import { Sparkles, Pencil } from 'lucide-react';
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { getTranslation } from '@/lib/translations';
+import { Sparkles, Pencil, Grid, Scan } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useEffects } from '@/contexts/EffectsContext';
+import { getTranslation } from '@/lib/translations';
 import './SpecialEffectsModal.css';
 
 interface SpecialEffectsModalProps {
@@ -12,8 +13,8 @@ interface SpecialEffectsModalProps {
   onOpenChange: (open: boolean) => void;
   animationIntensity: number;
   onAnimationIntensityChange: (value: number) => void;
-  zoomIntensity?: number;
-  onZoomIntensityChange?: (value: number) => void;
+  zoomIntensity: number;
+  onZoomIntensityChange: (value: number) => void;
 }
 
 const SpecialEffectsModal: React.FC<SpecialEffectsModalProps> = ({
@@ -21,16 +22,27 @@ const SpecialEffectsModal: React.FC<SpecialEffectsModalProps> = ({
   onOpenChange,
   animationIntensity,
   onAnimationIntensityChange,
-  zoomIntensity = 1,
-  onZoomIntensityChange = () => {},
+  zoomIntensity,
+  onZoomIntensityChange
 }) => {
   const { currentLanguage } = useLanguage();
-  const { state, toggleEffect, updatePencilConfig } = useEffects();
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const {
+    activeEffect,
+    pencilEffect,
+    pixelateEffect,
+    scanlineEffect,
+    togglePencilEffect,
+    updatePencilConfig,
+    togglePixelateEffect,
+    updatePixelateConfig,
+    toggleScanlineEffect,
+    updateScanlineConfig
+  } = useEffects();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
         onOpenChange(false);
       }
     };
@@ -44,156 +56,202 @@ const SpecialEffectsModal: React.FC<SpecialEffectsModalProps> = ({
     };
   }, [open, onOpenChange]);
 
-  const handlePencilIntensityChange = (value: number) => {
-    updatePencilConfig({
-      intensity: value,
-      scale: value * 2,
-      baseFrequency: 0.02 / value
-    });
-  };
-
-  const handlePencilSpeedChange = (value: number) => {
-    updatePencilConfig({
-      animationSpeed: value
-    });
-  };
-
   if (!open) return null;
 
+  const handlePencilIntensityChange = (value: number[]) => {
+    updatePencilConfig({ intensity: value[0] });
+  };
+
+  const handlePencilSpeedChange = (value: number[]) => {
+    updatePencilConfig({ animationSpeed: value[0] });
+  };
+
+  const handlePixelateSizeChange = (value: number[]) => {
+    updatePixelateConfig({ pixelSize: value[0] });
+  };
+
+  const handlePixelateIntensityChange = (value: number[]) => {
+    updatePixelateConfig({ intensity: value[0] });
+  };
+
+  const handleScanlineOpacityChange = (value: number[]) => {
+    updateScanlineConfig({ opacity: value[0] / 100 });
+  };
+
+  const handleScanlineSpeedChange = (value: number[]) => {
+    updateScanlineConfig({ speed: value[0] });
+  };
+
+  const handleScanlineColorChange = (value: string) => {
+    updateScanlineConfig({ color: value });
+  };
+
+  const handleScanlineBlendModeChange = (value: string) => {
+    updateScanlineConfig({ blendMode: value as 'hard-light' | 'multiply' | 'overlay' });
+  };
+
   return (
-    <div className="special-effects-dropdown" ref={dropdownRef}>
-      <div className="dropdown-content">
-        <div className="dropdown-header">
-          <Sparkles className="h-5 w-5" />
-          <h2>{getTranslation('specialEffects', currentLanguage)}</h2>
+    <div className="special-effects-modal-overlay">
+      <div ref={modalRef} className="special-effects-modal">
+        <div className="effects-header">
+          <h3>{getTranslation('specialEffects', currentLanguage)}</h3>
         </div>
-        <div className="dropdown-body">
-          <div className="slider-group">
-            <div className="slider-header">
-              <Label htmlFor="animation-intensity">
-                {getTranslation('animationIntensity', currentLanguage)}
-              </Label>
-              <span className="intensity-label">
-                {animationIntensity === 0 
-                  ? getTranslation('off', currentLanguage)
-                  : animationIntensity === 1 
-                  ? getTranslation('max', currentLanguage)
-                  : `${Math.round(animationIntensity * 100)}%`}
-              </span>
-            </div>
+        
+        <div className="effects-controls">
+          <div className="settings-group">
+            <Label>{getTranslation('animationIntensity', currentLanguage)}</Label>
             <Slider
-              id="animation-intensity"
-              min={0}
-              max={1}
-              step={0.01}
               value={[animationIntensity]}
-              onValueChange={([value]) => onAnimationIntensityChange(value)}
-              className="slider-track"
-            />
-            <p className="intensity-description">
-              {animationIntensity === 0 
-                ? getTranslation('animationsDisabled', currentLanguage)
-                : animationIntensity < 0.3 
-                ? getTranslation('subtleAnimations', currentLanguage)
-                : animationIntensity < 0.7 
-                ? getTranslation('moderateAnimations', currentLanguage)
-                : getTranslation('energeticAnimations', currentLanguage)}
-            </p>
-          </div>
-
-          <div className="slider-group">
-            <div className="slider-header">
-              <Label htmlFor="zoom-intensity">
-                {getTranslation('zoomIntensity', currentLanguage)}
-              </Label>
-              <span className="intensity-label">
-                {zoomIntensity === 0 
-                  ? getTranslation('off', currentLanguage)
-                  : zoomIntensity === 1 
-                  ? getTranslation('max', currentLanguage)
-                  : `${Math.round(zoomIntensity * 100)}%`}
-              </span>
-            </div>
-            <Slider
-              id="zoom-intensity"
+              onValueChange={(value) => onAnimationIntensityChange(value[0])}
               min={0}
               max={1}
-              step={0.01}
-              value={[zoomIntensity]}
-              onValueChange={([value]) => onZoomIntensityChange(value)}
-              className="slider-track"
+              step={0.1}
             />
-            <p className="intensity-description">
-              {zoomIntensity === 0 
-                ? getTranslation('zoomDisabled', currentLanguage)
-                : zoomIntensity < 0.3 
-                ? getTranslation('subtleZoom', currentLanguage)
-                : zoomIntensity < 0.7 
-                ? getTranslation('mediumZoom', currentLanguage)
-                : getTranslation('maxZoom', currentLanguage)}
-            </p>
           </div>
 
-          <div className="slider-group">
-            <div className="slider-header">
-              <button
-                className={`effect-button ${state.activeEffect === 'pencil' ? 'active' : ''}`}
-                onClick={() => toggleEffect('pencil')}
-                title={getTranslation('pencilEffect', currentLanguage)}
-              >
-                <Pencil size={16} />
-                {getTranslation('pencilEffect', currentLanguage)}
-              </button>
-            </div>
+          <div className="settings-group">
+            <Label>{getTranslation('zoomIntensity', currentLanguage)}</Label>
+            <Slider
+              value={[zoomIntensity]}
+              onValueChange={(value) => onZoomIntensityChange(value[0])}
+              min={0}
+              max={1}
+              step={0.1}
+            />
+          </div>
 
-            {state.activeEffect === 'pencil' && (
-              <>
-                <div className="slider-header">
-                  <Label htmlFor="pencil-intensity">
-                    {getTranslation('effectIntensity', currentLanguage)}
-                  </Label>
-                  <span className="intensity-label">
-                    {state.pencilConfig.intensity === 0.1 
-                      ? getTranslation('off', currentLanguage)
-                      : state.pencilConfig.intensity === 2 
-                      ? getTranslation('max', currentLanguage)
-                      : `${Math.round(state.pencilConfig.intensity * 50)}%`}
-                  </span>
-                </div>
+          <button
+            className={`effect-button ${pencilEffect.enabled ? 'active' : ''}`}
+            onClick={togglePencilEffect}
+          >
+            <Pencil className="effect-icon" />
+            {getTranslation('pencilEffect', currentLanguage)}
+          </button>
+
+          {pencilEffect.enabled && (
+            <div className="effect-settings">
+              <div className="settings-group">
+                <Label>{getTranslation('effectIntensity', currentLanguage)}</Label>
                 <Slider
-                  id="pencil-intensity"
+                  value={[pencilEffect.intensity]}
+                  onValueChange={handlePencilIntensityChange}
+                  min={0}
+                  max={100}
+                  step={1}
+                />
+              </div>
+              <div className="settings-group">
+                <Label>{getTranslation('animationSpeed', currentLanguage)}</Label>
+                <Slider
+                  value={[pencilEffect.animationSpeed]}
+                  onValueChange={handlePencilSpeedChange}
                   min={0.1}
                   max={2}
                   step={0.1}
-                  value={[state.pencilConfig.intensity]}
-                  onValueChange={([value]) => handlePencilIntensityChange(value)}
-                  className="slider-track"
                 />
+              </div>
+            </div>
+          )}
 
-                <div className="slider-header">
-                  <Label htmlFor="pencil-speed">
-                    {getTranslation('animationSpeed', currentLanguage)}
-                  </Label>
-                  <span className="intensity-label">
-                    {state.pencilConfig.animationSpeed === 0.1 
-                      ? getTranslation('off', currentLanguage)
-                      : state.pencilConfig.animationSpeed === 1 
-                      ? getTranslation('max', currentLanguage)
-                      : `${Math.round(state.pencilConfig.animationSpeed * 100)}%`}
-                  </span>
-                </div>
+          <button
+            className={`effect-button ${pixelateEffect.enabled ? 'active' : ''}`}
+            onClick={togglePixelateEffect}
+          >
+            <Grid className="effect-icon" />
+            {getTranslation('pixelateEffect', currentLanguage)}
+          </button>
+
+          {pixelateEffect.enabled && (
+            <div className="effect-settings">
+              <div className="settings-group">
+                <Label>{getTranslation('pixelSize', currentLanguage)}</Label>
                 <Slider
-                  id="pencil-speed"
-                  min={0.1}
-                  max={1}
-                  step={0.1}
-                  value={[state.pencilConfig.animationSpeed]}
-                  onValueChange={([value]) => handlePencilSpeedChange(value)}
-                  className="slider-track"
+                  value={[pixelateEffect.pixelSize]}
+                  onValueChange={handlePixelateSizeChange}
+                  min={2}
+                  max={20}
+                  step={1}
                 />
-              </>
-            )}
-          </div>
+              </div>
+              <div className="settings-group">
+                <Label>{getTranslation('effectIntensity', currentLanguage)}</Label>
+                <Slider
+                  value={[pixelateEffect.intensity]}
+                  onValueChange={handlePixelateIntensityChange}
+                  min={0}
+                  max={100}
+                  step={1}
+                />
+              </div>
+            </div>
+          )}
+
+          <button
+            className={`effect-button ${scanlineEffect.enabled ? 'active' : ''}`}
+            onClick={toggleScanlineEffect}
+          >
+            <Scan className="effect-icon" />
+            {getTranslation('scanlineEffect', currentLanguage)}
+          </button>
+
+          {scanlineEffect.enabled && (
+            <div className="effect-settings">
+              <div className="settings-group">
+                <Label>{getTranslation('effectOpacity', currentLanguage)}</Label>
+                <Slider
+                  value={[scanlineEffect.opacity * 100]}
+                  onValueChange={handleScanlineOpacityChange}
+                  min={0}
+                  max={100}
+                  step={1}
+                />
+              </div>
+              <div className="settings-group">
+                <Label>{getTranslation('animationSpeed', currentLanguage)}</Label>
+                <Slider
+                  value={[scanlineEffect.speed]}
+                  onValueChange={handleScanlineSpeedChange}
+                  min={0.5}
+                  max={5}
+                  step={0.1}
+                />
+              </div>
+              <div className="settings-group">
+                <Label>{getTranslation('scanlineColor', currentLanguage)}</Label>
+                <Select
+                  value={scanlineEffect.color}
+                  onValueChange={handleScanlineColorChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="#8BC34A">Green</SelectItem>
+                    <SelectItem value="#FFEB3B">Yellow</SelectItem>
+                    <SelectItem value="#2196F3">Blue</SelectItem>
+                    <SelectItem value="#F44336">Red</SelectItem>
+                    <SelectItem value="#9C27B0">Purple</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="settings-group">
+                <Label>{getTranslation('blendMode', currentLanguage)}</Label>
+                <Select
+                  value={scanlineEffect.blendMode}
+                  onValueChange={handleScanlineBlendModeChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hard-light">Hard Light</SelectItem>
+                    <SelectItem value="multiply">Multiply</SelectItem>
+                    <SelectItem value="overlay">Overlay</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

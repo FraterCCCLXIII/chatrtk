@@ -68,17 +68,17 @@
 }
 
 .chat-message {
-  transition: all 0.2s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--animation-duration) var(--animation-timing),
+              box-shadow var(--animation-duration) var(--animation-timing);
   transform-origin: center;
   will-change: transform;
   backface-visibility: hidden;
   -webkit-font-smoothing: antialiased;
-  transform: scale(1);
 }
 
 .chat-message:hover {
-  transform: scale(calc(1.1 + (0.3 * var(--animation-intensity) * var(--zoom-intensity))));
-  transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform: scale(var(--hover-scale));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .speech-pill {
@@ -318,11 +318,17 @@
 }
 
 .chat-message {
-  transition: all 0.3s var(--animation-intensity) cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform var(--animation-duration) var(--animation-timing),
+              box-shadow var(--animation-duration) var(--animation-timing);
+  transform-origin: center;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 .chat-message:hover {
-  transform: scale(calc(1.02 + (0.08 * var(--animation-intensity) * var(--zoom-intensity))));
+  transform: scale(var(--hover-scale));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .speech-pill {
@@ -438,4 +444,177 @@
 .effect-button svg {
   width: 16px;
   height: 16px;
+}
+
+.special-effects-modal-overlay {
+  position: fixed;
+  top: 4rem;
+  right: 1rem;
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.special-effects-modal {
+  background-color: hsl(var(--popover));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 300px;
+  animation: dropdown-enter 0.2s ease-out;
+  padding: 1rem;
+}
+
+@keyframes dropdown-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.effects-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.effects-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  color: hsl(var(--foreground));
+}
+
+.effects-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.effect-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.375rem;
+  background: hsl(var(--background));
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  color: hsl(var(--foreground));
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.effect-button:hover {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--accent));
+}
+
+.effect-button.active {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.effect-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.effect-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0.5rem;
+  background: hsl(var(--muted));
+  border-radius: 0.375rem;
+  margin-top: 0.25rem;
+}
+
+/* Remove the overlay background */
+.special-effects-modal-overlay::before {
+  display: none;
+}
+
+/* Base animation variables */
+:root {
+  --animation-duration: 0.3s;
+  --animation-timing: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --hover-scale: 1.05;
+  --active-scale: 0.95;
+}
+
+/* Effect intensity modifiers */
+[data-animation-intensity="0.5"] .chat-message {
+  --hover-scale: 1.03;
+  --animation-duration: 0.25s;
+}
+
+[data-animation-intensity="1"] .chat-message {
+  --hover-scale: 1.05;
+  --animation-duration: 0.3s;
+  --animation-timing: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Zoom intensity modifiers */
+[data-zoom-intensity="0.5"] .chat-message:hover {
+  transform: scale(calc(var(--hover-scale) * 0.8));
+}
+
+[data-zoom-intensity="1"] .chat-message:hover {
+  transform: scale(calc(var(--hover-scale) * 1.2));
+}
+
+/* Disable animations when intensity is 0 */
+[data-animation-intensity="0"] .chat-message {
+  transition: none !important;
+  transform: none !important;
+}
+
+/* Remove duplicate and conflicting transitions */
+.chat-message {
+  /* Remove any conflicting transitions */
+  transition: transform var(--animation-duration) var(--animation-timing),
+              box-shadow var(--animation-duration) var(--animation-timing) !important;
+}
+
+/* Ensure effect controls don't interfere with chat message animations */
+.effect-button,
+.effect-settings,
+.settings-group {
+  transition: background-color 0.2s ease,
+              border-color 0.2s ease,
+              color 0.2s ease !important;
+  transform: none !important;
+}
+
+/* Remove any other conflicting chat message transitions */
+.chat-message * {
+  transition: none !important;
+}
+
+/* Ensure smooth transitions for all interactive elements */
+button,
+.slider-thumb,
+.effect-button {
+  transition: all 0.2s ease !important;
+}
+
+/* Remove any transform conflicts */
+.chat-message:not(:hover) {
+  transform: scale(1) !important;
 } 

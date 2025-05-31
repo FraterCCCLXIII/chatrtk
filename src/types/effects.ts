@@ -1,4 +1,4 @@
-export type EffectType = 'pencil' | 'none';
+export type EffectType = 'pencil' | 'pixelate' | 'scanline' | 'none';
 
 export interface EffectConfig {
   type: EffectType;
@@ -14,17 +14,47 @@ export interface PencilEffectConfig extends EffectConfig {
   animationSpeed: number;
 }
 
+export interface PixelateEffectConfig {
+  enabled: boolean;
+  pixelSize: number; // Controls the size of the pixels
+  intensity: number; // Controls the overall intensity of the effect
+}
+
+export interface ScanlineEffectConfig {
+  enabled: boolean;
+  opacity: number;
+  speed: number;
+  color: string;
+  blendMode: 'hard-light' | 'multiply' | 'overlay';
+}
+
 export const DEFAULT_PENCIL_CONFIG: PencilEffectConfig = {
   type: 'pencil',
-  intensity: 1,
+  intensity: 50,
   enabled: false,
   baseFrequency: 0.02,
   numOctaves: 3,
   scale: 2,
-  animationSpeed: 0.3
+  animationSpeed: 1
+};
+
+export const DEFAULT_PIXELATE_CONFIG: PixelateEffectConfig = {
+  enabled: false,
+  pixelSize: 10,
+  intensity: 50
+};
+
+export const DEFAULT_SCANLINE_CONFIG: ScanlineEffectConfig = {
+  enabled: false,
+  opacity: 0.4,
+  speed: 2,
+  color: '#8BC34A',
+  blendMode: 'hard-light'
 };
 
 export interface EffectsState {
-  activeEffect: EffectType;
-  pencilConfig: PencilEffectConfig;
+  activeEffect: EffectType | null;
+  pencilEffect: PencilEffectConfig;
+  pixelateEffect: PixelateEffectConfig;
+  scanlineEffect: ScanlineEffectConfig;
 } 
