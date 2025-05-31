@@ -452,6 +452,9 @@
   right: 1rem;
   z-index: 1000;
   pointer-events: auto;
+  width: auto;
+  height: auto;
+  background: none;
 }
 
 .special-effects-modal {
@@ -460,8 +463,14 @@
   border-radius: 0.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   min-width: 300px;
+  max-width: 400px;
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
   animation: dropdown-enter 0.2s ease-out;
   padding: 1rem;
+  position: relative;
+  margin: 0;
+  inset: auto;
 }
 
 @keyframes dropdown-enter {

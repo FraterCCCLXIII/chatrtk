@@ -44,6 +44,7 @@ import HotkeysModal from '../HotkeysModal/HotkeysModal';
 import { useHotkeys } from '@/hooks/useHotkeys';
 import SpecialEffectsModal from '../SpecialEffectsModal/SpecialEffectsModal';
 import Keyboard from '../Keyboard/Keyboard';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Expression = 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
 
@@ -179,9 +180,9 @@ const ChatTalkingHead: React.FC = () => {
   // Add voice configuration state
   const [voiceSettings, setVoiceSettings] = useState({
     rate: 1.0,
-    pitch: 1.0,
+    pitch: 1.7,
     volume: 1.0,
-    voice: 'en-US' // Default voice
+    voice: 'sv-SE' // Default to Swedish (Alva)
   });
 
   // Add this near the top of the component, after other state declarations
@@ -301,7 +302,13 @@ const ChatTalkingHead: React.FC = () => {
   // Initialize Talkify
   useEffect(() => {
     setupTalkify().then(() => {
-      setTtsPlayer(getTalkifyPlayer());
+      const player = getTalkifyPlayer();
+      // Set initial voice settings
+      player.voice = 'sv-SE'; // Alva
+      player.rate = 1.0;
+      player.pitch = 1.7;
+      player.volume = 1.0;
+      setTtsPlayer(player);
       setIsTtsReady(true);
     }).catch(error => {
       console.error('Failed to initialize Talkify:', error);
@@ -1308,456 +1315,570 @@ When asked about cards, weather, recipes, or any structured information, respond
   };
 
   return (
-    <div>
-      <AnimatePresence>
-        {isLoading && (
-          <LoadingScreen onLoadingComplete={() => setIsLoading(false)} />
-        )}
-      </AnimatePresence>
-      
-      <MotionDiv 
-        className="app-title"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="rtk-logo" width="24" height="24" viewBox="0 0 173.35 75.11">
-          <path d="M86.67 0 0 37.81l86.68 37.3 86.67-37.8L86.67 0zm76.62 37.33L86.67 70.75 10.06 37.78 86.68 4.36l76.61 32.97z" />
-          <path d="M128.79 31.06v13.47l10-4.36v4.64l-14.25 6.21V24.57l14.25 6.21v4.64l-10-4.36zm-20-8.72v13.34h7.5v4.25h-7.5v13.33l10-4.36v4.63l-14.25 6.21V15.85l14.25 6.21v4.64l-10-4.36zm-10-9.01v4.65l-10-4.37v53.01l-2.12.92-2.13-.92V13.61l-10 4.36v-4.64l12.13-5.29 12.12 5.29zM65.83 35.05l2.96-1.3V15.84l-14.25 6.22v31.47l4.25 1.85V38.11l3.12-1.37 7.7 23.37 2.84 1.23h.29v.14l2.1.91-9.01-27.34zm-1.29-4.09-5.75 2.51v-8.63l5.75-2.51v8.63zm-30-.18v14.03l4.25 1.85v-4.59h5.75v7.1l4.25 1.85V24.57l-14.25 6.21zm10 7.04h-5.75v-4.26l5.75-2.51v6.77z" />
-        </svg>
-        ChatRTK
-        <a 
-          href="https://github.com/paulbloch/chatrtk" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="ml-2 hover:text-primary transition-colors"
-          title="View on GitHub"
+    <TooltipProvider>
+      <div className="chat-talking-head">
+        <AnimatePresence>
+          {isLoading && (
+            <LoadingScreen onLoadingComplete={() => setIsLoading(false)} />
+          )}
+        </AnimatePresence>
+        
+        <MotionDiv 
+          className="app-title"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
-          <Github className="h-5 w-5" />
-        </a>
-      </MotionDiv>
-      <MotionDiv 
-        className="model-version"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.2 }}
-        style={{ color: '#000000' }}
-      >
-        <span className="text-lg">神字</span> RTK-ALPHA
-      </MotionDiv>
-      <div className="controls-container">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsProjectInfoOpen(true)}
-          className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={`${getTranslation('aboutRTK', currentLanguage)} [i]`}
-        >
-          <FileText className="h-5 w-5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsFaceSelectorOpen(true)}
-          className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={`${getTranslation('changeFace', currentLanguage)} [f]`}
-        >
-          <Smiley className="h-5 w-5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowHead(!showHead)}
-          className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={`${showHead ? getTranslation('hideHead', currentLanguage) : getTranslation('showHead', currentLanguage)} [h]`}
-        >
-          {showHead ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowChat(!showChat)}
-          className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={`${showChat ? getTranslation('hideChat', currentLanguage) : getTranslation('showChat', currentLanguage)} [c]`}
-        >
-          {showChat ? <MessageSquareOff className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleVoice}
-          className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={`${isVoiceEnabled ? getTranslation('disableVoice', currentLanguage) : getTranslation('enableVoice', currentLanguage)} [v]`}
-        >
-          {isVoiceEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsModalOpen(true)}
-          className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={`${getTranslation('settings', currentLanguage)} [s]`}
-        >
-          <Settings className="h-5 w-5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsFacialRigEditorOpen(true)}
-          className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={`${getTranslation('editFacialRig', currentLanguage)} [e]`}
-        >
-          <Edit2 className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setShowCaptions(!showCaptions)}
-          className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={`${showCaptions ? getTranslation('hideCaptions', currentLanguage) : getTranslation('showCaptions', currentLanguage)} [t]`}
-        >
-          <Subtitles className={`h-4 w-4 ${showCaptions ? 'text-primary' : ''}`} />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsGamesOpen(true)}
-          className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={`${getTranslation('rtkArcade', currentLanguage)} [g]`}
-        >
-          <Gamepad2 className="h-5 w-5" />
-        </Button>
-        <div className="relative">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsVerbosityOpen(!isVerbosityOpen)}
-            className={`hover:scale-105 active:scale-95 transition-transform ${verbosityLevel > 0 ? 'text-primary' : ''}`}
-            data-tooltip={`${getTranslation('chatVerbosity', currentLanguage)} [b]`}
+          <svg xmlns="http://www.w3.org/2000/svg" className="rtk-logo" width="24" height="24" viewBox="0 0 173.35 75.11">
+            <path d="M86.67 0 0 37.81l86.68 37.3 86.67-37.8L86.67 0zm76.62 37.33L86.67 70.75 10.06 37.78 86.68 4.36l76.61 32.97z" />
+            <path d="M128.79 31.06v13.47l10-4.36v4.64l-14.25 6.21V24.57l14.25 6.21v4.64l-10-4.36zm-20-8.72v13.34h7.5v4.25h-7.5v13.33l10-4.36v4.63l-14.25 6.21V15.85l14.25 6.21v4.64l-10-4.36zm-10-9.01v4.65l-10-4.37v53.01l-2.12.92-2.13-.92V13.61l-10 4.36v-4.64l12.13-5.29 12.12 5.29zM65.83 35.05l2.96-1.3V15.84l-14.25 6.22v31.47l4.25 1.85V38.11l3.12-1.37 7.7 23.37 2.84 1.23h.29v.14l2.1.91-9.01-27.34zm-1.29-4.09-5.75 2.51v-8.63l5.75-2.51v8.63zm-30-.18v14.03l4.25 1.85v-4.59h5.75v7.1l4.25 1.85V24.57l-14.25 6.21zm10 7.04h-5.75v-4.26l5.75-2.51v6.77z" />
+          </svg>
+          ChatRTK
+          <a 
+            href="https://github.com/paulbloch/chatrtk" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="ml-2 hover:text-primary transition-colors"
+            title="View on GitHub"
           >
-            <MessageSquarePlus className="h-5 w-5" />
-          </Button>
-          {isVerbosityOpen && (
-            <div className="absolute right-0 top-full mt-2 p-4 bg-white rounded-lg shadow-lg border w-64 z-50">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="verbosity">{getTranslation('chatVerbosity', currentLanguage)}</Label>
-                  <span className="text-sm text-muted-foreground">{verbosityLevel}%</span>
+            <Github className="h-5 w-5" />
+          </a>
+        </MotionDiv>
+        <MotionDiv 
+          className="model-version"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.2 }}
+          style={{ color: '#000000' }}
+        >
+          <span className="text-lg">神字</span> RTK-ALPHA
+        </MotionDiv>
+        <div className="controls-container">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsProjectInfoOpen(true)}
+                className="hover:scale-105 active:scale-95 transition-transform"
+              >
+                <FileText className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {getTranslation('aboutRTK', currentLanguage)} [i]
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsFaceSelectorOpen(true)}
+                className="hover:scale-105 active:scale-95 transition-transform"
+              >
+                <Smiley className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {getTranslation('changeFace', currentLanguage)} [f]
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowHead(!showHead)}
+                className="hover:scale-105 active:scale-95 transition-transform"
+              >
+                {showHead ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {showHead ? getTranslation('hideHead', currentLanguage) : getTranslation('showHead', currentLanguage)} [h]
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowChat(!showChat)}
+                className="hover:scale-105 active:scale-95 transition-transform"
+              >
+                {showChat ? <MessageSquareOff className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {showChat ? getTranslation('hideChat', currentLanguage) : getTranslation('showChat', currentLanguage)} [c]
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleVoice}
+                className="hover:scale-105 active:scale-95 transition-transform"
+              >
+                {isVoiceEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {isVoiceEnabled ? getTranslation('disableVoice', currentLanguage) : getTranslation('enableVoice', currentLanguage)} [v]
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsModalOpen(true)}
+                className="hover:scale-105 active:scale-95 transition-transform"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {getTranslation('settings', currentLanguage)} [s]
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsFacialRigEditorOpen(true)}
+                className="hover:scale-105 active:scale-95 transition-transform"
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {getTranslation('editFacialRig', currentLanguage)} [e]
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowCaptions(!showCaptions)}
+                className="hover:scale-105 active:scale-95 transition-transform"
+              >
+                <Subtitles className={`h-4 w-4 ${showCaptions ? 'text-primary' : ''}`} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {showCaptions ? getTranslation('hideCaptions', currentLanguage) : getTranslation('showCaptions', currentLanguage)} [t]
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsGamesOpen(true)}
+                className="hover:scale-105 active:scale-95 transition-transform"
+              >
+                <Gamepad2 className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {getTranslation('rtkArcade', currentLanguage)} [g]
+            </TooltipContent>
+          </Tooltip>
+
+          <div className="relative">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsVerbosityOpen(!isVerbosityOpen)}
+                  className={`hover:scale-105 active:scale-95 transition-transform ${verbosityLevel > 0 ? 'text-primary' : ''}`}
+                >
+                  <MessageSquarePlus className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {getTranslation('chatVerbosity', currentLanguage)} [b]
+              </TooltipContent>
+            </Tooltip>
+            {isVerbosityOpen && (
+              <div className="absolute right-0 top-full mt-2 p-4 bg-white rounded-lg shadow-lg border w-64 z-50">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="verbosity">{getTranslation('chatVerbosity', currentLanguage)}</Label>
+                    <span className="text-sm text-muted-foreground">{verbosityLevel}%</span>
+                  </div>
+                  <Slider
+                    id="verbosity"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={[verbosityLevel]}
+                    onValueChange={([value]) => setVerbosityLevel(value)}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {verbosityLevel === 0 
+                      ? getTranslation('aiWillOnlyRespond', currentLanguage)
+                      : verbosityLevel < 30 
+                      ? getTranslation('aiWillOccasionallyInitiate', currentLanguage)
+                      : verbosityLevel < 70 
+                      ? getTranslation('aiWillRegularlyEngage', currentLanguage)
+                      : getTranslation('aiWillBeVeryChatty', currentLanguage)}
+                  </p>
                 </div>
-                <Slider
-                  id="verbosity"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={[verbosityLevel]}
-                  onValueChange={([value]) => setVerbosityLevel(value)}
-                  className="w-full"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {verbosityLevel === 0 
-                    ? getTranslation('aiWillOnlyRespond', currentLanguage)
-                    : verbosityLevel < 30 
-                    ? getTranslation('aiWillOccasionallyInitiate', currentLanguage)
-                    : verbosityLevel < 70 
-                    ? getTranslation('aiWillRegularlyEngage', currentLanguage)
-                    : getTranslation('aiWillBeVeryChatty', currentLanguage)}
-                </p>
               </div>
+            )}
+          </div>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsHotkeysOpen(true)}
+                className="hover:scale-105 active:scale-95 transition-transform"
+              >
+                <KeyboardIcon className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {getTranslation('showHotkeys', currentLanguage)} [k]
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsSpecialEffectsOpen(true)}
+                className="control-button ui-animate-springy"
+              >
+                <Sparkles className="h-5 w-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {getTranslation('specialEffects', currentLanguage)} [x]
+            </TooltipContent>
+          </Tooltip>
+
+          <LanguageSelector
+            currentLanguage={currentLanguage}
+            onLanguageChange={handleLanguageChange}
+          />
+        </div>
+        
+        {showHead && (
+          <>
+            <div 
+              className="talking-head-container" 
+              style={{ 
+                height: `${headHeight}px`,
+                backgroundColor: currentFaceTheme.previewColor
+              }}
+            >
+              <TalkingHead 
+                text={currentSpeechText}
+                speaking={isSpeaking}
+                expression={currentExpression}
+                theme={currentFaceTheme}
+                headShape={currentHeadShape}
+              />
+              {showCaptions && (
+                <div 
+                  className="captions-container"
+                  style={{
+                    opacity: captionOpacity,
+                    transition: 'opacity 0.3s ease-in-out'
+                  }}
+                >
+                  <div className="captions-text">
+                    {captionText.split('\n').slice(0, 2).join('\n')}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div 
+              className="resize-handle"
+              onMouseDown={handleResizeStart}
+              style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+            >
+              <div className="resize-handle-line"></div>
+            </div>
+          </>
+        )}
+        
+        {showChat && (
+          <div className="chat-container">
+            <ScrollArea className="chat-messages">
+              {messages.map((message, index) => (
+                message.type === 'card' ? (
+                  <AnimatedCard 
+                    key={message.id || index}
+                    delay={index * 0.1}
+                  >
+                    <Card className="w-full max-w-[600px] mx-auto">
+                      <CardHeader>
+                        <CardTitle>{message.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p>{message.content}</p>
+                      </CardContent>
+                      {message.actions && message.actions.length > 0 && (
+                        <CardFooter className="flex gap-2">
+                          {message.actions.map((action, idx) => (
+                            <Button
+                              key={idx}
+                              variant="outline"
+                              onClick={() => handleCardAction(action.action)}
+                              className="hover:scale-105 active:scale-95 transition-transform"
+                            >
+                              {action.label}
+                            </Button>
+                          ))}
+                        </CardFooter>
+                      )}
+                    </Card>
+                  </AnimatedCard>
+                ) : (
+                  <AnimatedMessage 
+                    key={message.id || index}
+                    isUser={message.isUser}
+                    delay={index * 0.05}
+                  >
+                    <div
+                      id={`message-${index}`}
+                      className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'} ui-animate-springy`}
+                      style={message.isUser ? userMessageStyle : aiMessageStyle}
+                    >
+                      {message.text}
+                    </div>
+                  </AnimatedMessage>
+                )
+              ))}
+              {isAIResponding && (
+                <div id="loading-message" className="chat-message ai-message" style={aiMessageStyle}>
+                  <div className="flex space-x-2">
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor }}></div>
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor, animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor, animationDelay: '0.4s' }}></div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} style={{ float: "left", clear: "both" }} />
+            </ScrollArea>
+          </div>
+        )}
+        
+        <MotionDiv 
+          className="input-container ui-animate-springy"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
+          <div className="chat-input-wrapper">
+            {(isAIResponding || isAISpeaking) && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    className="stop-button"
+                    onClick={stopAllAI}
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {getTranslation('stopAI', currentLanguage)} (Space)
+                </TooltipContent>
+              </Tooltip>
+            )}
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleVoiceInput}
+                  className={`audio-control-button ${isListening ? 'active' : ''}`}
+                >
+                  {isListening ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isListening ? getTranslation('stopVoiceInput', currentLanguage) : getTranslation('startVoiceInput', currentLanguage)} [m]
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleAlwaysListening}
+                  className={`audio-control-button ${isAlwaysListening ? 'active' : ''}`}
+                >
+                  <Radio className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {isAlwaysListening ? getTranslation('disableAlwaysListen', currentLanguage) : getTranslation('enableAlwaysListen', currentLanguage)} [a]
+              </TooltipContent>
+            </Tooltip>
+
+            <MotionTextarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder={isListening ? getTranslation('listening', currentLanguage) : getTranslation('typeYourMessage', currentLanguage)}
+              className="chat-input translate-y-[2px]"
+              whileFocus={{ scale: 1.01 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
+            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="submit"
+                  onClick={handleSendMessage}
+                  disabled={!inputText.trim() || isAIResponding}
+                  className="send-button"
+                >
+                  {isAIResponding ? (
+                    <div className="loading-spinner" />
+                  ) : (
+                    <Send className="h-5 w-5" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {getTranslation('sendMessage', currentLanguage)} [Enter]
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          {(showSpeechPill || isListening) && (
+            <div className={`speech-pill ${showSpeechPill ? 'visible' : ''}`}>
+              <div className="recording-dot" />
+              <span>{transcript || getTranslation('listening', currentLanguage)}</span>
+              {isRecordingEnding ? (
+                <div className="recording-spinner" />
+              ) : isSending ? (
+                <Send className="h-4 w-4 animate-paper-airplane" />
+              ) : (
+                <button 
+                  className="cancel-recording"
+                  onClick={() => {
+                    if (recognitionRef.current) {
+                      recognitionRef.current.stop();
+                    }
+                    setIsListening(false);
+                    setTranscript('');
+                    finalTranscriptRef.current = '';
+                    setShowSpeechPill(false);
+                  }}
+                  title={getTranslation('cancelRecording', currentLanguage)}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
           )}
-        </div>
+        </MotionDiv>
+
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setIsHotkeysOpen(true)}
-          className="hover:scale-105 active:scale-95 transition-transform"
-          data-tooltip={`${getTranslation('showHotkeys', currentLanguage)} [k]`}
+          onClick={() => setIsKeyboardOpen(true)}
+          className="keyboard-trigger"
+          data-tooltip={getTranslation('keyboard', currentLanguage)}
         >
           <KeyboardIcon className="h-5 w-5" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsSpecialEffectsOpen(true)}
-          className="control-button ui-animate-springy"
-          data-tooltip={`${getTranslation('specialEffects', currentLanguage)} [x]`}
-        >
-          <Sparkles className="h-5 w-5" />
-        </Button>
-        <LanguageSelector
-          currentLanguage={currentLanguage}
-          onLanguageChange={handleLanguageChange}
+
+        <ApiKeyModal
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          onSave={handleSaveSettings}
+          currentProvider={apiSettings.provider}
+          currentApiKey={apiSettings.apiKey}
+          currentModel={apiSettings.model}
+          currentEndpoint={apiSettings.endpoint}
+        />
+
+        <FaceSelectorModal
+          open={isFaceSelectorOpen}
+          onOpenChange={setIsFaceSelectorOpen}
+          onSelectFace={handleSelectFace}
+          currentFaceTheme={currentFaceTheme.id}
+        />
+        
+        <FacialRigEditor
+          open={isFacialRigEditorOpen}
+          onOpenChange={setIsFacialRigEditorOpen}
+          onSave={handleSaveFacialRigChanges}
+          currentFaceTheme={currentFaceTheme}
+          currentHeadShape={currentHeadShape}
+          voiceSettings={voiceSettings}
+          onVoiceSettingsChange={updateVoiceSettings}
+        />
+
+        <ProjectInfoModal
+          open={isProjectInfoOpen}
+          onOpenChange={setIsProjectInfoOpen}
+        />
+
+        <GamesModal
+          open={isGamesOpen}
+          onOpenChange={setIsGamesOpen}
+        />
+
+        <HotkeysModal
+          open={isHotkeysOpen}
+          onOpenChange={setIsHotkeysOpen}
+        />
+
+        <SpecialEffectsModal
+          open={isSpecialEffectsOpen}
+          onOpenChange={setIsSpecialEffectsOpen}
+          animationIntensity={animationIntensity}
+          onAnimationIntensityChange={setAnimationIntensity}
+          zoomIntensity={zoomIntensity}
+          onZoomIntensityChange={setZoomIntensity}
+        />
+
+        <Keyboard
+          open={isKeyboardOpen}
+          onOpenChange={setIsKeyboardOpen}
+          onKeyPress={(key: string) => {
+            if (key === 'Enter') {
+              handleSendMessage();
+            } else if (key === 'Backspace') {
+              setInputText(prev => prev.slice(0, -1));
+            } else {
+              setInputText(prev => prev + key);
+            }
+          }}
         />
       </div>
-      
-      {showHead && (
-        <>
-          <div 
-            className="talking-head-container" 
-            style={{ 
-              height: `${headHeight}px`,
-              backgroundColor: currentFaceTheme.previewColor
-            }}
-          >
-            <TalkingHead 
-              text={currentSpeechText}
-              speaking={isSpeaking}
-              expression={currentExpression}
-              theme={currentFaceTheme}
-              headShape={currentHeadShape}
-            />
-            {showCaptions && (
-              <div 
-                className="captions-container"
-                style={{
-                  opacity: captionOpacity,
-                  transition: 'opacity 0.3s ease-in-out'
-                }}
-              >
-                <div className="captions-text">
-                  {captionText.split('\n').slice(0, 2).join('\n')}
-                </div>
-              </div>
-            )}
-          </div>
-          
-          <div 
-            className="resize-handle"
-            onMouseDown={handleResizeStart}
-            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-          >
-            <div className="resize-handle-line"></div>
-          </div>
-        </>
-      )}
-      
-      {showChat && (
-        <div className="chat-container">
-          <ScrollArea className="chat-messages">
-            {messages.map((message, index) => (
-              message.type === 'card' ? (
-                <AnimatedCard 
-                  key={message.id || index}
-                  delay={index * 0.1}
-                >
-                  <Card className="w-full max-w-[600px] mx-auto">
-                    <CardHeader>
-                      <CardTitle>{message.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p>{message.content}</p>
-                    </CardContent>
-                    {message.actions && message.actions.length > 0 && (
-                      <CardFooter className="flex gap-2">
-                        {message.actions.map((action, idx) => (
-                          <Button
-                            key={idx}
-                            variant="outline"
-                            onClick={() => handleCardAction(action.action)}
-                            className="hover:scale-105 active:scale-95 transition-transform"
-                          >
-                            {action.label}
-                          </Button>
-                        ))}
-                      </CardFooter>
-                    )}
-                  </Card>
-                </AnimatedCard>
-              ) : (
-                <AnimatedMessage 
-                  key={message.id || index}
-                  isUser={message.isUser}
-                  delay={index * 0.05}
-                >
-                  <div
-                    id={`message-${index}`}
-                    className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'} ui-animate-springy`}
-                    style={message.isUser ? userMessageStyle : aiMessageStyle}
-                  >
-                    {message.text}
-                  </div>
-                </AnimatedMessage>
-              )
-            ))}
-            {isAIResponding && (
-              <div id="loading-message" className="chat-message ai-message" style={aiMessageStyle}>
-                <div className="flex space-x-2">
-                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor }}></div>
-                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor, animationDelay: '0.2s' }}></div>
-                  <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor, animationDelay: '0.4s' }}></div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} style={{ float: "left", clear: "both" }} />
-          </ScrollArea>
-        </div>
-      )}
-      
-      <MotionDiv 
-        className="input-container ui-animate-springy"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      >
-        <div className="chat-input-wrapper">
-          {(isAIResponding || isAISpeaking) && (
-            <button 
-              className="stop-button"
-              onClick={stopAllAI}
-              title={`${getTranslation('stopAI', currentLanguage)} (Space)`}
-            >
-              <X className="h-5 w-5" />
-            </button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleVoiceInput}
-            className={`audio-control-button ${isListening ? 'active' : ''}`}
-            data-tooltip={`${isListening ? getTranslation('stopVoiceInput', currentLanguage) : getTranslation('startVoiceInput', currentLanguage)} [m]`}
-          >
-            {isListening ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleAlwaysListening}
-            className={`audio-control-button ${isAlwaysListening ? 'active' : ''}`}
-            data-tooltip={`${isAlwaysListening ? getTranslation('disableAlwaysListen', currentLanguage) : getTranslation('enableAlwaysListen', currentLanguage)} [a]`}
-          >
-            <Radio className="h-5 w-5" />
-          </Button>
-          <MotionTextarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder={isListening ? getTranslation('listening', currentLanguage) : getTranslation('typeYourMessage', currentLanguage)}
-            className="chat-input translate-y-[2px]"
-            whileFocus={{ scale: 1.01 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-          />
-          <Button 
-            onClick={handleSendMessage} 
-            className="send-button ui-animate-springy"
-            disabled={isAIResponding}
-            data-tooltip={isAIResponding ? getTranslation('aiIsResponding', currentLanguage) : `${getTranslation('sendMessage', currentLanguage)} [Enter]`}
-          >
-            {isAIResponding ? (
-              <div className="loading-spinner" />
-            ) : (
-              <MessageCircleMore className="h-5 w-5" />
-            )}
-          </Button>
-        </div>
-        {(showSpeechPill || isListening) && (
-          <div className={`speech-pill ${showSpeechPill ? 'visible' : ''}`}>
-            <div className="recording-dot" />
-            <span>{transcript || getTranslation('listening', currentLanguage)}</span>
-            {isRecordingEnding ? (
-              <div className="recording-spinner" />
-            ) : isSending ? (
-              <Send className="h-4 w-4 animate-paper-airplane" />
-            ) : (
-              <button 
-                className="cancel-recording"
-                onClick={() => {
-                  if (recognitionRef.current) {
-                    recognitionRef.current.stop();
-                  }
-                  setIsListening(false);
-                  setTranscript('');
-                  finalTranscriptRef.current = '';
-                  setShowSpeechPill(false);
-                }}
-                title={getTranslation('cancelRecording', currentLanguage)}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        )}
-      </MotionDiv>
-
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setIsKeyboardOpen(true)}
-        className="keyboard-trigger"
-        data-tooltip={getTranslation('keyboard', currentLanguage)}
-      >
-        <KeyboardIcon className="h-5 w-5" />
-      </Button>
-
-      <ApiKeyModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        onSave={handleSaveSettings}
-        currentProvider={apiSettings.provider}
-        currentApiKey={apiSettings.apiKey}
-        currentModel={apiSettings.model}
-        currentEndpoint={apiSettings.endpoint}
-      />
-
-      <FaceSelectorModal
-        open={isFaceSelectorOpen}
-        onOpenChange={setIsFaceSelectorOpen}
-        onSelectFace={handleSelectFace}
-        currentFaceTheme={currentFaceTheme.id}
-      />
-      
-      <FacialRigEditor
-        open={isFacialRigEditorOpen}
-        onOpenChange={setIsFacialRigEditorOpen}
-        onSave={handleSaveFacialRigChanges}
-        currentFaceTheme={currentFaceTheme}
-        currentHeadShape={currentHeadShape}
-        voiceSettings={voiceSettings}
-        onVoiceSettingsChange={updateVoiceSettings}
-      />
-
-      <ProjectInfoModal
-        open={isProjectInfoOpen}
-        onOpenChange={setIsProjectInfoOpen}
-      />
-
-      <GamesModal
-        open={isGamesOpen}
-        onOpenChange={setIsGamesOpen}
-      />
-
-      <HotkeysModal
-        open={isHotkeysOpen}
-        onOpenChange={setIsHotkeysOpen}
-      />
-
-      <SpecialEffectsModal
-        open={isSpecialEffectsOpen}
-        onOpenChange={setIsSpecialEffectsOpen}
-        animationIntensity={animationIntensity}
-        onAnimationIntensityChange={setAnimationIntensity}
-        zoomIntensity={zoomIntensity}
-        onZoomIntensityChange={setZoomIntensity}
-      />
-
-      <Keyboard
-        open={isKeyboardOpen}
-        onOpenChange={setIsKeyboardOpen}
-        onKeyPress={(key: string) => {
-          if (key === 'Enter') {
-            handleSendMessage();
-          } else if (key === 'Backspace') {
-            setInputText(prev => prev.slice(0, -1));
-          } else {
-            setInputText(prev => prev + key);
-          }
-        }}
-      />
-    </div>
+    </TooltipProvider>
   );
 };
 
