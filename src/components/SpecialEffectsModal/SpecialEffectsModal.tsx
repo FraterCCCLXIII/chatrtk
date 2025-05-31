@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Sparkles, Pencil, Grid, Scan } from 'lucide-react';
+import { Sparkles, Pencil, Grid, Scan, Circle } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -32,12 +32,15 @@ const SpecialEffectsModal: React.FC<SpecialEffectsModalProps> = ({
     pencilEffect,
     pixelateEffect,
     scanlineEffect,
+    dotEffect,
     togglePencilEffect,
     updatePencilConfig,
     togglePixelateEffect,
     updatePixelateConfig,
     toggleScanlineEffect,
-    updateScanlineConfig
+    updateScanlineConfig,
+    toggleDotEffect,
+    updateDotConfig
   } = useEffects();
 
   useEffect(() => {
@@ -66,12 +69,20 @@ const SpecialEffectsModal: React.FC<SpecialEffectsModalProps> = ({
     updatePencilConfig({ animationSpeed: value[0] });
   };
 
-  const handlePixelateSizeChange = (value: number[]) => {
-    updatePixelateConfig({ pixelSize: value[0] });
+  const handlePixelateGridSizeChange = (value: number[]) => {
+    updatePixelateConfig({ gridSize: value[0] });
   };
 
-  const handlePixelateIntensityChange = (value: number[]) => {
-    updatePixelateConfig({ intensity: value[0] });
+  const handlePixelateColorChange = (value: string) => {
+    updatePixelateConfig({ color: value });
+  };
+
+  const handlePixelateNoisyChange = (checked: boolean) => {
+    updatePixelateConfig({ noisy: checked });
+  };
+
+  const handlePixelateSpeedChange = (value: number[]) => {
+    updatePixelateConfig({ animationSpeed: value[0] });
   };
 
   const handleScanlineOpacityChange = (value: number[]) => {
@@ -88,6 +99,34 @@ const SpecialEffectsModal: React.FC<SpecialEffectsModalProps> = ({
 
   const handleScanlineBlendModeChange = (value: string) => {
     updateScanlineConfig({ blendMode: value as 'hard-light' | 'multiply' | 'overlay' });
+  };
+
+  const handleDotGridSizeChange = (value: number[]) => {
+    updateDotConfig({ gridSize: value[0] });
+  };
+
+  const handleDotElementSizeChange = (value: number[]) => {
+    updateDotConfig({ elementSize: value[0] });
+  };
+
+  const handleDotThicknessChange = (value: number[]) => {
+    updateDotConfig({ thickness: value[0] });
+  };
+
+  const handleDotSpeedChange = (value: number[]) => {
+    updateDotConfig({ animationSpeed: value[0] });
+  };
+
+  const handleDotColorChange = (value: string) => {
+    updateDotConfig({ color: value });
+  };
+
+  const handleDotBorderColorChange = (value: string) => {
+    updateDotConfig({ borderColor: value });
+  };
+
+  const handleDotNoisyChange = (checked: boolean) => {
+    updateDotConfig({ noisy: checked });
   };
 
   return (
@@ -164,24 +203,42 @@ const SpecialEffectsModal: React.FC<SpecialEffectsModalProps> = ({
           {pixelateEffect.enabled && (
             <div className="effect-settings">
               <div className="settings-group">
-                <Label>{getTranslation('pixelSize', currentLanguage)}</Label>
+                <Label>{getTranslation('gridSize', currentLanguage)}</Label>
                 <Slider
-                  value={[pixelateEffect.pixelSize]}
-                  onValueChange={handlePixelateSizeChange}
-                  min={2}
-                  max={20}
+                  value={[pixelateEffect.gridSize]}
+                  onValueChange={handlePixelateGridSizeChange}
+                  min={5}
+                  max={50}
                   step={1}
                 />
               </div>
               <div className="settings-group">
-                <Label>{getTranslation('effectIntensity', currentLanguage)}</Label>
+                <Label>{getTranslation('animationSpeed', currentLanguage)}</Label>
                 <Slider
-                  value={[pixelateEffect.intensity]}
-                  onValueChange={handlePixelateIntensityChange}
-                  min={0}
-                  max={100}
-                  step={1}
+                  value={[pixelateEffect.animationSpeed]}
+                  onValueChange={handlePixelateSpeedChange}
+                  min={0.1}
+                  max={2}
+                  step={0.1}
                 />
+              </div>
+              <div className="settings-group">
+                <Label>{getTranslation('dotColor', currentLanguage)}</Label>
+                <input
+                  type="color"
+                  value={pixelateEffect.color}
+                  onChange={(e) => handlePixelateColorChange(e.target.value)}
+                />
+              </div>
+              <div className="settings-group">
+                <Label>
+                  <input
+                    type="checkbox"
+                    checked={pixelateEffect.noisy}
+                    onChange={(e) => handlePixelateNoisyChange(e.target.checked)}
+                  />
+                  {getTranslation('noisyAnimation', currentLanguage)}
+                </Label>
               </div>
             </div>
           )}
@@ -249,6 +306,85 @@ const SpecialEffectsModal: React.FC<SpecialEffectsModalProps> = ({
                     <SelectItem value="overlay">Overlay</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+          )}
+
+          <button
+            className={`effect-button ${dotEffect.enabled ? 'active' : ''}`}
+            onClick={toggleDotEffect}
+          >
+            <Circle className="effect-icon" />
+            {getTranslation('dotEffect', currentLanguage)}
+          </button>
+
+          {dotEffect.enabled && (
+            <div className="effect-settings">
+              <div className="settings-group">
+                <Label>{getTranslation('gridSize', currentLanguage)}</Label>
+                <Slider
+                  value={[dotEffect.gridSize]}
+                  onValueChange={handleDotGridSizeChange}
+                  min={5}
+                  max={20}
+                  step={1}
+                />
+              </div>
+              <div className="settings-group">
+                <Label>{getTranslation('elementSize', currentLanguage)}</Label>
+                <Slider
+                  value={[dotEffect.elementSize]}
+                  onValueChange={handleDotElementSizeChange}
+                  min={0.1}
+                  max={1}
+                  step={0.1}
+                />
+              </div>
+              <div className="settings-group">
+                <Label>{getTranslation('thickness', currentLanguage)}</Label>
+                <Slider
+                  value={[dotEffect.thickness]}
+                  onValueChange={handleDotThicknessChange}
+                  min={1}
+                  max={5}
+                  step={0.5}
+                />
+              </div>
+              <div className="settings-group">
+                <Label>{getTranslation('animationSpeed', currentLanguage)}</Label>
+                <Slider
+                  value={[dotEffect.animationSpeed]}
+                  onValueChange={handleDotSpeedChange}
+                  min={0.1}
+                  max={2}
+                  step={0.1}
+                />
+              </div>
+              <div className="settings-group">
+                <Label>{getTranslation('dotColor', currentLanguage)}</Label>
+                <input
+                  type="color"
+                  value={dotEffect.color}
+                  onChange={(e) => handleDotColorChange(e.target.value)}
+                />
+              </div>
+              <div className="settings-group">
+                <Label>{getTranslation('borderColor', currentLanguage)}</Label>
+                <input
+                  type="color"
+                  value={dotEffect.borderColor}
+                  onChange={(e) => handleDotBorderColorChange(e.target.value)}
+                />
+              </div>
+              <div className="settings-group">
+                <Label>
+                  <input
+                    type="checkbox"
+                    checked={dotEffect.noisy}
+                    onChange={(e) => handleDotNoisyChange(e.target.checked)}
+                  />
+                  {getTranslation('noisyAnimation', currentLanguage)}
+                </Label>
               </div>
             </div>
           )}

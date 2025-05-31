@@ -11,66 +11,102 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadingComplete }) => {
   const [showLogo, setShowLogo] = useState(false);
   const [showText, setShowText] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [showContent, setShowContent] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
 
   useEffect(() => {
-    // Simulate loading progress
+    // Handle space key press to skip loading
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (event.code === 'Space') {
+        event.preventDefault();
+        onLoadingComplete();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+
+    // Initial black screen
+    const blackScreenTimeout = setTimeout(() => {
+      setShowContent(true);
+    }, 300);
+
+    // Simulate loading progress - slower to match the exit timing
     const interval = setInterval(() => {
       setLoadingProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
           return 100;
         }
-        return prev + 1;
+        return prev + 1; // Slower increment
       });
-    }, 30);
+    }, 25); // Slower interval
 
-    // Show logo after a short delay
+    // Show logo after content is visible
     const logoTimeout = setTimeout(() => {
-      setShowLogo(true);
+      if (showContent) {
+        setShowLogo(true);
+      }
     }, 500);
 
     // Show text after logo appears
     const textTimeout = setTimeout(() => {
-      setShowText(true);
-    }, 1500);
+      if (showContent && showLogo) {
+        setShowText(true);
+      }
+    }, 800);
 
-    // Start exit animation
+    // Start content fade out
+    const fadeOutTimeout = setTimeout(() => {
+      setIsFadingOut(true);
+    }, 2500);
+
+    // Start exit animation after content fades
     const exitTimeout = setTimeout(() => {
       setIsExiting(true);
-    }, 3500);
+    }, 3000);
 
-    // Complete loading after animations
+    // Complete loading after exit animation
     const completeTimeout = setTimeout(() => {
       onLoadingComplete();
-    }, 4500);
+    }, 4000); // Longer final fade
 
     return () => {
       clearInterval(interval);
+      clearTimeout(blackScreenTimeout);
       clearTimeout(logoTimeout);
       clearTimeout(textTimeout);
+      clearTimeout(fadeOutTimeout);
       clearTimeout(exitTimeout);
       clearTimeout(completeTimeout);
+      window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [onLoadingComplete]);
+  }, [onLoadingComplete, showContent, showLogo]);
 
   return (
     <AnimatePresence mode="wait">
       <motion.div
         className="loading-screen"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        initial={{ backgroundColor: '#000000' }}
+        animate={{ backgroundColor: showContent ? '#ffffff' : '#000000' }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 1, ease: "easeInOut" }}
+        transition={{ 
+          backgroundColor: { duration: 0.5, ease: "easeInOut" },
+          opacity: { duration: 1, ease: "easeInOut" } // Longer final fade
+        }}
       >
         <div className="loading-content">
           <AnimatePresence mode="wait">
-            {showLogo && !isExiting && (
+            {showContent && showLogo && !isFadingOut && (
               <motion.div
                 className="logo-container"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
+                transition={{ 
+                  duration: 0.5, 
+                  ease: "easeOut",
+                  exit: { duration: 0.3 } // Faster exit for content
+                }}
               >
                 <svg
                   className="artec-logo"
@@ -86,13 +122,17 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadingComplete }) => {
           </AnimatePresence>
 
           <AnimatePresence mode="wait">
-            {showText && !isExiting && (
+            {showContent && showText && !isFadingOut && (
               <motion.div
                 className="text-container"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
+                transition={{ 
+                  duration: 0.5, 
+                  ease: "easeOut",
+                  exit: { duration: 0.3 } // Faster exit for content
+                }}
               >
                 <h1 className="title">ChatRTK</h1>
                 <h2 className="subtitle">RTK-ALPHA</h2>
@@ -100,15 +140,34 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadingComplete }) => {
             )}
           </AnimatePresence>
 
-          <div className="loading-bar-container">
-            <motion.div
-              className="loading-bar"
-              initial={{ width: 0 }}
-              animate={{ width: `${loadingProgress}%` }}
-              exit={{ width: "100%" }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
-            />
-          </div>
+          {showContent && !isFadingOut && (
+            <div className="loading-bar-container">
+              <motion.div
+                className="loading-bar"
+                initial={{ width: 0 }}
+                animate={{ width: `${loadingProgress}%` }}
+                exit={{ width: "100%" }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+              />
+            </div>
+          )}
+
+          {showContent && !isFadingOut && (
+            <motion.button
+              className="skip-link"
+              onClick={onLoadingComplete}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.6 }}
+              whileHover={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ 
+                duration: 0.15,
+                exit: { duration: 0.3 } // Faster exit for content
+              }}
+            >
+              Skip (Space)
+            </motion.button>
+          )}
         </div>
       </motion.div>
     </AnimatePresence>

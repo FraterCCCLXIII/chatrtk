@@ -1,4 +1,4 @@
-export type EffectType = 'pencil' | 'pixelate' | 'scanline' | 'none';
+export type EffectType = 'pencil' | 'pixelate' | 'scanline' | 'dot';
 
 export interface EffectConfig {
   type: EffectType;
@@ -16,16 +16,34 @@ export interface PencilEffectConfig extends EffectConfig {
 
 export interface PixelateEffectConfig {
   enabled: boolean;
-  pixelSize: number; // Controls the size of the pixels
-  intensity: number; // Controls the overall intensity of the effect
+  gridSize: number;
+  color: string;
+  noisy: boolean;
+  animationSpeed: number;
 }
 
 export interface ScanlineEffectConfig {
   enabled: boolean;
+  gridSize: number;
+  thickness: number;
+  color: string;
+  borderColor: string;
+  noisy: boolean;
+  animationSpeed: number;
   opacity: number;
   speed: number;
-  color: string;
   blendMode: 'hard-light' | 'multiply' | 'overlay';
+}
+
+export interface DotEffectConfig {
+  enabled: boolean;
+  gridSize: number;
+  elementSize: number;
+  thickness: number;
+  color: string;
+  borderColor: string;
+  noisy: boolean;
+  animationSpeed: number;
 }
 
 export const DEFAULT_PENCIL_CONFIG: PencilEffectConfig = {
@@ -40,16 +58,34 @@ export const DEFAULT_PENCIL_CONFIG: PencilEffectConfig = {
 
 export const DEFAULT_PIXELATE_CONFIG: PixelateEffectConfig = {
   enabled: false,
-  pixelSize: 10,
-  intensity: 50
+  gridSize: 10,
+  color: '#ffffff',
+  noisy: false,
+  animationSpeed: 1
 };
 
 export const DEFAULT_SCANLINE_CONFIG: ScanlineEffectConfig = {
   enabled: false,
-  opacity: 0.4,
-  speed: 2,
+  gridSize: 64,
+  thickness: 0.5,
   color: '#8BC34A',
+  borderColor: 'teal',
+  noisy: true,
+  animationSpeed: 1,
+  opacity: 0.5,
+  speed: 2,
   blendMode: 'hard-light'
+};
+
+export const DEFAULT_DOT_CONFIG: DotEffectConfig = {
+  enabled: false,
+  gridSize: 64,
+  elementSize: 0.75,
+  thickness: 0.5,
+  color: 'aquamarine',
+  borderColor: 'teal',
+  noisy: true,
+  animationSpeed: 1
 };
 
 export interface EffectsState {
@@ -57,4 +93,5 @@ export interface EffectsState {
   pencilEffect: PencilEffectConfig;
   pixelateEffect: PixelateEffectConfig;
   scanlineEffect: ScanlineEffectConfig;
+  dotEffect: DotEffectConfig;
 } 

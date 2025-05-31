@@ -448,32 +448,33 @@
 
 .special-effects-modal-overlay {
   position: fixed;
-  top: 4rem;
-  right: 1rem;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent;
   z-index: 1000;
-  pointer-events: auto;
-  width: auto;
-  height: auto;
-  background: none;
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  padding-top: 4rem;
+  padding-right: 1rem;
 }
 
 .special-effects-modal {
-  background-color: hsl(var(--popover));
-  border: 1px solid hsl(var(--border));
-  border-radius: 0.5rem;
+  background-color: white;
+  border-radius: 0.75rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  min-width: 300px;
-  max-width: 400px;
+  width: 300px;
   max-height: calc(100vh - 6rem);
   overflow-y: auto;
-  animation: dropdown-enter 0.2s ease-out;
-  padding: 1rem;
   position: relative;
-  margin: 0;
-  inset: auto;
+  z-index: 1001;
+  border: 1px solid hsl(var(--border));
+  animation: slideIn 0.2s ease-out;
 }
 
-@keyframes dropdown-enter {
+@keyframes slideIn {
   from {
     opacity: 0;
     transform: translateY(-10px);
@@ -485,22 +486,24 @@
 }
 
 .effects-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
+  padding: 1rem;
   border-bottom: 1px solid hsl(var(--border));
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 1;
+  text-align: center;
 }
 
 .effects-header h3 {
+  margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  margin: 0;
-  color: hsl(var(--foreground));
+  width: 100%;
 }
 
 .effects-controls {
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -517,26 +520,25 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem;
+  border-radius: 0.5rem;
   border: 1px solid hsl(var(--border));
-  border-radius: 0.375rem;
-  background: hsl(var(--background));
+  background-color: transparent;
+  color: hsl(var(--foreground));
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.875rem;
-  color: hsl(var(--foreground));
   width: 100%;
-  justify-content: flex-start;
+  text-align: left;
 }
 
 .effect-button:hover {
-  background: hsl(var(--accent));
-  border-color: hsl(var(--accent));
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
 }
 
 .effect-button.active {
-  background: hsl(var(--accent));
-  border-color: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
 }
 
 .effect-icon {
@@ -545,18 +547,29 @@
 }
 
 .effect-settings {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
   padding: 0.5rem;
-  background: hsl(var(--muted));
-  border-radius: 0.375rem;
-  margin-top: 0.25rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+  background-color: hsl(var(--muted));
 }
 
-/* Remove the overlay background */
-.special-effects-modal-overlay::before {
-  display: none;
+/* Scrollbar styling */
+.special-effects-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.special-effects-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.special-effects-modal::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 4px;
+}
+
+.special-effects-modal::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--border) / 0.8);
 }
 
 /* Base animation variables */

@@ -4,11 +4,11 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #ffffff;
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 9999;
+  will-change: background-color;
 }
 
 .loading-content {
@@ -20,6 +20,7 @@
   width: 100%;
   max-width: 400px;
   min-height: 400px;
+  will-change: opacity, transform;
 }
 
 .logo-container {
@@ -74,4 +75,30 @@
   background-color: #000000;
   border-radius: 1px;
   transform-origin: left;
+}
+
+.skip-link {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: none;
+  border: none;
+  color: #666666;
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.skip-link:hover {
+  color: #000000;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.skip-link:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
 } 
