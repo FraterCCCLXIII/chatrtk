@@ -30,6 +30,10 @@
   gap: 0.5rem;
 }
 
+.app-title button {
+  margin-right: 0.5rem;
+}
+
 .rtk-logo {
   fill: currentColor;
   width: 2rem;
@@ -49,21 +53,23 @@
 
 .controls-container {
   display: flex;
-  justify-content: flex-end;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1.5rem;
-  background-color: transparent;
-  border-bottom: none;
-  z-index: 20;
+  justify-content: flex-end;
   position: fixed;
   top: 0;
   right: 0;
-  width: auto;
-  min-width: 200px;
-  margin: 0;
-  left: auto;
-  transform: none;
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  z-index: 50;
+  gap: 0.5rem;
+}
+
+.controls-container > *:last-child {
+  margin-left: 0.5rem;
+}
+
+.controls-container button:first-child {
+  margin-right: 0.5rem;
 }
 
 .controls-container button {

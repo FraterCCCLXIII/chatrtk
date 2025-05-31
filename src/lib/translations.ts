@@ -83,6 +83,7 @@ const translations: Translations = {
     effectOpacity: 'Effect Opacity',
     scanlineColor: 'Scanline Color',
     blendMode: 'Blend Mode',
+    aiApiSettings: "AI API Settings",
   },
   ja: {
     chatVerbosity: "チャットの詳細度",
@@ -150,6 +151,7 @@ const translations: Translations = {
     effectOpacity: '効果の不透明度',
     scanlineColor: 'スキャンラインの色',
     blendMode: 'ブレンドモード',
+    aiApiSettings: "AI API設定",
   },
   zh: {
     chatVerbosity: "聊天详细度",
@@ -217,6 +219,7 @@ const translations: Translations = {
     effectOpacity: '效果不透明度',
     scanlineColor: '扫描线颜色',
     blendMode: '混合模式',
+    aiApiSettings: "AI API设置",
   },
   keyboard: {
     en: 'Keyboard',

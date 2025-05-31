@@ -1,11 +1,12 @@
-import React, { useRef, useEffect } from 'react';
-import { Sparkles, Pencil, Grid, Scan, Circle } from 'lucide-react';
+import React from 'react';
+import { Sparkles, Pencil, Grid, Scan, Circle, X, Maximize2, Minimize2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useEffects } from '@/contexts/EffectsContext';
 import { getTranslation } from '@/lib/translations';
+import { useWindow } from '@/lib/windowManager';
 import './SpecialEffectsModal.css';
 
 interface SpecialEffectsModalProps {
@@ -26,7 +27,33 @@ const SpecialEffectsModal: React.FC<SpecialEffectsModalProps> = ({
   onZoomIntensityChange
 }) => {
   const { currentLanguage } = useLanguage();
-  const modalRef = useRef<HTMLDivElement>(null);
+  const {
+    state,
+    handleDragStart,
+    handleResizeStart,
+    toggleMaximize,
+    style
+  } = useWindow({
+    initialPosition: {
+      x: (window.innerWidth - 400) / 2,
+      y: (window.innerHeight - 300) / 2
+    },
+    initialSize: {
+      width: 400,
+      height: 300
+    },
+    minSize: {
+      width: 300,
+      height: 200
+    },
+    bounds: {
+      top: 0,
+      right: window.innerWidth,
+      bottom: window.innerHeight,
+      left: 0
+    }
+  });
+
   const {
     activeEffect,
     pencilEffect,
@@ -42,22 +69,6 @@ const SpecialEffectsModal: React.FC<SpecialEffectsModalProps> = ({
     toggleDotEffect,
     updateDotConfig
   } = useEffects();
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        onOpenChange(false);
-      }
-    };
-
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [open, onOpenChange]);
 
   if (!open) return null;
 
@@ -130,266 +141,186 @@ const SpecialEffectsModal: React.FC<SpecialEffectsModalProps> = ({
   };
 
   return (
-    <div className="special-effects-modal-overlay">
-      <div ref={modalRef} className="special-effects-modal">
-        <div className="effects-header">
-          <h3>{getTranslation('specialEffects', currentLanguage)}</h3>
+    <div className="special-effects-modal" style={style}>
+      <div className="special-effects-header" onMouseDown={handleDragStart}>
+        <div className="special-effects-title">
+          <Sparkles className="h-4 w-4 mr-2" />
+          {getTranslation('specialEffects', currentLanguage)}
         </div>
-        
-        <div className="effects-controls">
-          <div className="settings-group">
+        <div className="special-effects-controls">
+          <button onClick={toggleMaximize} className="special-effects-control-button">
+            {state.isMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </button>
+          <button onClick={() => onOpenChange(false)} className="special-effects-control-button">
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="special-effects-content">
+        <div className="space-y-4">
+          <div className="space-y-2">
             <Label>{getTranslation('animationIntensity', currentLanguage)}</Label>
             <Slider
               value={[animationIntensity]}
               onValueChange={(value) => onAnimationIntensityChange(value[0])}
               min={0}
-              max={1}
-              step={0.1}
+              max={3}
+              step={1}
+              className="w-full"
             />
+            <div className="text-sm text-muted-foreground">
+              {animationIntensity === 0 && getTranslation('animationsDisabled', currentLanguage)}
+              {animationIntensity === 1 && getTranslation('subtleAnimations', currentLanguage)}
+              {animationIntensity === 2 && getTranslation('moderateAnimations', currentLanguage)}
+              {animationIntensity === 3 && getTranslation('energeticAnimations', currentLanguage)}
+            </div>
           </div>
 
-          <div className="settings-group">
+          <div className="space-y-2">
             <Label>{getTranslation('zoomIntensity', currentLanguage)}</Label>
             <Slider
               value={[zoomIntensity]}
               onValueChange={(value) => onZoomIntensityChange(value[0])}
               min={0}
-              max={1}
-              step={0.1}
+              max={3}
+              step={1}
+              className="w-full"
             />
+            <div className="text-sm text-muted-foreground">
+              {zoomIntensity === 0 && getTranslation('zoomDisabled', currentLanguage)}
+              {zoomIntensity === 1 && getTranslation('subtleZoom', currentLanguage)}
+              {zoomIntensity === 2 && getTranslation('mediumZoom', currentLanguage)}
+              {zoomIntensity === 3 && getTranslation('maxZoom', currentLanguage)}
+            </div>
           </div>
 
-          <button
-            className={`effect-button ${pencilEffect.enabled ? 'active' : ''}`}
-            onClick={togglePencilEffect}
-          >
-            <Pencil className="effect-icon" />
-            {getTranslation('pencilEffect', currentLanguage)}
-          </button>
+          <div className="space-y-2">
+            <Label>{getTranslation('effectIntensity', currentLanguage)}</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => togglePencilEffect()}
+                className={`effect-button ${pencilEffect.enabled ? 'active' : ''}`}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                {getTranslation('pencilEffect', currentLanguage)}
+              </button>
+              <button
+                onClick={() => togglePixelateEffect()}
+                className={`effect-button ${pixelateEffect.enabled ? 'active' : ''}`}
+              >
+                <Grid className="h-4 w-4 mr-2" />
+                {getTranslation('pixelateEffect', currentLanguage)}
+              </button>
+              <button
+                onClick={() => toggleScanlineEffect()}
+                className={`effect-button ${scanlineEffect.enabled ? 'active' : ''}`}
+              >
+                <Scan className="h-4 w-4 mr-2" />
+                {getTranslation('scanlineEffect', currentLanguage)}
+              </button>
+              <button
+                onClick={() => toggleDotEffect()}
+                className={`effect-button ${dotEffect.enabled ? 'active' : ''}`}
+              >
+                <Circle className="h-4 w-4 mr-2" />
+                {getTranslation('dotEffect', currentLanguage)}
+              </button>
+            </div>
+          </div>
 
           {pencilEffect.enabled && (
-            <div className="effect-settings">
-              <div className="settings-group">
-                <Label>{getTranslation('effectIntensity', currentLanguage)}</Label>
-                <Slider
-                  value={[pencilEffect.intensity]}
-                  onValueChange={handlePencilIntensityChange}
-                  min={0}
-                  max={100}
-                  step={1}
-                />
-              </div>
-              <div className="settings-group">
-                <Label>{getTranslation('animationSpeed', currentLanguage)}</Label>
-                <Slider
-                  value={[pencilEffect.animationSpeed]}
-                  onValueChange={handlePencilSpeedChange}
-                  min={0.1}
-                  max={2}
-                  step={0.1}
-                />
+            <div className="space-y-2">
+              <Label>{getTranslation('pencilEffect', currentLanguage)}</Label>
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-sm">{getTranslation('effectIntensity', currentLanguage)}</Label>
+                  <Slider
+                    value={[pencilEffect.intensity]}
+                    onValueChange={handlePencilIntensityChange}
+                    min={0}
+                    max={100}
+                    step={1}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm">{getTranslation('animationSpeed', currentLanguage)}</Label>
+                  <Slider
+                    value={[pencilEffect.animationSpeed]}
+                    onValueChange={handlePencilSpeedChange}
+                    min={1}
+                    max={10}
+                    step={1}
+                    className="w-full"
+                  />
+                </div>
               </div>
             </div>
           )}
-
-          <button
-            className={`effect-button ${pixelateEffect.enabled ? 'active' : ''}`}
-            onClick={togglePixelateEffect}
-          >
-            <Grid className="effect-icon" />
-            {getTranslation('pixelateEffect', currentLanguage)}
-          </button>
 
           {pixelateEffect.enabled && (
-            <div className="effect-settings">
-              <div className="settings-group">
-                <Label>{getTranslation('gridSize', currentLanguage)}</Label>
-                <Slider
-                  value={[pixelateEffect.gridSize]}
-                  onValueChange={handlePixelateGridSizeChange}
-                  min={5}
-                  max={50}
-                  step={1}
-                />
-              </div>
-              <div className="settings-group">
-                <Label>{getTranslation('animationSpeed', currentLanguage)}</Label>
-                <Slider
-                  value={[pixelateEffect.animationSpeed]}
-                  onValueChange={handlePixelateSpeedChange}
-                  min={0.1}
-                  max={2}
-                  step={0.1}
-                />
-              </div>
-              <div className="settings-group">
-                <Label>{getTranslation('dotColor', currentLanguage)}</Label>
-                <input
-                  type="color"
-                  value={pixelateEffect.color}
-                  onChange={(e) => handlePixelateColorChange(e.target.value)}
-                />
-              </div>
-              <div className="settings-group">
-                <Label>
-                  <input
-                    type="checkbox"
-                    checked={pixelateEffect.noisy}
-                    onChange={(e) => handlePixelateNoisyChange(e.target.checked)}
+            <div className="space-y-2">
+              <Label>{getTranslation('pixelateEffect', currentLanguage)}</Label>
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-sm">{getTranslation('pixelSize', currentLanguage)}</Label>
+                  <Slider
+                    value={[pixelateEffect.gridSize]}
+                    onValueChange={handlePixelateGridSizeChange}
+                    min={2}
+                    max={20}
+                    step={1}
+                    className="w-full"
                   />
-                  {getTranslation('noisyAnimation', currentLanguage)}
-                </Label>
+                </div>
+                <div>
+                  <Label className="text-sm">{getTranslation('animationSpeed', currentLanguage)}</Label>
+                  <Slider
+                    value={[pixelateEffect.animationSpeed]}
+                    onValueChange={handlePixelateSpeedChange}
+                    min={1}
+                    max={10}
+                    step={1}
+                    className="w-full"
+                  />
+                </div>
               </div>
             </div>
           )}
-
-          <button
-            className={`effect-button ${scanlineEffect.enabled ? 'active' : ''}`}
-            onClick={toggleScanlineEffect}
-          >
-            <Scan className="effect-icon" />
-            {getTranslation('scanlineEffect', currentLanguage)}
-          </button>
 
           {scanlineEffect.enabled && (
-            <div className="effect-settings">
-              <div className="settings-group">
-                <Label>{getTranslation('effectOpacity', currentLanguage)}</Label>
-                <Slider
-                  value={[scanlineEffect.opacity * 100]}
-                  onValueChange={handleScanlineOpacityChange}
-                  min={0}
-                  max={100}
-                  step={1}
-                />
-              </div>
-              <div className="settings-group">
-                <Label>{getTranslation('animationSpeed', currentLanguage)}</Label>
-                <Slider
-                  value={[scanlineEffect.speed]}
-                  onValueChange={handleScanlineSpeedChange}
-                  min={0.5}
-                  max={5}
-                  step={0.1}
-                />
-              </div>
-              <div className="settings-group">
-                <Label>{getTranslation('scanlineColor', currentLanguage)}</Label>
-                <Select
-                  value={scanlineEffect.color}
-                  onValueChange={handleScanlineColorChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="#8BC34A">Green</SelectItem>
-                    <SelectItem value="#FFEB3B">Yellow</SelectItem>
-                    <SelectItem value="#2196F3">Blue</SelectItem>
-                    <SelectItem value="#F44336">Red</SelectItem>
-                    <SelectItem value="#9C27B0">Purple</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="settings-group">
-                <Label>{getTranslation('blendMode', currentLanguage)}</Label>
-                <Select
-                  value={scanlineEffect.blendMode}
-                  onValueChange={handleScanlineBlendModeChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="hard-light">Hard Light</SelectItem>
-                    <SelectItem value="multiply">Multiply</SelectItem>
-                    <SelectItem value="overlay">Overlay</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-
-          <button
-            className={`effect-button ${dotEffect.enabled ? 'active' : ''}`}
-            onClick={toggleDotEffect}
-          >
-            <Circle className="effect-icon" />
-            {getTranslation('dotEffect', currentLanguage)}
-          </button>
-
-          {dotEffect.enabled && (
-            <div className="effect-settings">
-              <div className="settings-group">
-                <Label>{getTranslation('gridSize', currentLanguage)}</Label>
-                <Slider
-                  value={[dotEffect.gridSize]}
-                  onValueChange={handleDotGridSizeChange}
-                  min={5}
-                  max={20}
-                  step={1}
-                />
-              </div>
-              <div className="settings-group">
-                <Label>{getTranslation('elementSize', currentLanguage)}</Label>
-                <Slider
-                  value={[dotEffect.elementSize]}
-                  onValueChange={handleDotElementSizeChange}
-                  min={0.1}
-                  max={1}
-                  step={0.1}
-                />
-              </div>
-              <div className="settings-group">
-                <Label>{getTranslation('thickness', currentLanguage)}</Label>
-                <Slider
-                  value={[dotEffect.thickness]}
-                  onValueChange={handleDotThicknessChange}
-                  min={1}
-                  max={5}
-                  step={0.5}
-                />
-              </div>
-              <div className="settings-group">
-                <Label>{getTranslation('animationSpeed', currentLanguage)}</Label>
-                <Slider
-                  value={[dotEffect.animationSpeed]}
-                  onValueChange={handleDotSpeedChange}
-                  min={0.1}
-                  max={2}
-                  step={0.1}
-                />
-              </div>
-              <div className="settings-group">
-                <Label>{getTranslation('dotColor', currentLanguage)}</Label>
-                <input
-                  type="color"
-                  value={dotEffect.color}
-                  onChange={(e) => handleDotColorChange(e.target.value)}
-                />
-              </div>
-              <div className="settings-group">
-                <Label>{getTranslation('borderColor', currentLanguage)}</Label>
-                <input
-                  type="color"
-                  value={dotEffect.borderColor}
-                  onChange={(e) => handleDotBorderColorChange(e.target.value)}
-                />
-              </div>
-              <div className="settings-group">
-                <Label>
-                  <input
-                    type="checkbox"
-                    checked={dotEffect.noisy}
-                    onChange={(e) => handleDotNoisyChange(e.target.checked)}
+            <div className="space-y-2">
+              <Label>{getTranslation('scanlineEffect', currentLanguage)}</Label>
+              <div className="space-y-2">
+                <div>
+                  <Label className="text-sm">{getTranslation('effectOpacity', currentLanguage)}</Label>
+                  <Slider
+                    value={[scanlineEffect.opacity * 100]}
+                    onValueChange={handleScanlineOpacityChange}
+                    min={0}
+                    max={100}
+                    step={1}
+                    className="w-full"
                   />
-                  {getTranslation('noisyAnimation', currentLanguage)}
-                </Label>
+                </div>
+                <div>
+                  <Label className="text-sm">{getTranslation('animationSpeed', currentLanguage)}</Label>
+                  <Slider
+                    value={[scanlineEffect.speed]}
+                    onValueChange={handleScanlineSpeedChange}
+                    min={1}
+                    max={10}
+                    step={1}
+                    className="w-full"
+                  />
+                </div>
               </div>
             </div>
           )}
         </div>
       </div>
+      <div className="special-effects-resize-handle" onMouseDown={(e) => handleResizeStart(e, 'se')} />
     </div>
   );
 };

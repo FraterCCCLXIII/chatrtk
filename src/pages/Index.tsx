@@ -1,6 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import ChatTalkingHead from '@/components/ChatTalkingHead/ChatTalkingHead';
+import { Drawers } from '@/components/Drawers/Drawers';
 
 const Index = () => {
     const [backgroundColor, setBackgroundColor] = useState('#5ddbaf'); // Default mint background (same as face container)
@@ -56,11 +56,13 @@ const Index = () => {
     }, []);
 
     return (
-    <div className="min-h-screen p-4" style={{ backgroundColor }}>
-      <div className="container mx-auto py-8">
-        <ChatTalkingHead />
-      </div>
-    </div>
+        <Drawers>
+            <div className="min-h-screen p-4" style={{ backgroundColor }}>
+                <div className="container mx-auto py-8">
+                    <ChatTalkingHead />
+                </div>
+            </div>
+        </Drawers>
     );
 }
 
