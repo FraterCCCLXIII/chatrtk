@@ -406,4 +406,36 @@
 /* Remove conflicting transitions */
 .chat-bubble {
   transition: none;
+}
+
+.effect-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  color: #333;
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.effect-button:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
+}
+
+.effect-button.active {
+  background: #e3f2fd;
+  border-color: #2196f3;
+  color: #1976d2;
+}
+
+.effect-button svg {
+  width: 16px;
+  height: 16px;
 } 

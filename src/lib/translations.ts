@@ -73,7 +73,10 @@ const translations: Translations = {
     searchGifs: 'Search GIFs...',
     keyboard: 'Keyboard',
     emojis: 'Emojis',
-    gifs: 'GIFs'
+    gifs: 'GIFs',
+    pencilEffect: 'Pencil Effect',
+    effectIntensity: 'Effect Intensity',
+    animationSpeed: 'Animation Speed'
   },
   ja: {
     chatVerbosity: "チャットの詳細度",
@@ -132,6 +135,9 @@ const translations: Translations = {
     maxZoom: '最大のズーム効果',
     off: 'オフ',
     max: '最大',
+    pencilEffect: '鉛筆効果',
+    effectIntensity: '効果の強さ',
+    animationSpeed: 'アニメーション速度'
   },
   zh: {
     chatVerbosity: "聊天详细度",
@@ -190,6 +196,9 @@ const translations: Translations = {
     maxZoom: '最大缩放效果',
     off: '关闭',
     max: '最大',
+    pencilEffect: '铅笔效果',
+    effectIntensity: '效果强度',
+    animationSpeed: '动画速度'
   },
   keyboard: {
     en: 'Keyboard',
