@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,38 +8,10 @@ import {
 import { Keyboard } from "lucide-react";
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getTranslation } from '@/lib/translations';
-
-interface Hotkey {
-  key: string;
-  description: string;
-  category: 'navigation' | 'voice' | 'chat' | 'general';
-}
-
-const hotkeys: Hotkey[] = [
-  // Navigation
-  { key: '⌘/Ctrl + H', description: 'Toggle head visibility', category: 'navigation' },
-  { key: '⌘/Ctrl + C', description: 'Toggle chat visibility', category: 'navigation' },
-  { key: '⌘/Ctrl + F', description: 'Open face selector', category: 'navigation' },
-  { key: '⌘/Ctrl + E', description: 'Open facial rig editor', category: 'navigation' },
-  { key: '⌘/Ctrl + S', description: 'Open settings', category: 'navigation' },
-  { key: '⌘/Ctrl + G', description: 'Open RTK Arcade', category: 'navigation' },
-  { key: '⌘/Ctrl + I', description: 'Open project info', category: 'navigation' },
-  
-  // Voice Controls
-  { key: '⌘/Ctrl + V', description: 'Toggle voice', category: 'voice' },
-  { key: '⌘/Ctrl + M', description: 'Toggle microphone', category: 'voice' },
-  { key: '⌘/Ctrl + A', description: 'Toggle always listen', category: 'voice' },
-  { key: 'Space', description: 'Stop/Continue AI', category: 'voice' },
-  
-  // Chat Controls
-  { key: 'Enter', description: 'Send message', category: 'chat' },
-  { key: 'Shift + Enter', description: 'New line in chat', category: 'chat' },
-  { key: '⌘/Ctrl + L', description: 'Change language', category: 'chat' },
-  
-  // General
-  { key: '⌘/Ctrl + K', description: 'Show hotkeys', category: 'general' },
-  { key: 'Esc', description: 'Close any modal', category: 'general' },
-];
+import { HOTKEYS, getHotkeysByCategory, getHotkeyDisplay, isHotkeysEnabled, setHotkeysEnabled } from '@/lib/hotkeysRegistry';
+import { HotkeyCategory } from '@/types/hotkeys';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface HotkeysModalProps {
   open: boolean;
@@ -48,44 +20,66 @@ interface HotkeysModalProps {
 
 const HotkeysModal: React.FC<HotkeysModalProps> = ({ open, onOpenChange }) => {
   const { currentLanguage } = useLanguage();
+  const categories: HotkeyCategory[] = ['navigation', 'voice', 'chat', 'general'];
+  const [enabled, setEnabled] = useState(isHotkeysEnabled());
 
-  const hotkeys = [
-    { key: 'k', description: getTranslation('showHotkeys', currentLanguage) },
-    { key: 'h', description: getTranslation('toggleHead', currentLanguage) },
-    { key: 'c', description: getTranslation('toggleChat', currentLanguage) },
-    { key: 'f', description: getTranslation('changeFace', currentLanguage) },
-    { key: 'e', description: getTranslation('editFacialRig', currentLanguage) },
-    { key: 's', description: getTranslation('settings', currentLanguage) },
-    { key: 'g', description: getTranslation('rtkArcade', currentLanguage) },
-    { key: 'i', description: getTranslation('aboutRTK', currentLanguage) },
-    { key: 'v', description: getTranslation('toggleVoice', currentLanguage) },
-    { key: 'm', description: getTranslation('toggleVoiceInput', currentLanguage) },
-    { key: 'a', description: getTranslation('toggleAlwaysListen', currentLanguage) },
-    { key: 'l', description: getTranslation('changeLanguage', currentLanguage) },
-    { key: 'b', description: getTranslation('chatVerbosity', currentLanguage) },
-    { key: 'Space', description: getTranslation('stopContinueAI', currentLanguage) },
-    { key: 'Enter', description: getTranslation('sendMessage', currentLanguage) },
-  ];
+  // Listen for hotkeys state changes
+  useEffect(() => {
+    const handleHotkeysStateChange = (event: CustomEvent<boolean>) => {
+      setEnabled(event.detail);
+    };
+
+    window.addEventListener('hotkeysStateChanged', handleHotkeysStateChange as EventListener);
+    return () => {
+      window.removeEventListener('hotkeysStateChanged', handleHotkeysStateChange as EventListener);
+    };
+  }, []);
+
+  const handleToggle = (checked: boolean) => {
+    setEnabled(checked);
+    setHotkeysEnabled(checked);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{getTranslation('keyboardShortcuts', currentLanguage)}</DialogTitle>
+          <DialogTitle className="flex items-center justify-between">
+            <span>{getTranslation('keyboardShortcuts', currentLanguage)}</span>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="hotkeys-toggle"
+                checked={enabled}
+                onCheckedChange={handleToggle}
+              />
+              <Label htmlFor="hotkeys-toggle" className="text-sm">
+                {enabled 
+                  ? getTranslation('hotkeysEnabled', currentLanguage) 
+                  : getTranslation('hotkeysDisabled', currentLanguage)}
+              </Label>
+            </div>
+          </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-            {hotkeys.map((hotkey) => (
-              <React.Fragment key={hotkey.key}>
-                <div className="font-mono bg-muted px-2 py-1 rounded text-sm">
-                  {hotkey.key}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {hotkey.description}
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
+          {categories.map((category) => (
+            <div key={category} className="space-y-2">
+              <h3 className="font-semibold text-sm">
+                {getTranslation(`${category}Hotkeys`, currentLanguage)}
+              </h3>
+              <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+                {getHotkeysByCategory(category).map((hotkey) => (
+                  <React.Fragment key={hotkey.id}>
+                    <div className="font-mono bg-muted px-2 py-1 rounded text-sm">
+                      {getHotkeyDisplay(hotkey)}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {getTranslation(hotkey.id, currentLanguage) || hotkey.description}
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </DialogContent>
     </Dialog>

@@ -1,44 +1,36 @@
 import { useEffect, useCallback } from 'react';
+import { getHotkeyId } from '@/lib/hotkeysRegistry';
 
 type HotkeyCallback = (e: KeyboardEvent) => void;
 
 interface HotkeyOptions {
-  ctrlKey?: boolean;
-  shiftKey?: boolean;
-  altKey?: boolean;
-  metaKey?: boolean;
   preventDefault?: boolean;
+  enabled?: boolean;
 }
 
 export const useHotkeys = (
-  key: string,
+  hotkeyId: string,
   callback: HotkeyCallback,
   options: HotkeyOptions = {}
 ) => {
   const {
-    ctrlKey = false,
-    shiftKey = false,
-    altKey = false,
-    metaKey = false,
     preventDefault = true,
+    enabled = true,
   } = options;
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (
-        e.key.toLowerCase() === key.toLowerCase() &&
-        e.ctrlKey === ctrlKey &&
-        e.shiftKey === shiftKey &&
-        e.altKey === altKey &&
-        e.metaKey === metaKey
-      ) {
+      if (!enabled) return;
+
+      const detectedHotkeyId = getHotkeyId(e);
+      if (detectedHotkeyId === hotkeyId) {
         if (preventDefault) {
           e.preventDefault();
         }
         callback(e);
       }
     },
-    [key, callback, ctrlKey, shiftKey, altKey, metaKey, preventDefault]
+    [hotkeyId, callback, preventDefault, enabled]
   );
 
   useEffect(() => {
@@ -50,11 +42,11 @@ export const useHotkeys = (
 export const useHotkeysManager = () => {
   const registerHotkey = useCallback(
     (
-      key: string,
+      hotkeyId: string,
       callback: HotkeyCallback,
       options: HotkeyOptions = {}
     ) => {
-      useHotkeys(key, callback, options);
+      useHotkeys(hotkeyId, callback, options);
     },
     []
   );

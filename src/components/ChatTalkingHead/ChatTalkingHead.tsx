@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,7 +30,7 @@ import { setupTalkify, getTalkifyPlayer } from '@/lib/talkify-setup';
 import type { TtsPlayer } from '@/types/talkify';
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { RTK_ALPHA, managePersonality, getThoughtToExpress } from '@/lib/ai-personality';
+import { RTK_ALPHA, managePersonality, getThoughtToExpress, ACTION_SYSTEM_PROMPT } from '@/lib/ai-personality';
 import type { AIPersonality, Thought } from '@/lib/types';
 import LoadingScreen from '../LoadingScreen/LoadingScreen';
 import { AnimatePresence } from 'framer-motion';
@@ -46,15 +46,13 @@ import SpecialEffectsModal from '../SpecialEffectsModal/SpecialEffectsModal';
 import Keyboard from '../Keyboard/Keyboard';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Drawers, LeftDrawerButton, RightDrawerButton } from '../Drawers/Drawers';
+import { useActionRegistry, registerDefaultActions } from '@/lib/actionRegistry';
+import { useAIActionHandler } from '@/hooks/useAIActionHandler';
+import ResizeHandle from './ResizeHandle';
+import { useApiSettings, type ApiSettings } from '@/hooks/useApiSettings';
+import { initializeHotkeysState } from '@/lib/hotkeysRegistry';
 
 type Expression = 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
-
-interface ApiSettings {
-  provider: string;
-  apiKey: string;
-  model: string;
-  endpoint?: string;
-}
 
 // Add TypeScript declarations for the Web Speech API
 interface SpeechRecognitionEvent extends Event {
@@ -116,13 +114,7 @@ const ChatTalkingHead: React.FC = () => {
   const [showHead, setShowHead] = useState(true);
   const [showChat, setShowChat] = useState(true);
   const [headHeight, setHeadHeight] = useState(300); // Initial height in pixels
-  const [isDragging, setIsDragging] = useState(false);
-  const [apiSettings, setApiSettings] = useState<ApiSettings>({
-    provider: 'openai',
-    apiKey: '',
-    model: 'gpt-4o',
-    endpoint: ''
-  });
+  const { apiSettings, saveApiSettings } = useApiSettings();
   const [isFaceSelectorOpen, setIsFaceSelectorOpen] = useState(false);
   const [isFacialRigEditorOpen, setIsFacialRigEditorOpen] = useState(false);
   const [currentFaceTheme, setCurrentFaceTheme] = useState<FaceTheme>({
@@ -188,6 +180,13 @@ const ChatTalkingHead: React.FC = () => {
     voice: 'sv-SE' // Default to Swedish (Alva)
   });
 
+  // Initialize action registry
+  useEffect(() => {
+    registerDefaultActions();
+  }, []);
+
+  const { processAIResponse } = useAIActionHandler();
+
   // Add this near the top of the component, after other state declarations
   useEffect(() => {
     document.documentElement.style.setProperty('--animation-intensity', animationIntensity.toString());
@@ -201,89 +200,316 @@ const ChatTalkingHead: React.FC = () => {
     });
   }, [animationIntensity, zoomIntensity]);
 
-  // Handle keyboard events globally
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Check if the active element is an input or textarea
-      const activeElement = document.activeElement;
-      const isInputElement = activeElement instanceof HTMLInputElement || 
-                           activeElement instanceof HTMLTextAreaElement ||
-                           activeElement?.getAttribute('contenteditable') === 'true';
+  // Mock AI response for testing or when API key isn't configured
+  const mockGenerateResponse = useCallback((userInput: string): TextMessage => {
+    const responses = [
+      "I understand what you're saying. Let me help you with that.",
+      "That's an interesting point! Here's what I think about it.",
+      "I'm here to assist you with that request.",
+      "Let me process that and get back to you with a helpful response.",
+      "I'm analyzing your request and will provide a suitable response.",
+    ];
+    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+    
+    return {
+      id: `ai-${Date.now()}`,
+      type: 'text',
+      text: randomResponse,
+      isUser: false,
+      expression: 'neutral'
+    };
+  }, []);
 
-      // If we're in an input element, don't handle hotkeys
-      if (isInputElement) {
-        return;
-      }
+  // Stop AI speech
+  const stopAISpeech = useCallback(() => {
+    if (speechSynthesis.speaking) {
+      speechSynthesis.cancel();
+    }
+    setIsAISpeaking(false);
+  }, []);
 
-      // Handle hotkeys
-      switch (e.key.toLowerCase()) {
-        case 'k':
-          setIsHotkeysOpen(true);
-          break;
-        case 'h':
-          setShowHead(!showHead);
-          break;
-        case 'c':
-          setShowChat(!showChat);
-          break;
-        case 'f':
-          setIsFaceSelectorOpen(true);
-          break;
-        case 'e':
-          setIsFacialRigEditorOpen(true);
-          break;
-        case 's':
-          setIsModalOpen(true);
-          break;
-        case 'g':
-          setIsGamesOpen(true);
-          break;
-        case 'i':
-          setIsProjectInfoOpen(true);
-          break;
-        case 'v':
-          toggleVoice();
-          break;
-        case 'm':
-          toggleVoiceInput();
-          break;
-        case 'a':
-          toggleAlwaysListening();
-          break;
-        case 'l':
-          const languageButton = document.querySelector('[data-tooltip*="Change Language"]');
-          if (languageButton instanceof HTMLElement) {
-            languageButton.click();
-          }
-          break;
-        case ' ':
-          if (isAIResponding || isAISpeaking) {
-            e.preventDefault();
-            stopAllAI();
-          } else if (messages.length > 0) {
-            const lastMessage = messages[messages.length - 1];
-            if (!lastMessage.isUser && lastMessage.type === 'text') {
-              e.preventDefault();
-              generateAIResponse(lastMessage.text).then(response => {
-                setMessages(prev => [...prev, response]);
-              });
-            }
-          }
-          break;
-      }
+  // Generate AI response from API
+  const generateAIResponseFromAPI = useCallback(async (userInput: string) => {
+    let apiUrl: string;
+    let requestBody: any;
+    let headers: Record<string, string> = {
+      'Content-Type': 'application/json',
     };
 
+    // System prompt that includes card format instructions and action system
+    const systemPrompt = `${RTK_ALPHA}
+
+${ACTION_SYSTEM_PROMPT}
+
+You are a friendly, helpful AI assistant with a personality. You should:
+1. Be concise but informative
+2. Show personality through your responses
+3. Use appropriate expressions based on the context
+4. Maintain a consistent tone
+5. Be helpful and proactive
+6. Use the available actions to help users control the interface
+
+When asked to perform actions, you MUST include the action in your response using this exact format:
+[ACTION]{"type": "ACTION_TYPE", "params": {"paramName": "value"}}[/ACTION]
+
+Available action types:
+- OPEN_MODAL: Opens a modal (params: modalId: 'specialEffects' | 'settings' | 'apiSettings' | 'faceSelector' | 'facialRigEditor' | 'games' | 'projectInfo')
+- CLOSE_MODAL: Closes a modal (params: modalId: 'current' or specific modal ID)
+- TOGGLE_FEATURE: Toggles a feature (params: featureId: 'voice' | 'captions' | 'head' | 'chat' | 'alwaysListen', value?: boolean)
+- CHANGE_SETTING: Changes a setting (params: settingId: 'animationIntensity' | 'zoomLevel' | 'voiceRate' | 'voicePitch' | 'voiceVolume', value: number)
+- TRIGGER_EFFECT: Triggers an effect (params: effectId: 'pencil' | 'pixelate' | 'scanline' | 'dot', value?: object)
+
+Example responses with actions:
+User: "Open the special effects modal"
+You: "I'll open the special effects modal for you." [ACTION]{"type": "OPEN_MODAL", "params": {"modalId": "specialEffects"}}[/ACTION]
+
+User: "Turn on the pencil effect"
+You: "I'll enable the pencil effect for you." [ACTION]{"type": "TRIGGER_EFFECT", "params": {"effectId": "pencil", "value": {"enabled": true}}}[/ACTION]
+
+User: "Make the head bigger"
+You: "I'll increase the head size for you." [ACTION]{"type": "CHANGE_SETTING", "params": {"settingId": "zoomLevel", "value": 2}}[/ACTION]
+
+Your responses should be natural and conversational, while still being efficient and helpful.`;
+
+    // Convert messages to API format
+    const apiMessages = messages.map(msg => {
+      if (msg.type === 'text') {
+        return {
+          role: msg.isUser ? "user" : "assistant",
+          content: msg.text
+        };
+      } else if (msg.type === 'card') {
+        // For card messages, convert to a text representation for the API
+        return {
+          role: "assistant",
+          content: `I sent a card titled "${msg.title}" with content: "${msg.content}"`
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    switch (apiSettings.provider) {
+      case 'openai':
+        apiUrl = 'https://api.openai.com/v1/chat/completions';
+        headers['Authorization'] = `Bearer ${apiSettings.apiKey}`;
+        requestBody = {
+          model: apiSettings.model,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            },
+            ...apiMessages,
+            {
+              role: "user",
+              content: userInput
+            }
+          ],
+          max_tokens: 500
+        };
+        break;
+
+      case 'claude':
+        apiUrl = 'https://api.anthropic.com/v1/messages';
+        headers['x-api-key'] = apiSettings.apiKey;
+        headers['anthropic-version'] = '2023-06-01';
+        requestBody = {
+          model: apiSettings.model,
+          max_tokens: 500,
+          messages: [
+            {
+              role: "user",
+              content: `${systemPrompt}\n\nRespond to: ${userInput}`
+            }
+          ]
+        };
+        break;
+        
+      case 'deepseek':
+        apiUrl = 'https://api.deepseek.com/v1/chat/completions';
+        headers['Authorization'] = `Bearer ${apiSettings.apiKey}`;
+        requestBody = {
+          model: apiSettings.model,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            },
+            ...apiMessages,
+            {
+              role: "user",
+              content: userInput
+            }
+          ],
+          max_tokens: 500
+        };
+        break;
+        
+      case 'local':
+        apiUrl = apiSettings.endpoint || 'http://localhost:1234/v1/chat/completions';
+        requestBody = {
+          model: apiSettings.model,
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt
+            },
+            ...apiMessages,
+            {
+              role: "user",
+              content: userInput
+            }
+          ],
+          max_tokens: 500
+        };
+        break;
+        
+      default:
+        throw new Error('Invalid API provider');
+    }
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    let content;
+    switch (apiSettings.provider) {
+      case 'claude':
+        content = data.content?.[0]?.text || "I'm not sure how to respond to that.";
+        break;
+      case 'openai':
+      case 'deepseek':
+      case 'local':
+      default:
+        content = data.choices?.[0]?.message?.content || "I'm not sure how to respond to that.";
+        break;
+    }
+    
+    // Process the AI response to extract any actions
+    const processedResponse = await processAIResponse(content);
+    
+    // Create the AI message
+    const aiMessage: TextMessage = {
+      id: `ai-${Date.now()}`,
+      type: 'text',
+      text: processedResponse,
+      isUser: false,
+      expression: detectExpression(processedResponse)
+    };
+
+    return aiMessage;
+  }, [apiSettings, messages, processAIResponse, detectExpression]);
+
+  // Generate AI response using the configured API
+  const generateAIResponse = useCallback(async (userInput: string) => {
+    // Stop any ongoing AI speech
+    stopAISpeech();
+
+    // Set loading state for AI response
+    setIsAIResponding(true);
+
+    try {
+      // Check if API key is configured - if not, use simulator without showing modal
+      if (!apiSettings.apiKey) {
+        // Add a small delay to simulate processing
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return mockGenerateResponse(userInput);
+      }
+
+      // Use the real API if key is configured
+      return await generateAIResponseFromAPI(userInput);
+    } catch (error) {
+      console.error('Error generating response:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get response. Using simulator mode instead.",
+        variant: "destructive",
+      });
+      
+      // Use simulator as fallback
+      return mockGenerateResponse(userInput);
+    } finally {
+      setIsAIResponding(false);
+    }
+  }, [apiSettings.apiKey, stopAISpeech, toast, generateAIResponseFromAPI, mockGenerateResponse]);
+
+  // Handle sending messages
+  const handleSendMessage = useCallback(() => {
+    if (inputText.trim()) {
+      const userMessage = {
+        id: Date.now().toString(),
+        text: inputText,
+        isUser: true,
+        type: 'text' as const,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, userMessage]);
+      setInputText('');
+      generateAIResponse(inputText).then(response => {
+        setMessages(prev => [...prev, response]);
+      });
+    }
+  }, [inputText, generateAIResponse]);
+
+  // Register hotkeys
+  useHotkeys('toggleHead', () => setShowHead(!showHead));
+  useHotkeys('toggleChat', () => setShowChat(!showChat));
+  useHotkeys('openFaceSelector', () => setIsFaceSelectorOpen(true));
+  useHotkeys('openFacialRigEditor', () => setIsFacialRigEditorOpen(true));
+  useHotkeys('openSettings', () => setIsModalOpen(true));
+  useHotkeys('openGames', () => setIsGamesOpen(true));
+  useHotkeys('openProjectInfo', () => setIsProjectInfoOpen(true));
+  useHotkeys('toggleVoice', () => toggleVoice());
+  useHotkeys('toggleMicrophone', () => toggleVoiceInput());
+  useHotkeys('toggleAlwaysListen', () => toggleAlwaysListening());
+  useHotkeys('showHotkeys', () => setIsHotkeysOpen(true));
+  useHotkeys('closeModal', () => {
+    setIsHotkeysOpen(false);
+    setIsFaceSelectorOpen(false);
+    setIsFacialRigEditorOpen(false);
+    setIsModalOpen(false);
+    setIsGamesOpen(false);
+    setIsProjectInfoOpen(false);
+    setIsSpecialEffectsOpen(false);
+  });
+
+  // Handle keyboard events for chat input
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Check if the active element is an input or textarea
+    const activeElement = document.activeElement;
+    const isInputElement = activeElement instanceof HTMLInputElement || 
+                         activeElement instanceof HTMLTextAreaElement ||
+                         activeElement?.getAttribute('contenteditable') === 'true';
+
+    // If we're in an input element, don't handle hotkeys
+    if (isInputElement) {
+      return;
+    }
+
+    // Handle chat-specific hotkeys
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  }, [handleSendMessage]);
+
+  // Add keyboard event listener
+  useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showHead, showChat, isAIResponding, isAISpeaking, messages]);
+  }, [handleKeyDown]);
 
   // Load API settings, face theme, and head shape from localStorage on initial render
   useEffect(() => {
-    const savedSettings = localStorage.getItem('apiSettings');
-    if (savedSettings) {
-      setApiSettings(JSON.parse(savedSettings));
-    }
-    
+    // Remove the API settings loading since it's now handled by the hook
     const savedFaceTheme = localStorage.getItem('faceTheme');
     if (savedFaceTheme) {
       const theme = JSON.parse(savedFaceTheme);
@@ -545,9 +771,7 @@ const ChatTalkingHead: React.FC = () => {
 
   // Save API settings
   const handleSaveSettings = (provider: string, apiKey: string, model: string, endpoint?: string) => {
-    const newSettings = { provider, apiKey, model, endpoint };
-    setApiSettings(newSettings);
-    localStorage.setItem('apiSettings', JSON.stringify(newSettings));
+    saveApiSettings(provider, apiKey, model, endpoint);
   };
   
   // Save face theme
@@ -609,9 +833,7 @@ const ChatTalkingHead: React.FC = () => {
     
     switch (command) {
       case 'openModal':
-        if (param === 'settings') {
-          setIsModalOpen(true);
-        }
+        useActionRegistry.getState().execute('OPEN_MODAL', { modalId: param });
         break;
         
       case 'runFunction':
@@ -629,11 +851,7 @@ const ChatTalkingHead: React.FC = () => {
           };
           setMessages(prev => [...prev, demoCard]);
         } else if (param === 'dismiss') {
-          // Do nothing, just acknowledge the action
-          toast({
-            title: "Action Received",
-            description: "Dismiss action processed successfully.",
-          });
+          useActionRegistry.getState().execute('CLOSE_MODAL', { modalId: 'current' });
         }
         break;
         
@@ -647,348 +865,6 @@ const ChatTalkingHead: React.FC = () => {
     }
   };
 
-  // Update handleSendMessage to use isAIResponding
-  const handleSendMessage = async () => {
-    if (!inputText.trim()) return;
-
-    // Stop any ongoing AI speech
-    stopAISpeech();
-
-    // Add user message using functional update
-    const userMessage: TextMessage = {
-      id: `user-${Date.now()}`,
-      type: 'text',
-      text: inputText,
-      isUser: true
-    };
-    
-    // Store the input and clear it
-    const userInput = inputText;
-    setInputText('');
-
-    // Set loading state for AI response
-    setIsAIResponding(true);
-
-    try {
-      // Update messages with user message first
-      setMessages(prev => [...prev, userMessage]);
-
-      // Check if API key is configured - if not, use simulator without showing modal
-      if (!apiSettings.apiKey) {
-        // Add a small delay to simulate processing
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const response = mockGenerateResponse(userInput);
-        setMessages(prev => [...prev, response]);
-      } else {
-        // Use the real API if key is configured
-        const response = await generateAIResponse(userInput);
-        setMessages(prev => [...prev, response]);
-      }
-    } catch (error) {
-      console.error('Error generating response:', error);
-      toast({
-        title: "Error",
-        description: "Failed to get response. Using simulator mode instead.",
-        variant: "destructive",
-      });
-      
-      // Use simulator as fallback
-      const response = mockGenerateResponse(userInput);
-      setMessages(prev => [...prev, response]);
-    } finally {
-      setIsAIResponding(false);
-    }
-  };
-
-  // Generate AI response using the configured API
-  const generateAIResponse = async (userInput: string): Promise<ChatMessage> => {
-    // If no API key, use mock response
-    if (!apiSettings.apiKey) {
-      return mockGenerateResponse(userInput);
-    }
-
-    try {
-      let apiUrl: string;
-      let requestBody: any;
-      let headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-      };
-
-      // System prompt that includes card format instructions
-      const systemPrompt = `You are a helpful assistant with emotions. Express happiness, sadness, surprise, anger, or thoughtfulness in your responses. Keep responses concise.
-
-IMPORTANT: When asked to create a card, you MUST use the exact format below:
-
-[CARD]{"title": "Card Title", "content": "Card content", "actions": [{"label": "Button Text", "action": "command:param"}]}[/CARD]
-
-Do not describe creating a card - actually create one using the [CARD] format. The entire JSON object must be valid and enclosed in the [CARD] tags.
-
-Available commands for actions:
-- openModal:settings - Opens the settings modal
-- runFunction:demo - Shows a demo card
-- runFunction:dismiss - Dismisses/acknowledges an action
-
-Example card formats:
-1. Simple card:
-[CARD]{"title": "Weather in New York", "content": "Currently 72°F and Sunny\\nHigh: 74°F\\nLow: 58°F"}[/CARD]
-
-2. Card with actions:
-[CARD]{"title": "Task List", "content": "- Create prototype\\n- Test functionality\\n- Deploy to production", "actions": [{"label": "Mark Complete", "action": "runFunction:dismiss"}, {"label": "Settings", "action": "openModal:settings"}]}[/CARD]
-
-When asked about cards, weather, recipes, or any structured information, respond with a properly formatted card.`;
-
-      // Convert messages to API format
-      const apiMessages = messages.map(msg => {
-        if (msg.type === 'text') {
-          return {
-            role: msg.isUser ? "user" : "assistant",
-            content: msg.text
-          };
-        } else if (msg.type === 'card') {
-          // For card messages, convert to a text representation for the API
-          return {
-            role: "assistant",
-            content: `I sent a card titled "${msg.title}" with content: "${msg.content}"`
-          };
-        }
-        return null;
-      }).filter(Boolean);
-
-      switch (apiSettings.provider) {
-        case 'openai':
-          apiUrl = 'https://api.openai.com/v1/chat/completions';
-          headers['Authorization'] = `Bearer ${apiSettings.apiKey}`;
-          requestBody = {
-            model: apiSettings.model,
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt
-              },
-              ...apiMessages,
-              {
-                role: "user",
-                content: userInput
-              }
-            ],
-            max_tokens: 500
-          };
-          break;
-
-        case 'claude':
-          apiUrl = 'https://api.anthropic.com/v1/messages';
-          headers['x-api-key'] = apiSettings.apiKey;
-          headers['anthropic-version'] = '2023-06-01';
-          requestBody = {
-            model: apiSettings.model,
-            max_tokens: 500,
-            messages: [
-              {
-                role: "user",
-                content: `${systemPrompt}\n\nRespond to: ${userInput}`
-              }
-            ]
-          };
-          break;
-          
-        case 'deepseek':
-          apiUrl = 'https://api.deepseek.com/v1/chat/completions';
-          headers['Authorization'] = `Bearer ${apiSettings.apiKey}`;
-          requestBody = {
-            model: apiSettings.model,
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt
-              },
-              ...apiMessages,
-              {
-                role: "user",
-                content: userInput
-              }
-            ],
-            max_tokens: 500
-          };
-          break;
-          
-        case 'local':
-          apiUrl = apiSettings.endpoint || 'http://localhost:1234/v1/chat/completions';
-          requestBody = {
-            model: apiSettings.model,
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt
-              },
-              ...apiMessages,
-              {
-                role: "user",
-                content: userInput
-              }
-            ],
-            max_tokens: 500
-          };
-          break;
-          
-        default:
-          return mockGenerateResponse(userInput);
-      }
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      let content;
-      switch (apiSettings.provider) {
-        case 'claude':
-          content = data.content?.[0]?.text || "I'm not sure how to respond to that.";
-          break;
-        case 'openai':
-        case 'deepseek':
-        case 'local':
-        default:
-          content = data.choices?.[0]?.message?.content || "I'm not sure how to respond to that.";
-          break;
-      }
-      
-      // Parse the response to potentially extract card data
-      return parseAIResponse(content);
-    } catch (error) {
-      console.error('API error:', error);
-      throw error;
-    }
-  };
-
-  // Mock AI response for testing or when API key isn't configured
-  const mockGenerateResponse = (userInput: string): ChatMessage => {
-    const lowerInput = userInput.toLowerCase();
-    
-    // For demo purposes, return different types of cards based on user input
-    if (lowerInput.includes('card') || lowerInput.includes('demo')) {
-      return parseAIResponse(`[CARD]{"title": "Demo Card", "content": "This is a demo card that shows how interactive cards work in the chat interface.", "actions": [{"label": "Show Another", "action": "runFunction:demo"}, {"label": "Settings", "action": "openModal:settings"}]}[/CARD]`);
-    }
-    
-    // Task list card
-    if (lowerInput.includes('task') || lowerInput.includes('todo') || lowerInput.includes('to-do')) {
-      return parseAIResponse(`[CARD]{"title": "Task List", "content": "- Create card prototype\\n- Implement card parser\\n- Add interactive buttons\\n- Style the cards\\n- Test with different content", "actions": [{"label": "Mark Complete", "action": "runFunction:dismiss"}, {"label": "Add Task", "action": "runFunction:demo"}]}[/CARD]`);
-    }
-    
-    // Weather card
-    if (lowerInput.includes('weather') || lowerInput.includes('forecast')) {
-      return parseAIResponse(`[CARD]{"title": "Weather Forecast", "content": "New York, NY\\n\\nCurrently: 72°F, Sunny\\nHigh: 75°F\\nLow: 58°F\\n\\nTomorrow: Partly cloudy, 70°F", "actions": [{"label": "Refresh", "action": "runFunction:demo"}]}[/CARD]`);
-    }
-    
-    // Recipe card
-    if (lowerInput.includes('recipe') || lowerInput.includes('cook') || lowerInput.includes('food')) {
-      return parseAIResponse(`[CARD]{"title": "Simple Pasta Recipe", "content": "Ingredients:\\n- 1 lb pasta\\n- 2 cups marinara sauce\\n- 1 cup cheese\\n- Salt and pepper\\n\\nInstructions:\\n1. Cook pasta according to package\\n2. Heat sauce in a pan\\n3. Mix pasta and sauce\\n4. Top with cheese", "actions": [{"label": "Save Recipe", "action": "runFunction:dismiss"}]}[/CARD]`);
-    }
-    
-    // Help card
-    if (lowerInput.includes('help') || lowerInput.includes('assist') || lowerInput.includes('support')) {
-      return parseAIResponse(`[CARD]{"title": "ChatRTK Help", "content": "Here are some things you can ask me about:\\n\\n- Ask for a recipe\\n- Check the weather\\n- Create a task list\\n- Show a demo card\\n- Change my expression (try: happy, sad, angry, surprised)\\n- Ask about my features", "actions": [{"label": "Show Demo", "action": "runFunction:demo"}, {"label": "Settings", "action": "openModal:settings"}]}[/CARD]`);
-    }
-    
-    // Features card
-    if (lowerInput.includes('feature') || lowerInput.includes('what can you do') || lowerInput.includes('capability')) {
-      return parseAIResponse(`[CARD]{"title": "ChatRTK Features", "content": "- Interactive talking head with facial expressions\\n- Customizable appearance themes\\n- Interactive cards with buttons\\n- Responsive chat interface\\n- Animated expressions\\n- API integration (requires key)\\n- Local simulator mode", "actions": [{"label": "Try a Demo", "action": "runFunction:demo"}]}[/CARD]`);
-    }
-    
-    // Detect expression from user input (simplified for demo)
-    let response: string;
-    let expression: Expression = 'neutral';
-    
-    if (lowerInput.includes('hello') || lowerInput.includes('hi') || lowerInput.includes('hey')) {
-      response = "Hello there! How can I assist you today? Try asking me about recipes, weather, or tasks!";
-      expression = 'happy';
-    } else if (lowerInput.includes('sad') || lowerInput.includes('bad') || lowerInput.includes('sorry')) {
-      response = "I'm sorry to hear that. Is there anything I can do to help? Maybe a funny joke would cheer you up?";
-      expression = 'sad';
-    } else if (lowerInput.includes('wow') || lowerInput.includes('amazing') || lowerInput.includes('really')) {
-      response = "That's amazing! I'm surprised and excited to hear about it. Tell me more!";
-      expression = 'surprised';
-    } else if (lowerInput.includes('angry') || lowerInput.includes('mad') || lowerInput.includes('upset')) {
-      response = "I understand your frustration. Let's try to resolve this issue together. Deep breaths help!";
-      expression = 'angry';
-    } else if (lowerInput.includes('think') || lowerInput.includes('question') || lowerInput.includes('how')) {
-      response = "That's an interesting question. Let me think about that for a moment... I'm running in simulator mode, so I don't have access to real-time data, but I can show you some demo responses!";
-      expression = 'thinking';
-    } else if (lowerInput.includes('joke') || lowerInput.includes('funny')) {
-      response = "Why don't scientists trust atoms? Because they make up everything! 😄";
-      expression = 'happy';
-    } else if (lowerInput.includes('name') || lowerInput.includes('who are you')) {
-      response = "I'm ChatRTK, a talking head chat interface with expressive animations. I'm currently running in simulator mode since no API key is configured.";
-      expression = 'happy';
-    } else if (lowerInput.includes('thank')) {
-      response = "You're very welcome! Is there anything else I can help you with today?";
-      expression = 'happy';
-    } else if (lowerInput.includes('bye') || lowerInput.includes('goodbye')) {
-      response = "Goodbye! Have a wonderful day. Come back anytime you want to chat!";
-      expression = 'happy';
-    } else if (lowerInput.includes('happy') || lowerInput.includes('smile') || lowerInput.includes('joy')) {
-      response = "That makes me happy to hear! I'm smiling right now. Positive emotions are wonderful!";
-      expression = 'happy';
-    } else if (lowerInput.includes('surprise') || lowerInput.includes('shocked')) {
-      response = "Wow! That's quite surprising! I didn't expect that at all!";
-      expression = 'surprised';
-    } else if (lowerInput.includes('time') || lowerInput.includes('date')) {
-      const now = new Date();
-      response = `The current time is ${now.toLocaleTimeString()} on ${now.toLocaleDateString()}. Note that I'm running in simulator mode, so this is your device's time.`;
-      expression = 'neutral';
-    } else if (lowerInput.includes('api') || lowerInput.includes('key')) {
-      response = "To use me with a real AI model, you'll need to configure an API key. Click the settings icon in the top right corner to set up your API credentials.";
-      expression = 'thinking';
-    } else {
-      // Default response for anything else
-      const defaultResponses = [
-        "I see. Tell me more about what you're looking for.",
-        "That's interesting! Would you like to see a demo of what I can do?",
-        "I'm running in simulator mode right now. Try asking me about recipes, weather, or tasks!",
-        "Interesting point! What else would you like to discuss?",
-        "I'm here to help! Try saying 'help' to see what I can do.",
-        "I'm listening. Feel free to ask me about my features or try different expressions!"
-      ];
-      response = defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
-      expression = 'neutral';
-    }
-
-    return {
-      id: `ai-${Date.now()}`,
-      type: 'text',
-      text: response,
-      isUser: false,
-      expression: expression
-    };
-  };
-
-  // Handle resizing of the talking head container
-  const handleResizeStart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-    
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      // Calculate new height with a minimum of 200px to ensure head is visible
-      const newHeight = Math.max(200, Math.min(600, moveEvent.clientY - 100));
-      setHeadHeight(newHeight);
-    };
-    
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-    
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
-  
   // Toggle visibility of components
   const toggleHead = () => setShowHead(!showHead);
   const toggleChat = () => setShowChat(!showChat);
@@ -1156,17 +1032,6 @@ When asked about cards, weather, recipes, or any structured information, respond
     }
   };
 
-  // Add function to stop AI speech
-  const stopAISpeech = () => {
-    if (ttsPlayer) {
-      ttsPlayer.stop();
-      setIsAISpeaking(false);
-      if (aiSpeechTimeoutRef.current) {
-        clearTimeout(aiSpeechTimeoutRef.current);
-      }
-    }
-  };
-
   // Add voice settings update function
   const updateVoiceSettings = (newSettings: Partial<typeof voiceSettings>) => {
     setVoiceSettings(prev => ({ ...prev, ...newSettings }));
@@ -1317,6 +1182,115 @@ When asked about cards, weather, recipes, or any structured information, respond
     }
   };
 
+  // Add event listeners for action registry events
+  useEffect(() => {
+    const handleOpenModal = (event: CustomEvent) => {
+      const modalId = event.detail;
+      switch (modalId) {
+        case 'specialEffects':
+          setIsSpecialEffectsOpen(true);
+          break;
+        case 'settings':
+          setIsModalOpen(true);
+          break;
+        case 'apiSettings':
+          setIsModalOpen(true);
+          break;
+        case 'faceSelector':
+          setIsFaceSelectorOpen(true);
+          break;
+        case 'facialRigEditor':
+          setIsFacialRigEditorOpen(true);
+          break;
+        case 'games':
+          setIsGamesOpen(true);
+          break;
+        case 'projectInfo':
+          setIsProjectInfoOpen(true);
+          break;
+      }
+    };
+
+    const handleCloseModal = () => {
+      setIsSpecialEffectsOpen(false);
+      setIsModalOpen(false);
+      setIsFaceSelectorOpen(false);
+      setIsFacialRigEditorOpen(false);
+      setIsGamesOpen(false);
+      setIsProjectInfoOpen(false);
+    };
+
+    const handleToggleFeature = (event: CustomEvent) => {
+      const { feature, value } = event.detail;
+      switch (feature) {
+        case 'voice':
+          setIsVoiceEnabled(value ?? !isVoiceEnabled);
+          break;
+        case 'captions':
+          setShowCaptions(value ?? !showCaptions);
+          break;
+        case 'head':
+          setShowHead(value ?? !showHead);
+          break;
+        case 'chat':
+          setShowChat(value ?? !showChat);
+          break;
+        case 'alwaysListen':
+          setIsAlwaysListening(value ?? !isAlwaysListening);
+          break;
+      }
+    };
+
+    const handleChangeSetting = (event: CustomEvent) => {
+      const { setting, value } = event.detail;
+      switch (setting) {
+        case 'animationIntensity':
+          setAnimationIntensity(value);
+          break;
+        case 'zoomLevel':
+          setZoomIntensity(value);
+          break;
+        case 'voiceRate':
+          updateVoiceSettings({ rate: value });
+          break;
+        case 'voicePitch':
+          updateVoiceSettings({ pitch: value });
+          break;
+        case 'voiceVolume':
+          updateVoiceSettings({ volume: value });
+          break;
+      }
+    };
+
+    const handleTriggerEffect = (event: CustomEvent) => {
+      const { effect, value } = event.detail;
+      // Handle effect triggers here
+      // This will need to be connected to your effects state management
+      console.log('Effect triggered:', effect, value);
+    };
+
+    // Add event listeners
+    document.addEventListener('openModal', handleOpenModal as EventListener);
+    document.addEventListener('closeModal', handleCloseModal);
+    document.addEventListener('toggleFeature', handleToggleFeature as EventListener);
+    document.addEventListener('changeSetting', handleChangeSetting as EventListener);
+    document.addEventListener('triggerEffect', handleTriggerEffect as EventListener);
+
+    // Cleanup
+    return () => {
+      document.removeEventListener('openModal', handleOpenModal as EventListener);
+      document.removeEventListener('closeModal', handleCloseModal);
+      document.removeEventListener('toggleFeature', handleToggleFeature as EventListener);
+      document.removeEventListener('changeSetting', handleChangeSetting as EventListener);
+      document.removeEventListener('triggerEffect', handleTriggerEffect as EventListener);
+    };
+  }, [isVoiceEnabled, showCaptions, showHead, showChat, isAlwaysListening]);
+
+  // Initialize hotkeys state
+  useEffect(() => {
+    initializeHotkeysState();
+  }, []);
+
   return (
     <TooltipProvider>
       <Drawers
@@ -1419,13 +1393,11 @@ When asked about cards, weather, recipes, or any structured information, respond
                 )}
               </div>
               
-              <div 
-                className="resize-handle"
-                onMouseDown={handleResizeStart}
-                style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-              >
-                <div className="resize-handle-line"></div>
-              </div>
+              <ResizeHandle 
+                onResize={setHeadHeight}
+                minHeight={200}
+                maxHeight={600}
+              />
             </>
           )}
           
