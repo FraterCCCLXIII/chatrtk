@@ -23,7 +23,7 @@ ChatRTK is an innovative chat interface that combines expressive facial animatio
 - **State Management**: React Context
 - **Styling**: Tailwind CSS
 - **API Integration**: OpenAI, Claude, DeepSeek, and local models
-- **Voice Processing**: Web Speech API, Piper TTS
+- **Voice Processing**: Web Speech API
 - **Build Tool**: Vite
 
 ## Getting Started
@@ -118,7 +118,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [Shadcn UI](https://ui.shadcn.com/) for the beautiful components
 - [Framer Motion](https://www.framer.com/motion/) for animations
-- [Piper TTS](https://github.com/rhasspy/piper) for voice synthesis
+- Web Speech API for voice synthesis
 - All our contributors and supporters!
 
 ## Support the Project

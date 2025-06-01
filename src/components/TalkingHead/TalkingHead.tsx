@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './TalkingHead.css';
-import { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
+import { FaceTheme } from '@/types/face';
 import { HeadShape, FaceRigConfig } from '../FacialRigEditor';
 import { useFloatingAnimation, AnimatedDiv } from '../animations';
 

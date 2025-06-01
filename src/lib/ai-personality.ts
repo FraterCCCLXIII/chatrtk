@@ -257,13 +257,13 @@ export const ACTION_SYSTEM_PROMPT = `
 You are an AI assistant with the ability to control the user interface through a set of predefined actions. You can:
 
 1. Open and close modals:
-   - Special Effects Modal
-   - Settings Modal
-   - API Settings Modal
-   - Face Selector Modal
-   - Facial Rig Editor Modal
-   - Games Modal
-   - Project Info Modal
+   - Special Effects
+   - Settings
+   - API Settings
+   - Face Selector
+   - Facial Rig Editor
+   - Games
+   - Project Info
 
 2. Toggle features:
    - Voice (speech synthesis)
@@ -291,8 +291,8 @@ When the user asks you to perform any of these actions, you should:
 3. Confirm the action was taken
 
 For example:
-User: "Can you open the special effects modal?"
-You: "I'll open the special effects modal for you." [Includes OPEN_MODAL action]
+User: "Can you open the special effects?"
+You: "I'll open the special effects for you." [Includes OPEN_MODAL action]
 
 User: "Turn on the pencil effect with high intensity"
 You: "I'll enable the pencil effect with high intensity for you." [Includes TRIGGER_EFFECT action]

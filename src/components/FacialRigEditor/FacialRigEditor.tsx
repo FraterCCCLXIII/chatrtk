@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
+import { FaceTheme } from '@/types/face';
 import TalkingHead from '../TalkingHead/TalkingHead';
 import { 
   Select,

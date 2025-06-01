@@ -19,8 +19,9 @@ import {
   use3DRotation
 } from '../animations';
 import TalkingHead from '../TalkingHead/TalkingHead';
-import ApiKeyModal from '../ApiKeyModal/ApiKeyModal';
-import FaceSelectorModal, { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
+import ApiKey from '../settings/ApiKey';
+import FaceSelector from '../face/FaceSelector';
+import { FaceTheme } from '@/types/face';
 import FacialRigEditor, { HeadShape, FaceRigConfig } from '../FacialRigEditor';
 import './ChatTalkingHead.css';
 import { useToast } from "@/hooks/use-toast";
@@ -34,15 +35,15 @@ import { RTK_ALPHA, managePersonality, getThoughtToExpress, ACTION_SYSTEM_PROMPT
 import type { AIPersonality, Thought } from '@/lib/types';
 import LoadingScreen from '../LoadingScreen/LoadingScreen';
 import { AnimatePresence } from 'framer-motion';
-import ProjectInfoModal from '../ProjectInfoModal/ProjectInfoModal';
-import GamesModal from '../GamesModal/GamesModal';
+import ProjectInfo from '../project/ProjectInfo';
+import Games from '../games/Games';
 import { detectBrowserLanguage, setLanguagePreference, Language } from '@/lib/languages';
 import LanguageSelector from '../LanguageSelector/LanguageSelector';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getTranslation } from '@/lib/translations';
-import HotkeysModal from '../HotkeysModal/HotkeysModal';
+import Hotkeys from '../hotkeys/Hotkeys';
 import { useHotkeys } from '@/hooks/useHotkeys';
-import SpecialEffectsModal from '../SpecialEffectsModal/SpecialEffectsModal';
+import SpecialEffects from '../Effects/SpecialEffects';
 import Keyboard from '../Keyboard/Keyboard';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Drawers, LeftDrawerButton, RightDrawerButton } from '../Drawers/Drawers';
@@ -1591,17 +1592,32 @@ Your responses should be natural and conversational, while still being efficient
             <KeyboardIcon className="h-5 w-5" />
           </Button>
 
-          <ApiKeyModal
+          <ApiKey
             open={isModalOpen}
             onOpenChange={setIsModalOpen}
-            onSave={handleSaveSettings}
-            currentProvider={apiSettings.provider}
-            currentApiKey={apiSettings.apiKey}
-            currentModel={apiSettings.model}
-            currentEndpoint={apiSettings.endpoint}
+            apiKey={apiSettings.apiKey}
+            onApiKeyChange={(key) => {
+              // Update the API key in the settings
+              saveApiSettings(
+                apiSettings.provider,
+                key,
+                apiSettings.model,
+                apiSettings.endpoint
+              );
+            }}
+            onSave={() => {
+              // Save the current API settings
+              saveApiSettings(
+                apiSettings.provider,
+                apiSettings.apiKey,
+                apiSettings.model,
+                apiSettings.endpoint
+              );
+              setIsModalOpen(false);
+            }}
           />
 
-          <FaceSelectorModal
+          <FaceSelector
             open={isFaceSelectorOpen}
             onOpenChange={setIsFaceSelectorOpen}
             onSelectFace={handleSelectFace}
@@ -1618,22 +1634,22 @@ Your responses should be natural and conversational, while still being efficient
             onVoiceSettingsChange={updateVoiceSettings}
           />
 
-          <ProjectInfoModal
+          <ProjectInfo
             open={isProjectInfoOpen}
             onOpenChange={setIsProjectInfoOpen}
           />
 
-          <GamesModal
+          <Games
             open={isGamesOpen}
             onOpenChange={setIsGamesOpen}
           />
 
-          <HotkeysModal
+          <Hotkeys
             open={isHotkeysOpen}
             onOpenChange={setIsHotkeysOpen}
           />
 
-          <SpecialEffectsModal
+          <SpecialEffects
             open={isSpecialEffectsOpen}
             onOpenChange={setIsSpecialEffectsOpen}
             animationIntensity={animationIntensity}
