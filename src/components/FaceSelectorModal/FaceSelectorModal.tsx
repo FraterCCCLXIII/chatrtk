@@ -5,12 +5,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 
 export interface FaceTheme {
@@ -37,7 +33,6 @@ const FaceSelectorModal: React.FC<FaceSelectorModalProps> = ({
   currentFaceTheme,
 }) => {
   const { toast } = useToast();
-  const [selectedFace, setSelectedFace] = React.useState(currentFaceTheme);
 
   // Face theme options
   const faceThemes: FaceTheme[] = [
@@ -88,15 +83,12 @@ const FaceSelectorModal: React.FC<FaceSelectorModalProps> = ({
     },
   ];
 
-  const handleSave = () => {
-    const selectedTheme = faceThemes.find(theme => theme.id === selectedFace);
-    if (selectedTheme) {
-      onSelectFace(selectedTheme);
-      toast({
-        title: "Theme Changed",
-        description: `Successfully changed to ${selectedTheme.name} theme.`,
-      });
-    }
+  const handleSelectTheme = (theme: FaceTheme) => {
+    onSelectFace(theme);
+    toast({
+      title: "Theme Changed",
+      description: `Successfully changed to ${theme.name} theme.`,
+    });
     onOpenChange(false);
   };
 
@@ -104,63 +96,38 @@ const FaceSelectorModal: React.FC<FaceSelectorModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Choose a Face Theme</DialogTitle>
+          <DialogTitle>Choose a Theme</DialogTitle>
           <DialogDescription>
-            Select a face theme to personalize your chatty face.
+            Select a theme to personalize your chatty face.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="py-4">
-          <RadioGroup value={selectedFace} onValueChange={setSelectedFace} className="grid grid-cols-2 gap-4">
-            {faceThemes.map((theme) => (
-              <div key={theme.id} className="flex items-start space-x-2">
-                <RadioGroupItem value={theme.id} id={theme.id} className="mt-1" />
-                <div className="grid gap-1.5 w-full">
-                  <Label htmlFor={theme.id} className="font-medium">
-                    {theme.name}
-                  </Label>
-                  <Card className="overflow-hidden">
-                    <div 
-                      style={{ backgroundColor: theme.previewColor }} 
-                      className="h-24 w-full flex items-center justify-center"
-                    >
-                      <div 
-                        style={{ backgroundColor: theme.screenColor }}
-                        className="w-16 h-12 rounded-md border-2 border-gray-800 flex items-center justify-center"
-                      >
-                        <div className="relative">
-                          {/* Simple face preview */}
-                          <div className="flex space-x-2 mb-1">
-                            <div className="w-1.5 h-1.5 rounded-full bg-black"></div>
-                            <div className="w-1.5 h-1.5 rounded-full bg-black"></div>
-                          </div>
-                          <div 
-                            style={{ backgroundColor: theme.faceColor }}
-                            className="w-6 h-3 rounded-md flex items-center justify-center"
-                          >
-                            <div 
-                              style={{ backgroundColor: theme.tongueColor }}
-                              className="w-3 h-1.5 rounded-sm"
-                            ></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <CardContent className="p-3">
-                      <p className="text-xs text-gray-500">{theme.description}</p>
-                    </CardContent>
-                  </Card>
-                </div>
+        <div className="grid grid-cols-2 gap-4 py-4">
+          {faceThemes.map((theme) => (
+            <Card
+              key={theme.id}
+              className={`cursor-pointer transition-all hover:scale-105 hover:shadow-lg overflow-hidden ${
+                currentFaceTheme === theme.id ? 'ring-2 ring-primary' : ''
+              }`}
+              onClick={() => handleSelectTheme(theme)}
+            >
+              <div className="relative">
+                <div 
+                  className="h-24 w-full rounded-lg"
+                  style={{ backgroundColor: theme.previewColor }}
+                />
+                <div 
+                  className="absolute inset-0 flex items-center justify-center opacity-50"
+                  style={{ backgroundColor: theme.screenColor }}
+                />
               </div>
-            ))}
-          </RadioGroup>
+              <div className="p-3 space-y-1">
+                <h3 className="font-semibold text-sm">{theme.name}</h3>
+                <p className="text-xs text-muted-foreground line-clamp-2">{theme.description}</p>
+              </div>
+            </Card>
+          ))}
         </div>
-
-        <DialogFooter>
-          <Button type="submit" onClick={handleSave}>
-            Apply Theme
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -97,5 +97,14 @@
 
   body {
     @apply bg-background text-foreground;
+    min-height: 100vh;
+    overflow: hidden; /* Prevent body scrolling */
+    position: relative; /* For proper stacking context */
+  }
+
+  #root {
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
   }
 }

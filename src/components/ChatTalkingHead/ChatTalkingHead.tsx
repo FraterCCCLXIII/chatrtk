@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2 } from "lucide-react";
+import { Settings, Eye, EyeOff, MessageSquare, MessageSquareOff, MessageCircleMore, UserCircle2, Edit2, Github, Subtitles } from "lucide-react";
 import { Smiley, Robot } from "@phosphor-icons/react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { 
@@ -22,13 +21,13 @@ import {
 import TalkingHead from '../TalkingHead/TalkingHead';
 import ApiKeyModal from '../ApiKeyModal/ApiKeyModal';
 import FaceSelectorModal, { FaceTheme } from '../FaceSelectorModal/FaceSelectorModal';
-import { HeadSelectorModal, HeadTheme } from '../HeadSelectorModal/HeadSelectorModal';
-import { AnimatedHeadSelectorModal, AnimatedHeadTheme } from '../AnimatedHeadSelectorModal/AnimatedHeadSelectorModal';
 import FacialRigEditor, { HeadShape, FaceRigConfig } from '../FacialRigEditor';
 import './ChatTalkingHead.css';
 import { useToast } from "@/hooks/use-toast";
 import { ChatMessage, TextMessage, CardMessage } from "@/lib/types";
 import { parseAIResponse, detectExpression } from "@/lib/aiParser";
+
+type Expression = 'neutral' | 'happy' | 'sad' | 'surprised' | 'angry' | 'thinking';
 
 interface ApiSettings {
   provider: string;
@@ -38,26 +37,8 @@ interface ApiSettings {
 }
 
 const ChatTalkingHead: React.FC = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome-message',
-      type: 'text',
-      text: "Hello! I'm running in simulator mode since no API key is configured. You can still chat with me and try out all the features!",
-      isUser: false,
-      expression: 'happy'
-    } as TextMessage,
-    {
-      id: 'welcome-card',
-      type: 'card',
-      title: 'ChatRTK Simulator',
-      content: 'Try these commands to see what I can do:\n- "help" - Show available commands\n- "weather" - Show a weather card\n- "recipe" - Get a recipe\n- "tasks" - Create a task list\n- "features" - Learn about my capabilities',
-      isUser: false,
-      actions: [
-        { label: 'Show Demo Card', action: 'runFunction:demo' },
-        { label: 'Settings', action: 'openModal:settings' }
-      ]
-    } as CardMessage
-  ]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentSpeechText, setCurrentSpeechText] = useState('');
@@ -75,55 +56,6 @@ const ChatTalkingHead: React.FC = () => {
     endpoint: ''
   });
   const [isFaceSelectorOpen, setIsFaceSelectorOpen] = useState(false);
-  const [isHeadSelectorOpen, setIsHeadSelectorOpen] = useState(false);
-  const [isAnimatedHeadSelectorOpen, setIsAnimatedHeadSelectorOpen] = useState(false);
-  const [currentAnimatedHeadTheme, setCurrentAnimatedHeadTheme] = useState<AnimatedHeadTheme>({
-    id: 'rtk-100',
-    name: 'RTK-100',
-    description: 'The original talking head',
-    config: {
-      head: {
-        x: 0,
-        y: 0,
-        width: 220,
-        height: 160,
-        fillColor: '#5daa77',
-        strokeColor: '#333333',
-        strokeWidth: 8,
-        borderRadius: '20px'
-      },
-      leftEye: {
-        x: 30,
-        y: 40,
-        width: 12,
-        height: 12,
-        fillColor: '#000000',
-        strokeColor: 'transparent',
-        strokeWidth: 0,
-        borderRadius: '50%'
-      },
-      rightEye: {
-        x: 70,
-        y: 40,
-        width: 12,
-        height: 12,
-        fillColor: '#000000',
-        strokeColor: 'transparent',
-        strokeWidth: 0,
-        borderRadius: '50%'
-      },
-      mouth: {
-        x: 50,
-        y: 60,
-        width: 60,
-        height: 30,
-        fillColor: '#5daa77',
-        strokeColor: '#333333',
-        strokeWidth: 1,
-        borderRadius: '15px'
-      }
-    }
-  });
   const [isFacialRigEditorOpen, setIsFacialRigEditorOpen] = useState(false);
   const [currentFaceTheme, setCurrentFaceTheme] = useState<FaceTheme>({
     id: 'default',
@@ -140,6 +72,9 @@ const ChatTalkingHead: React.FC = () => {
     shape: 'rectangle',
   });
   const { toast } = useToast();
+  const [showCaptions, setShowCaptions] = useState(false);
+  const [captionText, setCaptionText] = useState('');
+  const [captionOpacity, setCaptionOpacity] = useState(0);
 
   // Load API settings, face theme, and head shape from localStorage on initial render
   useEffect(() => {
@@ -166,15 +101,8 @@ const ChatTalkingHead: React.FC = () => {
     }
   }, []);
 
-  // Scroll to the bottom of the messages container when new messages are added
-  useEffect(() => {
-    // Find the scrollable element inside the ScrollArea
-    const scrollableElement = document.querySelector('.chat-messages .scrollbar-container > div');
-    if (scrollableElement) {
-      // Scroll to the bottom to show the newest message
-      scrollableElement.scrollTop = scrollableElement.scrollHeight;
-    }
-  }, [messages]);
+  // We've removed the auto-scroll effect as requested
+  // This allows the user to manually scroll through the messages
 
   // Detect when AI is speaking and set the current text
   useEffect(() => {
@@ -196,6 +124,21 @@ const ChatTalkingHead: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [messages]);
+
+  // Update caption text when AI is speaking
+  useEffect(() => {
+    if (isSpeaking && showCaptions) {
+      setCaptionText(currentSpeechText);
+      setCaptionOpacity(1);
+      
+      // Fade out after 2 seconds
+      const fadeTimer = setTimeout(() => {
+        setCaptionOpacity(0);
+      }, 2000);
+
+      return () => clearTimeout(fadeTimer);
+    }
+  }, [isSpeaking, currentSpeechText, showCaptions]);
 
   // Save API settings
   const handleSaveSettings = (provider: string, apiKey: string, model: string, endpoint?: string) => {
@@ -220,64 +163,9 @@ const ChatTalkingHead: React.FC = () => {
     
     // Update document body background color
     document.body.style.backgroundColor = faceTheme.previewColor;
-  };
-  
-  // Save head theme
-  const handleSelectHead = (headTheme: HeadTheme) => {
-    // Update the face theme with the head theme colors
-    const updatedFaceTheme: FaceTheme = {
-      ...currentFaceTheme,
-      id: headTheme.id,
-      name: headTheme.name,
-      description: headTheme.description,
-      previewColor: headTheme.previewColor,
-      screenColor: headTheme.screenColor,
-      faceColor: headTheme.faceColor,
-      tongueColor: headTheme.tongueColor
-    };
     
-    // Update the head shape
-    const updatedHeadShape: HeadShape = headTheme.headShape;
-    
-    // Save the updated face theme and head shape
-    setCurrentFaceTheme(updatedFaceTheme);
-    setCurrentHeadShape(updatedHeadShape);
-    
-    // Save to localStorage
-    localStorage.setItem('faceTheme', JSON.stringify(updatedFaceTheme));
-    localStorage.setItem('headShape', JSON.stringify(updatedHeadShape));
-    
-    // Update the talking head container background color
-    const container = document.querySelector('.talking-head-container');
-    if (container) {
-      (container as HTMLElement).style.backgroundColor = headTheme.previewColor;
-    }
-    
-    // Dispatch a custom event to notify theme change
-    window.dispatchEvent(new Event('storage'));
-    
-    // Update document body background color
-    document.body.style.backgroundColor = headTheme.previewColor;
-    
-    toast({
-      title: "Head Theme Updated",
-      description: `Now using the ${headTheme.name} theme.`,
-    });
-  };
-  
-  // Save animated head theme
-  const handleSelectAnimatedHead = (theme: AnimatedHeadTheme) => {
-    setCurrentAnimatedHeadTheme(theme);
-    
-    // Save to localStorage
-    localStorage.setItem('animatedHeadTheme', JSON.stringify(theme));
-    
-    // Show toast notification
-    toast({
-      title: `${theme.name} head selected`,
-      description: `The ${theme.name} head style has been applied.`,
-      duration: 3000
-    });
+    // Update CSS variable for background color
+    document.documentElement.style.setProperty('--body-bg-color', faceTheme.previewColor);
   };
   
   // Save facial rig changes
@@ -677,7 +565,8 @@ When asked about cards, weather, recipes, or any structured information, respond
     setIsDragging(true);
     
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const newHeight = Math.max(100, Math.min(600, moveEvent.clientY - 100)); // Min 100px, max 600px
+      // Calculate new height with a minimum of 200px to ensure head is visible
+      const newHeight = Math.max(200, Math.min(600, moveEvent.clientY - 100));
       setHeadHeight(newHeight);
     };
     
@@ -728,7 +617,7 @@ When asked about cards, weather, recipes, or any structured information, respond
   const userMessageStyle = {
     backgroundColor: `${currentFaceTheme.previewColor}aa`, // Shade of the main background with 67% opacity
     borderRadius: '12px 12px 2px 12px',
-    color: '#fff', // White text for better contrast
+    color: '#000000', // Black text for user messages
   };
   
   const aiMessageStyle = {
@@ -739,7 +628,17 @@ When asked about cards, weather, recipes, or any structured information, respond
   // Animation for the app title
   const titleAnimation = useFadeIn();
   const floatingAnimation = useFloatingAnimation();
-  
+
+  // Add scroll to bottom effect
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   return (
     <div>
       <MotionDiv 
@@ -748,104 +647,94 @@ When asked about cards, weather, recipes, or any structured information, respond
         animate={{ opacity: 1, x: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
       >
+        <svg xmlns="http://www.w3.org/2000/svg" className="rtk-logo" width="24" height="24" viewBox="0 0 173.35 75.11">
+          <path d="M86.67 0 0 37.81l86.68 37.3 86.67-37.8L86.67 0zm76.62 37.33L86.67 70.75 10.06 37.78 86.68 4.36l76.61 32.97z" />
+          <path d="M128.79 31.06v13.47l10-4.36v4.64l-14.25 6.21V24.57l14.25 6.21v4.64l-10-4.36zm-20-8.72v13.34h7.5v4.25h-7.5v13.33l10-4.36v4.63l-14.25 6.21V15.85l14.25 6.21v4.64l-10-4.36zm-10-9.01v4.65l-10-4.37v53.01l-2.12.92-2.13-.92V13.61l-10 4.36v-4.64l12.13-5.29 12.12 5.29zM65.83 35.05l2.96-1.3V15.84l-14.25 6.22v31.47l4.25 1.85V38.11l3.12-1.37 7.7 23.37 2.84 1.23h.29v.14l2.1.91-9.01-27.34zm-1.29-4.09-5.75 2.51v-8.63l5.75-2.51v8.63zm-30-.18v14.03l4.25 1.85v-4.59h5.75v7.1l4.25 1.85V24.57l-14.25 6.21zm10 7.04h-5.75v-4.26l5.75-2.51v6.77z" />
+        </svg>
         ChatRTK
+        <a 
+          href="https://github.com/paulbloch/chatrtk" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="ml-2 hover:text-primary transition-colors"
+          title="View on GitHub"
+        >
+          <Github className="h-5 w-5" />
+        </a>
       </MotionDiv>
       <MotionDiv 
         className="model-version"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.2 }}
+        style={{ color: '#000000' }}
       >
         RTK-100
       </MotionDiv>
       <div className="controls-container">
-        <MotionButton 
-          variant="ghost" 
-          size="icon" 
-          onClick={toggleHead}
-          title={showHead ? "Hide talking head" : "Show talking head"}
-          whileHover={{ scale: 1.2, rotate: 5 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-        >
-          {showHead ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-        </MotionButton>
-        <MotionButton 
-          variant="ghost" 
-          size="icon" 
-          onClick={toggleChat}
-          title={showChat ? "Hide chat" : "Show chat"}
-          whileHover={{ scale: 1.2, rotate: -5 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-        >
-          {showChat ? <MessageSquareOff className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
-        </MotionButton>
-        <MotionButton 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => setIsFaceSelectorOpen(true)}
-          title="Change face theme"
-          whileHover={{ scale: 1.2, rotate: 5 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          className="hover:scale-105 active:scale-95 transition-transform"
+          data-tooltip="Change Face"
         >
-          <UserCircle2 className="h-4 w-4" />
-        </MotionButton>
-        <MotionButton 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => setIsHeadSelectorOpen(true)}
-          title="Select head theme"
-          whileHover={{ scale: 1.2, rotate: -5 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          <Smiley className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowHead(!showHead)}
+          className="hover:scale-105 active:scale-95 transition-transform"
+          data-tooltip={showHead ? "Hide Head" : "Show Head"}
         >
-          <Smiley className="h-4 w-4" weight="fill" />
-        </MotionButton>
-        <MotionButton 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => setIsAnimatedHeadSelectorOpen(true)}
-          title="Select animated head"
-          whileHover={{ scale: 1.2, rotate: 5 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          {showHead ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowChat(!showChat)}
+          className="hover:scale-105 active:scale-95 transition-transform"
+          data-tooltip={showChat ? "Hide Chat" : "Show Chat"}
         >
-          <Robot className="h-4 w-4" weight="fill" />
-        </MotionButton>
-        <MotionButton 
-          variant="ghost" 
-          size="icon" 
+          {showChat ? <MessageSquareOff className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsModalOpen(true)}
+          className="hover:scale-105 active:scale-95 transition-transform"
+          data-tooltip="Settings"
+        >
+          <Settings className="h-5 w-5" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => setIsFacialRigEditorOpen(true)}
-          title="Edit facial rig"
-          whileHover={{ scale: 1.2, rotate: -5 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          className="hover:scale-105 active:scale-95 transition-transform"
+          data-tooltip="Edit Facial Rig"
         >
           <Edit2 className="h-4 w-4" />
-        </MotionButton>
-        <MotionButton 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => setIsModalOpen(true)}
-          title="Settings"
-          whileHover={{ scale: 1.2, rotate: 5 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowCaptions(!showCaptions)}
+          className="hover:scale-105 active:scale-95 transition-transform"
+          data-tooltip={showCaptions ? "Hide Captions" : "Show Captions"}
         >
-          <Settings className="h-4 w-4" />
-        </MotionButton>
+          <Subtitles className={`h-4 w-4 ${showCaptions ? 'text-primary' : ''}`} />
+        </Button>
       </div>
       
       {showHead && (
         <>
-          <AnimatedDiv 
+          <div 
             className="talking-head-container" 
             style={{ 
               height: `${headHeight}px`,
-              backgroundColor: currentFaceTheme.previewColor,
-              ...floatingAnimation
+              backgroundColor: currentFaceTheme.previewColor
             }}
           >
             <TalkingHead 
@@ -854,9 +743,21 @@ When asked about cards, weather, recipes, or any structured information, respond
               expression={currentExpression}
               theme={currentFaceTheme}
               headShape={currentHeadShape}
-              animatedTheme={currentAnimatedHeadTheme}
             />
-          </AnimatedDiv>
+            {showCaptions && (
+              <div 
+                className="captions-container"
+                style={{
+                  opacity: captionOpacity,
+                  transition: 'opacity 0.3s ease-in-out'
+                }}
+              >
+                <div className="captions-text">
+                  {captionText.split('\n').slice(0, 2).join('\n')}
+                </div>
+              </div>
+            )}
+          </div>
           
           <div 
             className="resize-handle"
@@ -864,11 +765,6 @@ When asked about cards, weather, recipes, or any structured information, respond
             style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
           >
             <div className="resize-handle-line"></div>
-            <div className="resize-handle-dots">
-              <div className="resize-dot"></div>
-              <div className="resize-dot"></div>
-              <div className="resize-dot"></div>
-            </div>
           </div>
         </>
       )}
@@ -878,42 +774,33 @@ When asked about cards, weather, recipes, or any structured information, respond
           <ScrollArea className="chat-messages">
             {messages.map((message, index) => (
               message.type === 'card' ? (
-                <AnimatedMessage 
+                <AnimatedCard 
                   key={message.id || index}
-                  isUser={message.isUser}
-                  delay={index * 0.05}
+                  delay={index * 0.1}
                 >
-                  <div
-                    className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
-                  >
-                    <AnimatedCard>
-                      <Card className="w-full">
-                        <CardHeader>
-                          <CardTitle>{message.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p>{message.content}</p>
-                        </CardContent>
-                        {message.actions && message.actions.length > 0 && (
-                          <CardFooter className="flex gap-2">
-                            {message.actions.map((action, idx) => (
-                              <MotionButton
-                                key={idx}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                                variant="outline" 
-                                onClick={() => handleCardAction(action.action)}
-                              >
-                                {action.label}
-                              </MotionButton>
-                            ))}
-                          </CardFooter>
-                        )}
-                      </Card>
-                    </AnimatedCard>
-                  </div>
-                </AnimatedMessage>
+                  <Card className="w-full max-w-[600px] mx-auto">
+                    <CardHeader>
+                      <CardTitle>{message.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p>{message.content}</p>
+                    </CardContent>
+                    {message.actions && message.actions.length > 0 && (
+                      <CardFooter className="flex gap-2">
+                        {message.actions.map((action, idx) => (
+                          <Button
+                            key={idx}
+                            variant="outline"
+                            onClick={() => handleCardAction(action.action)}
+                            className="hover:scale-105 active:scale-95 transition-transform"
+                          >
+                            {action.label}
+                          </Button>
+                        ))}
+                      </CardFooter>
+                    )}
+                  </Card>
+                </AnimatedCard>
               ) : (
                 <AnimatedMessage 
                   key={message.id || index}
@@ -921,6 +808,7 @@ When asked about cards, weather, recipes, or any structured information, respond
                   delay={index * 0.05}
                 >
                   <div
+                    id={`message-${index}`}
                     className={`chat-message ${message.isUser ? 'user-message' : 'ai-message'}`}
                     style={message.isUser ? userMessageStyle : aiMessageStyle}
                   >
@@ -930,7 +818,7 @@ When asked about cards, weather, recipes, or any structured information, respond
               )
             ))}
             {isLoading && (
-              <div className="chat-message ai-message" style={aiMessageStyle}>
+              <div id="loading-message" className="chat-message ai-message" style={aiMessageStyle}>
                 <div className="flex space-x-2">
                   <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor }}></div>
                   <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentFaceTheme.previewColor, animationDelay: '0.2s' }}></div>
@@ -938,6 +826,7 @@ When asked about cards, weather, recipes, or any structured information, respond
                 </div>
               </div>
             )}
+            <div ref={messagesEndRef} style={{ float: "left", clear: "both" }} />
           </ScrollArea>
         </div>
       )}
@@ -948,32 +837,31 @@ When asked about cards, weather, recipes, or any structured information, respond
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
       >
-        <MotionTextarea
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="Type your message..."
-          className="chat-input"
-          whileFocus={{ scale: 1.01 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
-            }
-          }}
-        />
-        <MotionButton 
-          onClick={handleSendMessage} 
-          className="send-button"
-          disabled={isLoading}
-          variant="default"
-          size="icon"
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
-        >
-          {isLoading ? '...' : <MessageCircleMore className="h-5 w-5" />}
-        </MotionButton>
+        <div className="chat-input-wrapper">
+          <MotionTextarea
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="Type your message..."
+            className="chat-input"
+            whileFocus={{ scale: 1.01 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
+          />
+          <Button 
+            onClick={handleSendMessage} 
+            className="send-button"
+            disabled={isLoading}
+            variant="default"
+            size="icon"
+          >
+            {isLoading ? '...' : <MessageCircleMore className="h-5 w-5" />}
+          </Button>
+        </div>
       </MotionDiv>
 
       <ApiKeyModal
@@ -991,19 +879,6 @@ When asked about cards, weather, recipes, or any structured information, respond
         onOpenChange={setIsFaceSelectorOpen}
         onSelectFace={handleSelectFace}
         currentFaceTheme={currentFaceTheme.id}
-      />
-      
-      <HeadSelectorModal
-        open={isHeadSelectorOpen}
-        onOpenChange={setIsHeadSelectorOpen}
-        onSelectHead={handleSelectHead}
-      />
-      
-      <AnimatedHeadSelectorModal
-        isOpen={isAnimatedHeadSelectorOpen}
-        onClose={() => setIsAnimatedHeadSelectorOpen(false)}
-        onSelectHead={handleSelectAnimatedHead}
-        currentHeadId={currentAnimatedHeadTheme.id}
       />
       
       <FacialRigEditor
