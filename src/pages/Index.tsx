@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import ChatTalkingHead from '@/components/ChatTalkingHead/ChatTalkingHead';
-import { Drawers } from '@/components/Drawers/Drawers';
+import { ChatAvatar } from '@/features/chat/ui';
+import { Drawers } from '@/ui';
 
 const Index = () => {
     const [backgroundColor, setBackgroundColor] = useState('#5ddbaf'); // Default mint background (same as face container)
+    const [isLeftOpen, setIsLeftOpen] = useState(false);
+    const [isRightOpen, setIsRightOpen] = useState(false);
 
     useEffect(() => {
         // Get the current theme from localStorage
@@ -56,10 +58,30 @@ const Index = () => {
     }, []);
 
     return (
-        <Drawers>
+        <Drawers
+            isLeftOpen={isLeftOpen}
+            isRightOpen={isRightOpen}
+            onLeftOpenChange={setIsLeftOpen}
+            onRightOpenChange={setIsRightOpen}
+            showHead={true}
+            showChat={true}
+            isVoiceEnabled={true}
+            showCaptions={false}
+            onToggleHead={() => {}}
+            onToggleChat={() => {}}
+            onToggleVoice={() => {}}
+            onToggleCaptions={() => {}}
+            onOpenFaceSelector={() => {}}
+            onOpenFacialRigEditor={() => {}}
+            onOpenProjectInfo={() => {}}
+            onOpenGames={() => {}}
+            onOpenHotkeys={() => {}}
+            onOpenSpecialEffects={() => {}}
+            onOpenApiSettings={() => {}}
+        >
             <div className="min-h-screen p-4" style={{ backgroundColor }}>
                 <div className="container mx-auto py-8">
-                    <ChatTalkingHead />
+                    <ChatAvatar />
                 </div>
             </div>
         </Drawers>
