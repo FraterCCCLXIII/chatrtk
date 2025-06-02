@@ -1037,6 +1037,11 @@ Your responses should be natural and conversational, while still being efficient
     setVoiceSettings(prev => ({ ...prev, ...newSettings }));
   };
 
+  // Helper function to remove emojis from text
+  const removeEmojis = (text: string): string => {
+    return text.replace(/[\p{Emoji}]/gu, '');
+  };
+
   // Update speakText function
   const speakText = async (text: string) => {
     if (!ttsPlayer || !isTtsReady) {
@@ -1055,8 +1060,11 @@ Your responses should be natural and conversational, while still being efficient
       ttsPlayer.volume = voiceSettings.volume;
       ttsPlayer.voice = voiceSettings.voice;
 
+      // Remove emojis before playing textAdd commentMore actions
+      const cleanText = removeEmojis(text);
+
       // Play the text
-      await ttsPlayer.playText(text);
+      await ttsPlayer.playText(cleanText);
       
       // After TTS finishes, send the message
       if (text.trim()) {
