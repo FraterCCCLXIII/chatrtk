@@ -26,6 +26,7 @@ const DialogContent = React.forwardRef<
         "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
         "sm:rounded-lg",
         "cursor-move",
+        "overflow-y-auto max-h-[90vh]",
         className
       )}
       onPointerDown={(e) => {
@@ -35,20 +36,68 @@ const DialogContent = React.forwardRef<
         const dialog = target.closest('[role="dialog"]') as HTMLElement;
         if (!dialog) return;
 
-        if (target.closest('button, a, input, select, textarea')) return;
+        // Don't initiate drag if clicking on interactive elements or their containers
+        if (target.closest('button, a, input, select, textarea, [role="switch"], [data-no-drag]')) return;
 
+        // Prevent default to avoid text selection during drag
+        e.preventDefault();
+        
         const startX = e.clientX;
         const startY = e.clientY;
-        const startLeft = parseInt(getComputedStyle(dialog).left) || 0;
-        const startTop = parseInt(getComputedStyle(dialog).top) || 0;
+        
+        // Get the current position, accounting for transform
+        let startLeft = 0;
+        let startTop = 0;
+        
+        try {
+          const rect = dialog.getBoundingClientRect();
+          startLeft = rect.left;
+          startTop = rect.top;
+          
+          // If dialog already has explicit position, use that instead
+          if (dialog.style.left && dialog.style.top) {
+            startLeft = parseInt(dialog.style.left) || startLeft;
+            startTop = parseInt(dialog.style.top) || startTop;
+          }
+        } catch (err) {
+          console.error('Error getting dialog position:', err);
+          // Fallback to transform if getBoundingClientRect fails
+          const transform = getComputedStyle(dialog).transform;
+          if (transform && transform !== 'none') {
+            try {
+              // Extract translation values from matrix
+              const matrix = new DOMMatrix(transform);
+              startLeft = matrix.m41; // translateX value
+              startTop = matrix.m42;  // translateY value
+            } catch (err) {
+              console.error('Error parsing transform matrix:', err);
+              // Fallback to left/top if matrix parsing fails
+              startLeft = parseInt(getComputedStyle(dialog).left) || 0;
+              startTop = parseInt(getComputedStyle(dialog).top) || 0;
+            }
+          } else {
+            // Fallback to left/top if no transform
+            startLeft = parseInt(getComputedStyle(dialog).left) || 0;
+            startTop = parseInt(getComputedStyle(dialog).top) || 0;
+          }
+        }
+
+        // Set initial position
+        dialog.style.left = `${startLeft}px`;
+        dialog.style.top = `${startTop}px`;
+        dialog.style.transform = 'none'; // Remove transform to prevent conflicts
+        dialog.style.position = 'fixed'; // Ensure fixed positioning
 
         const handlePointerMove = (e: PointerEvent) => {
           const dx = e.clientX - startX;
           const dy = e.clientY - startY;
           
+          // Apply new position directly
           dialog.style.left = `${startLeft + dx}px`;
           dialog.style.top = `${startTop + dy}px`;
-          dialog.style.transform = 'none';
+          
+          // Prevent text selection during drag
+          e.preventDefault();
         };
 
         const handlePointerUp = () => {

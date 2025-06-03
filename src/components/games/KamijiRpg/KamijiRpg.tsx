@@ -76,12 +76,40 @@ const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
 
   const handleAiMovementChange = useCallback((enabled: boolean) => {
     console.log('AI Movement change requested:', enabled);
+    // Store the setting in localStorage for persistence
+    localStorage.setItem('kamijiRpg_aiMovementEnabled', JSON.stringify(enabled));
     setAiMovementEnabled(enabled);
-  }, []);
+    
+    // If AI movement is disabled, stop any current movement
+    if (!enabled) {
+      gameEngine.updateCharacter({ isMoving: false });
+      updateCharacterState();
+    }
+  }, [gameEngine, updateCharacterState]);
 
   const handleAiSpeechChange = useCallback((enabled: boolean) => {
     console.log('AI Speech change requested:', enabled);
+    // Store the setting in localStorage for persistence
+    localStorage.setItem('kamijiRpg_aiSpeechEnabled', JSON.stringify(enabled));
     setAiSpeechEnabled(enabled);
+    
+    // If AI speech is disabled, clear any current message
+    if (!enabled) {
+      setCurrentMessage(null);
+    }
+  }, [setCurrentMessage]);
+
+  // Load settings from localStorage on initial render
+  useEffect(() => {
+    const savedMovementSetting = localStorage.getItem('kamijiRpg_aiMovementEnabled');
+    if (savedMovementSetting !== null) {
+      setAiMovementEnabled(JSON.parse(savedMovementSetting));
+    }
+    
+    const savedSpeechSetting = localStorage.getItem('kamijiRpg_aiSpeechEnabled');
+    if (savedSpeechSetting !== null) {
+      setAiSpeechEnabled(JSON.parse(savedSpeechSetting));
+    }
   }, []);
 
   useEffect(() => {
@@ -202,7 +230,16 @@ const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
 
   // AI Movement Timer
   useEffect(() => {
-    if (!aiMovementEnabled) return;
+    // If AI movement is disabled, stop any current movement and return early
+    if (!aiMovementEnabled) {
+      gameEngine.updateCharacter({ isMoving: false });
+      updateCharacterState();
+      return () => {
+        // Ensure character stops moving when effect is cleaned up
+        gameEngine.updateCharacter({ isMoving: false });
+        updateCharacterState();
+      };
+    }
 
     const baseInterval = 1000; // Base interval of 1 second
     const interval = setInterval(() => {
@@ -212,12 +249,23 @@ const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
       }
     }, baseInterval / timeSpeed);
 
-    return () => clearInterval(interval);
-  }, [aiMovementEnabled, getAiMovementDirection, handleMove, timeSpeed]);
+    return () => {
+      clearInterval(interval);
+      // Ensure character stops moving when effect is cleaned up
+      gameEngine.updateCharacter({ isMoving: false });
+      updateCharacterState();
+    };
+  }, [aiMovementEnabled, getAiMovementDirection, handleMove, timeSpeed, gameEngine, updateCharacterState]);
 
   // AI Speech Logic
   const generateAiMessage = useCallback(() => {
-    if (!aiSpeechEnabled) return;
+    if (!aiSpeechEnabled) {
+      // Clear any existing message when AI speech is toggled off
+      if (currentMessage) {
+        setCurrentMessage(null);
+      }
+      return;
+    }
 
     const currentTerrain = gameEngine.getTerrainAt(gameEngine.getCharacterPosition());
     let messageType = 'wandering';
@@ -251,9 +299,24 @@ const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
 
   // Update AI speech timer
   useEffect(() => {
-    if (!aiSpeechEnabled) return;
+    // If AI speech is disabled, clear any existing message
+    if (!aiSpeechEnabled) {
+      setCurrentMessage(null);
+      return () => {};
+    }
+    
+    // Set up interval for AI speech generation
     const interval = setInterval(generateAiMessage, 5000 / timeSpeed);
-    return () => clearInterval(interval);
+    
+    // Clean up function
+    return () => {
+      clearInterval(interval);
+      // If the component is unmounting or AI speech is being disabled,
+      // make sure to clear any existing messages
+      if (!aiSpeechEnabled) {
+        setCurrentMessage(null);
+      }
+    };
   }, [aiSpeechEnabled, generateAiMessage, timeSpeed]);
 
   // Tamagotchi actions

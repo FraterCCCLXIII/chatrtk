@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Bot, MessageSquare } from 'lucide-react';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -21,15 +21,36 @@ const Settings: React.FC<SettingsProps> = ({
   onAiMovementChange,
   onAiSpeechChange,
 }) => {
-  const handleMovementChange = React.useCallback((checked: boolean) => {
-    console.log('Movement switch clicked, current state:', aiMovementEnabled, 'new state:', checked);
-    onAiMovementChange(checked);
-  }, [aiMovementEnabled, onAiMovementChange]);
+  // Local state to track switch values
+  const [localMovementEnabled, setLocalMovementEnabled] = useState(aiMovementEnabled);
+  const [localSpeechEnabled, setLocalSpeechEnabled] = useState(aiSpeechEnabled);
+  
+  // Update local state when props change
+  useEffect(() => {
+    setLocalMovementEnabled(aiMovementEnabled);
+  }, [aiMovementEnabled]);
+  
+  useEffect(() => {
+    setLocalSpeechEnabled(aiSpeechEnabled);
+  }, [aiSpeechEnabled]);
 
-  const handleSpeechChange = React.useCallback((checked: boolean) => {
-    console.log('Speech switch clicked, current state:', aiSpeechEnabled, 'new state:', checked);
-    onAiSpeechChange(checked);
-  }, [aiSpeechEnabled, onAiSpeechChange]);
+  const handleMovementChange = (checked: boolean) => {
+    console.log('Movement switch clicked, current state:', localMovementEnabled, 'new state:', checked);
+    // Update local state first
+    setLocalMovementEnabled(checked);
+    // Then call the parent handler with the new value
+    // Use setTimeout to ensure the state update happens after the current event loop
+    setTimeout(() => onAiMovementChange(checked), 50);
+  };
+
+  const handleSpeechChange = (checked: boolean) => {
+    console.log('Speech switch clicked, current state:', localSpeechEnabled, 'new state:', checked);
+    // Update local state first
+    setLocalSpeechEnabled(checked);
+    // Then call the parent handler with the new value
+    // Use setTimeout to ensure the state update happens after the current event loop
+    setTimeout(() => onAiSpeechChange(checked), 50);
+  };
 
   return (
     <div className="relative">
@@ -66,9 +87,10 @@ const Settings: React.FC<SettingsProps> = ({
                 </div>
                 <Switch
                   id="ai-movement"
-                  checked={aiMovementEnabled}
+                  checked={localMovementEnabled}
                   onCheckedChange={handleMovementChange}
                   aria-label="Toggle AI Movement Control"
+                  className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-300"
                 />
               </div>
               <p className="text-xs text-gray-500">
@@ -89,9 +111,10 @@ const Settings: React.FC<SettingsProps> = ({
                 </div>
                 <Switch
                   id="ai-speech"
-                  checked={aiSpeechEnabled}
+                  checked={localSpeechEnabled}
                   onCheckedChange={handleSpeechChange}
                   aria-label="Toggle AI Speech Control"
+                  className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-gray-300"
                 />
               </div>
               <p className="text-xs text-gray-500">
