@@ -1,0 +1,22 @@
+
+{
+  "width": 20,
+  "height": 15,
+  "tiles": [
+    ["grass", "grass", "grass", "tree", "grass", "grass", "water", "water", "water", "grass", "grass", "tree", "grass", "grass", "grass", "rock", "grass", "grass", "grass", "grass"],
+    ["grass", "tree", "grass", "grass", "grass", "water", "water", "water", "water", "water", "grass", "grass", "grass", "tree", "grass", "grass", "grass", "rock", "grass", "grass"],
+    ["grass", "grass", "grass", "grass", "grass", "water", "water", "water", "water", "water", "water", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "tree"],
+    ["rock", "grass", "tree", "grass", "grass", "grass", "water", "water", "water", "water", "grass", "grass", "tree", "grass", "grass", "grass", "rock", "grass", "grass", "grass"],
+    ["grass", "grass", "grass", "grass", "grass", "grass", "grass", "water", "water", "grass", "grass", "grass", "grass", "grass", "tree", "grass", "grass", "grass", "grass", "grass"],
+    ["grass", "tree", "grass", "rock", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "rock", "grass", "grass", "grass", "grass", "grass", "tree", "grass", "grass"],
+    ["grass", "grass", "grass", "grass", "grass", "tree", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "rock", "grass", "grass", "grass", "grass", "grass", "grass"],
+    ["grass", "grass", "rock", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "tree", "grass", "grass", "rock", "grass"],
+    ["tree", "grass", "grass", "grass", "grass", "grass", "rock", "grass", "grass", "grass", "grass", "grass", "tree", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+    ["grass", "grass", "grass", "tree", "grass", "grass", "grass", "grass", "grass", "rock", "grass", "grass", "grass", "grass", "grass", "grass", "rock", "grass", "tree", "grass"],
+    ["grass", "rock", "grass", "grass", "grass", "grass", "grass", "tree", "grass", "grass", "grass", "grass", "grass", "grass", "tree", "grass", "grass", "grass", "grass", "grass"],
+    ["grass", "grass", "grass", "grass", "rock", "grass", "grass", "grass", "grass", "grass", "grass", "rock", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "tree"],
+    ["grass", "tree", "grass", "grass", "grass", "grass", "grass", "grass", "rock", "grass", "grass", "grass", "grass", "tree", "grass", "grass", "grass", "rock", "grass", "grass"],
+    ["grass", "grass", "grass", "rock", "grass", "tree", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "grass"],
+    ["rock", "grass", "grass", "grass", "grass", "grass", "grass", "grass", "tree", "grass", "rock", "grass", "grass", "grass", "tree", "grass", "grass", "grass", "grass", "grass"]
+  ]
+}
