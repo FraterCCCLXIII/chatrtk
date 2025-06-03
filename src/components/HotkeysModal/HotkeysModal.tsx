@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Keyboard } from "lucide-react";
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -22,6 +23,7 @@ const HotkeysModal: React.FC<HotkeysModalProps> = ({ open, onOpenChange }) => {
   const { currentLanguage } = useLanguage();
   const categories: HotkeyCategory[] = ['navigation', 'voice', 'chat', 'general'];
   const [enabled, setEnabled] = useState(isHotkeysEnabled());
+  const descriptionId = "hotkeys-modal-description";
 
   // Listen for hotkeys state changes
   useEffect(() => {
@@ -42,7 +44,7 @@ const HotkeysModal: React.FC<HotkeysModalProps> = ({ open, onOpenChange }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px]" aria-describedby={descriptionId}>
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>{getTranslation('keyboardShortcuts', currentLanguage)}</span>
@@ -59,6 +61,9 @@ const HotkeysModal: React.FC<HotkeysModalProps> = ({ open, onOpenChange }) => {
               </Label>
             </div>
           </DialogTitle>
+          <DialogDescription id={descriptionId}>
+            {getTranslation('hotkeysDescription', currentLanguage) || 'View and manage keyboard shortcuts for the application.'}
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           {categories.map((category) => (

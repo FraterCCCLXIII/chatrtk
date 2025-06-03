@@ -12,33 +12,53 @@ const DialogPortal = DialogPrimitive.Portal
 
 const DialogClose = DialogPrimitive.Close
 
-const DialogOverlay = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay
-    ref={ref}
-    className={cn(
-      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-      className
-    )}
-    {...props}
-  />
-))
-DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
-
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
 >(({ className, children, ...props }, ref) => (
   <DialogPortal>
-    <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        "fixed z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg duration-200",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out",
+        "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+        "sm:rounded-lg",
+        "cursor-move",
         className
       )}
+      onPointerDown={(e) => {
+        if (e.button !== 0) return;
+        
+        const target = e.target as HTMLElement;
+        const dialog = target.closest('[role="dialog"]') as HTMLElement;
+        if (!dialog) return;
+
+        if (target.closest('button, a, input, select, textarea')) return;
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startLeft = parseInt(getComputedStyle(dialog).left) || 0;
+        const startTop = parseInt(getComputedStyle(dialog).top) || 0;
+
+        const handlePointerMove = (e: PointerEvent) => {
+          const dx = e.clientX - startX;
+          const dy = e.clientY - startY;
+          
+          dialog.style.left = `${startLeft + dx}px`;
+          dialog.style.top = `${startTop + dy}px`;
+          dialog.style.transform = 'none';
+        };
+
+        const handlePointerUp = () => {
+          document.removeEventListener('pointermove', handlePointerMove);
+          document.removeEventListener('pointerup', handlePointerUp);
+        };
+
+        document.addEventListener('pointermove', handlePointerMove);
+        document.addEventListener('pointerup', handlePointerUp);
+      }}
       {...props}
     >
       {children}
@@ -109,7 +129,6 @@ DialogDescription.displayName = DialogPrimitive.Description.displayName
 export {
   Dialog,
   DialogPortal,
-  DialogOverlay,
   DialogClose,
   DialogTrigger,
   DialogContent,

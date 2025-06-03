@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Direction } from '../types';
 
@@ -6,10 +5,10 @@ interface KamijiSpriteProps {
   direction: Direction;
   isMoving: boolean;
   mood: string;
-  size?: number;
+  size: number | string;
 }
 
-const KamijiSprite = ({ direction, isMoving, mood, size = 32 }: KamijiSpriteProps) => {
+const KamijiSprite: React.FC<KamijiSpriteProps> = ({ direction, isMoving, mood, size }) => {
   const getEyeExpression = () => {
     switch (mood) {
       case 'happy':
