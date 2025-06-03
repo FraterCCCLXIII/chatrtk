@@ -6,10 +6,17 @@ import { Character, Direction } from './types';
 import TerrainSprite from './components/TerrainSprite';
 import KamijiSprite from './components/KamijiSprite';
 import SpeechBubble from './components/SpeechBubble';
-import StatusBar from '../StatusBar';
-import GameControls from '../GameControls';
-import TimeControls from '../TimeControls';
-import { PetStats } from '../TamagotchiGame';
+import StatusBar from './components/StatusBar';
+import GameControls from './components/GameControls';
+import TimeControls from './components/TimeControls';
+
+// Define PetStats interface here since we're not importing it
+interface PetStats {
+  hunger: number;
+  happiness: number;
+  energy: number;
+  age: number;
+}
 
 interface KamijiRpgProps {
   open: boolean;
@@ -271,4 +278,4 @@ const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
   );
 };
 
-export default KamijiRpg;
+export default KamijiRpg; 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,7 @@ import { Gamepad2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import WordChain from '../games/WordChain/WordChain';
-import KamijiRPG from '../../../kamiji-game-main/src/components/rpg/RPG';
+import KamijiRpg from '../games/KamijiRpg/KamijiRpg';
 
 interface GamesModalProps {
   open: boolean;
@@ -33,6 +33,7 @@ const GamesModal: React.FC<GamesModalProps> = ({
   open,
   onOpenChange,
 }) => {
+  const [isKamijiOpen, setIsKamijiOpen] = useState(false);
   const handleGameEnd = (result: any) => {
     console.log('Game ended:', result);
   };
@@ -57,7 +58,15 @@ const GamesModal: React.FC<GamesModalProps> = ({
           
           <TabsContent value="all" className="space-y-4">
             <WordChain onGameEnd={handleGameEnd} />
-            <KamijiRPG />
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle>KamijiRpg</CardTitle>
+                <CardDescription>Play Kamiji's Island Adventure</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <button onClick={() => setIsKamijiOpen(true)} className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90">Launch KamijiRpg</button>
+              </CardContent>
+            </Card>
             <GamePlaceholder 
               title="Memory Match" 
               description="Test your memory by matching pairs of cards"
@@ -85,13 +94,22 @@ const GamesModal: React.FC<GamesModalProps> = ({
           
           <TabsContent value="ai" className="space-y-4">
             <WordChain onGameEnd={handleGameEnd} />
-            <KamijiRPG />
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle>KamijiRpg</CardTitle>
+                <CardDescription>Play Kamiji's Island Adventure</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <button onClick={() => setIsKamijiOpen(true)} className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90">Launch KamijiRpg</button>
+              </CardContent>
+            </Card>
             <GamePlaceholder 
               title="AI Story Builder" 
               description="Collaborate with AI to create stories"
             />
           </TabsContent>
         </Tabs>
+        {isKamijiOpen && <KamijiRpg open={isKamijiOpen} onOpenChange={setIsKamijiOpen} />}
       </DialogContent>
     </Dialog>
   );

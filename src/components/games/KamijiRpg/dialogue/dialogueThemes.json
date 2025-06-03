@@ -1,0 +1,67 @@
+
+{
+  "wandering": [
+    {
+      "text": "What a beautiful day to explore! 🌟",
+      "conditions": { "mood": "happy" }
+    },
+    {
+      "text": "I wonder what's over there... 🤔",
+      "conditions": {}
+    },
+    {
+      "text": "The wind feels nice today! 🍃",
+      "conditions": {}
+    }
+  ],
+  "terrain_interaction": [
+    {
+      "text": "These trees are so tall! 🌳",
+      "conditions": { "terrain": "tree" }
+    },
+    {
+      "text": "This grass feels soft under my feet! 🌱",
+      "conditions": { "terrain": "grass" }
+    },
+    {
+      "text": "What a big rock! I can't climb over it! 🪨",
+      "conditions": { "terrain": "rock" }
+    },
+    {
+      "text": "The water looks so clear and peaceful! 🌊",
+      "conditions": { "terrain": "water" }
+    }
+  ],
+  "mood_based": [
+    {
+      "text": "I'm feeling great today! Let's explore more! 😊",
+      "conditions": { "mood": "happy" }
+    },
+    {
+      "text": "Hmm, I'm getting a bit tired... 😴",
+      "conditions": { "mood": "tired" }
+    },
+    {
+      "text": "I'm curious about what's around here! 🔍",
+      "conditions": { "mood": "curious" }
+    }
+  ],
+  "time_based": [
+    {
+      "text": "Good morning! Time for an adventure! ☀️",
+      "conditions": { "timeOfDay": "morning" }
+    },
+    {
+      "text": "The afternoon sun is perfect for exploring! 🌞",
+      "conditions": { "timeOfDay": "afternoon" }
+    },
+    {
+      "text": "Evening walks are so peaceful... 🌅",
+      "conditions": { "timeOfDay": "evening" }
+    },
+    {
+      "text": "The night sky is beautiful from here! ✨",
+      "conditions": { "timeOfDay": "night" }
+    }
+  ]
+}
