@@ -1,55 +1,45 @@
 import React from 'react';
-import { Utensils, Play, Moon } from 'lucide-react';
+import { Gamepad2, Heart, RotateCcw } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+type GameMode = 'rpg' | 'tamagotchi';
 
 interface GameControlsProps {
-  onFeed: () => void;
-  onPlay: () => void;
-  onSleep: () => void;
-  canPlay: boolean;
+  currentMode: GameMode;
+  onModeChange: (mode: GameMode) => void;
+  onReset: () => void;
 }
 
-const GameControls: React.FC<GameControlsProps> = ({
-  onFeed,
-  onPlay,
-  onSleep,
-  canPlay
+export const GameControls: React.FC<GameControlsProps> = ({
+  currentMode,
+  onModeChange,
+  onReset,
 }) => {
   return (
-    <div className="bg-white/60 rounded-2xl p-4 backdrop-blur-sm">
-      <h3 className="text-lg font-semibold mb-3 text-gray-800">Actions</h3>
-      <div className="grid grid-cols-3 gap-3">
-        <button
-          onClick={onFeed}
-          className="flex flex-col items-center justify-center p-3 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors"
-          title="Feed Kamiji"
-        >
-          <Utensils className="h-6 w-6 mb-1" />
-          <span className="text-sm">Feed</span>
-        </button>
-        <button
-          onClick={onPlay}
-          disabled={!canPlay}
-          className={`flex flex-col items-center justify-center p-3 rounded-xl transition-colors ${
-            canPlay
-              ? 'bg-blue-500 text-white hover:bg-blue-600'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
-          title={canPlay ? "Play with Kamiji" : "Kamiji is too tired to play"}
-        >
-          <Play className="h-6 w-6 mb-1" />
-          <span className="text-sm">Play</span>
-        </button>
-        <button
-          onClick={onSleep}
-          className="flex flex-col items-center justify-center p-3 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors"
-          title="Let Kamiji sleep"
-        >
-          <Moon className="h-6 w-6 mb-1" />
-          <span className="text-sm">Sleep</span>
-        </button>
-      </div>
+    <div className="flex flex-col gap-2 bg-background/80 backdrop-blur-sm border rounded-lg p-2">
+      <Tabs value={currentMode} onValueChange={(value) => onModeChange(value as GameMode)}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="rpg" className="flex items-center gap-2">
+            <Gamepad2 className="h-4 w-4" />
+            RPG Mode
+          </TabsTrigger>
+          <TabsTrigger value="tamagotchi" className="flex items-center gap-2">
+            <Heart className="h-4 w-4" />
+            Virtual Pet
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      <Button
+        variant="outline"
+        size="sm"
+        className="flex items-center gap-2"
+        onClick={onReset}
+      >
+        <RotateCcw className="h-4 w-4" />
+        Reset Game
+      </Button>
     </div>
   );
-};
-
-export default GameControls; 
+}; 

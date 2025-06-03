@@ -1,69 +1,86 @@
 import React from 'react';
-
-interface PetStats {
-  hunger: number;
-  happiness: number;
-  energy: number;
-  age: number;
-}
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Character } from '../types';
 
 interface StatusBarProps {
-  stats: PetStats;
+  character: Character;
+  timeSpeed: number;
+  aiMovementEnabled: boolean;
+  aiSpeechEnabled: boolean;
+  onAiMovementChange: (enabled: boolean) => void;
+  onAiSpeechChange: (enabled: boolean) => void;
 }
 
-const StatusBar: React.FC<StatusBarProps> = ({ stats }) => {
-  const getStatusColor = (value: number) => {
-    if (value > 70) return 'bg-green-500';
-    if (value > 30) return 'bg-yellow-500';
-    return 'bg-red-500';
-  };
-
+export const StatusBar: React.FC<StatusBarProps> = ({
+  character,
+  timeSpeed,
+  aiMovementEnabled,
+  aiSpeechEnabled,
+  onAiMovementChange,
+  onAiSpeechChange,
+}) => {
   return (
-    <div className="bg-white/60 rounded-2xl p-4 backdrop-blur-sm">
-      <h3 className="text-lg font-semibold mb-3 text-gray-800">Status</h3>
-      <div className="space-y-3">
-        <div>
-          <div className="flex justify-between text-sm mb-1">
-            <span>Hunger</span>
-            <span>{Math.round(stats.hunger)}%</span>
-          </div>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+    <div className="flex items-center justify-between px-4 h-full">
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">Health:</span>
+          <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className={`h-full ${getStatusColor(stats.hunger)} transition-all duration-300`}
-              style={{ width: `${stats.hunger}%` }}
+              className="h-full bg-red-500 transition-all duration-300"
+              style={{ width: `${character.health}%` }}
             />
           </div>
+          <span className="text-sm">{Math.round(character.health)}%</span>
         </div>
-        <div>
-          <div className="flex justify-between text-sm mb-1">
-            <span>Happiness</span>
-            <span>{Math.round(stats.happiness)}%</span>
-          </div>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">Energy:</span>
+          <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className={`h-full ${getStatusColor(stats.happiness)} transition-all duration-300`}
-              style={{ width: `${stats.happiness}%` }}
+              className="h-full bg-blue-500 transition-all duration-300"
+              style={{ width: `${character.energy}%` }}
             />
           </div>
+          <span className="text-sm">{Math.round(character.energy)}%</span>
         </div>
-        <div>
-          <div className="flex justify-between text-sm mb-1">
-            <span>Energy</span>
-            <span>{Math.round(stats.energy)}%</span>
-          </div>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">Happiness:</span>
+          <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
-              className={`h-full ${getStatusColor(stats.energy)} transition-all duration-300`}
-              style={{ width: `${stats.energy}%` }}
+              className="h-full bg-yellow-500 transition-all duration-300"
+              style={{ width: `${character.happiness}%` }}
             />
           </div>
+          <span className="text-sm">{Math.round(character.happiness)}%</span>
         </div>
-        <div className="text-sm text-gray-600">
-          Age: {stats.age} days
+      </div>
+
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Switch
+            id="ai-movement"
+            checked={aiMovementEnabled}
+            onCheckedChange={onAiMovementChange}
+          />
+          <Label htmlFor="ai-movement" className="text-sm">AI Movement</Label>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Switch
+            id="ai-speech"
+            checked={aiSpeechEnabled}
+            onCheckedChange={onAiSpeechChange}
+          />
+          <Label htmlFor="ai-speech" className="text-sm">AI Speech</Label>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">Speed:</span>
+          <span className="text-sm">{timeSpeed}x</span>
         </div>
       </div>
     </div>
   );
-};
-
-export default StatusBar; 
+}; 

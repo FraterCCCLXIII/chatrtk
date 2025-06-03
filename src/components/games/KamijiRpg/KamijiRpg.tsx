@@ -12,15 +12,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GameEngine } from './gameEngine/GameEngine';
 import { DialogueSystem } from './dialogue/DialogueSystem';
 import { Character, Direction } from './types';
-import TerrainSprite from './components/TerrainSprite';
-import KamijiSprite from './components/KamijiSprite';
-import SpeechBubble from './components/SpeechBubble';
-import StatusBar from './components/StatusBar';
-import GameControls from './components/GameControls';
-import TimeControls from './components/TimeControls';
-import Settings from './components/Settings';
+import TerrainSprite from '@/components/games/KamijiRpg/components/TerrainSprite';
+import KamijiSprite from '@/components/games/KamijiRpg/components/KamijiSprite';
+import SpeechBubble from '@/components/games/KamijiRpg/components/SpeechBubble';
+import { StatusBar } from '@/components/games/KamijiRpg/components/StatusBar';
+import { GameControls } from '@/components/games/KamijiRpg/components/GameControls';
+import { TimeControls } from '@/components/games/KamijiRpg/components/TimeControls';
+import Settings from '@/components/games/KamijiRpg/components/Settings';
 import { Gamepad2, Heart } from 'lucide-react';
-import BerrySprite from './components/BerrySprite';
+import BerrySprite from '@/components/games/KamijiRpg/components/BerrySprite';
+import { Button } from "@/components/ui/button";
 
 // Define PetStats interface here since we're not importing it
 interface PetStats {
@@ -39,17 +40,54 @@ interface Berry {
 interface KamijiRpgProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  isControlled?: boolean;
 }
 
-const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
+type GameMode = 'rpg' | 'tamagotchi';
+
+const KamijiRpg: React.FC<KamijiRpgProps> = ({ 
+  open, 
+  onOpenChange,
+  isControlled = false,
+  ...props 
+}) => {
   const [gameEngine] = useState(() => {
     const initialCharacter: Character = {
-      id: 'kamiji',
+      health: 100,
+      happiness: 100,
+      energy: 100,
+      hunger: 0,
+      thirst: 0,
       position: { x: 10, y: 7 },
-      type: 'character',
       direction: 'down',
       isMoving: false,
-      mood: 'happy'
+      isEating: false,
+      isSleeping: false,
+      isPlaying: false,
+      mood: 'happy',
+      lastInteraction: Date.now(),
+      lastMovement: Date.now(),
+      lastSpeech: Date.now(),
+      lastBerryCollection: Date.now(),
+      berriesCollected: 0,
+      experience: 0,
+      level: 1,
+      inventory: [],
+      quests: [],
+      achievements: [],
+      relationships: {},
+      skills: {
+        foraging: 1,
+        social: 1,
+        exploration: 1,
+        survival: 1
+      },
+      stats: {
+        strength: 10,
+        agility: 10,
+        intelligence: 10,
+        charisma: 10
+      }
     };
     return new GameEngine(initialCharacter);
   });
@@ -73,6 +111,33 @@ const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
 
   const [berries, setBerries] = useState<Berry[]>([]);
   const [berriesCollected, setBerriesCollected] = useState(0);
+
+  // Window state management
+  const [windowPosition, setWindowPosition] = React.useState(() => {
+    const saved = localStorage.getItem('kamijiRpgWindowPosition');
+    return saved ? JSON.parse(saved) : { x: window.innerWidth / 4, y: window.innerHeight / 4 };
+  });
+
+  const [windowSize, setWindowSize] = React.useState(() => {
+    const saved = localStorage.getItem('kamijiRpgWindowSize');
+    return saved ? JSON.parse(saved) : { width: 800, height: 600 };
+  });
+
+  // Save window state to localStorage
+  const handlePositionChange = React.useCallback((position: { x: number; y: number }) => {
+    setWindowPosition(position);
+    localStorage.setItem('kamijiRpgWindowPosition', JSON.stringify(position));
+  }, []);
+
+  const handleSizeChange = React.useCallback((size: { width: number; height: number }) => {
+    setWindowSize(size);
+    localStorage.setItem('kamijiRpgWindowSize', JSON.stringify(size));
+  }, []);
+
+  // Define updateCharacterState before any functions that use it
+  const updateCharacterState = useCallback(() => {
+    setCharacter(gameEngine.getCharacter());
+  }, [gameEngine]);
 
   const handleAiMovementChange = useCallback((enabled: boolean) => {
     console.log('AI Movement change requested:', enabled);
@@ -119,10 +184,6 @@ const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
   useEffect(() => {
     console.log('AI Speech state updated:', aiSpeechEnabled);
   }, [aiSpeechEnabled]);
-
-  const updateCharacterState = useCallback(() => {
-    setCharacter(gameEngine.getCharacter());
-  }, [gameEngine]);
 
   const handleMove = useCallback((direction: Direction) => {
     const moved = gameEngine.moveCharacter(direction);
@@ -402,15 +463,15 @@ const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
   // Mood changes based on stats
   useEffect(() => {
     const moodInterval = setInterval(() => {
-      let newMood = 'happy';
+      let newMood: Character['mood'] = 'happy';
       if (stats.hunger < 30 || stats.energy < 20) {
         newMood = 'tired';
       } else if (stats.happiness > 80) {
         newMood = 'happy';
       } else if (stats.happiness < 40) {
-        newMood = 'tired';
+        newMood = 'sad';
       } else {
-        newMood = 'curious';
+        newMood = 'neutral';
       }
       
       gameEngine.updateCharacter({ mood: newMood });
@@ -496,6 +557,62 @@ const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
     checkBerryCollection();
   }, [character.position, checkBerryCollection]);
 
+  // Add canvas ref
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  // Add game mode state
+  const [currentMode, setCurrentMode] = React.useState<GameMode>('rpg');
+
+  // Add mode change handler
+  const handleModeChange = React.useCallback((mode: GameMode) => {
+    setCurrentMode(mode);
+  }, []);
+
+  // Add reset handler
+  const handleReset = React.useCallback(() => {
+    // Reset game state
+    setCharacter({
+      ...character,
+      health: 100,
+      happiness: 100,
+      energy: 100,
+      hunger: 0,
+      thirst: 0,
+      position: { x: 0, y: 0 },
+      direction: 'right',
+      isMoving: false,
+      isEating: false,
+      isSleeping: false,
+      isPlaying: false,
+      mood: 'neutral',
+      lastInteraction: Date.now(),
+      lastMovement: Date.now(),
+      lastSpeech: Date.now(),
+      lastBerryCollection: Date.now(),
+      berriesCollected: 0,
+      experience: 0,
+      level: 1,
+      inventory: [],
+      quests: [],
+      achievements: [],
+      relationships: {},
+      skills: {
+        foraging: 1,
+        social: 1,
+        exploration: 1,
+        survival: 1
+      },
+      stats: {
+        strength: 10,
+        agility: 10,
+        intelligence: 10,
+        charisma: 10
+      }
+    });
+    setBerriesCollected(0);
+    setCurrentMessage(null);
+  }, [character]);
+
   const renderRpgMode = () => (
     <div className="grid grid-rows-[auto_1fr] gap-4 p-4 bg-gradient-to-b from-sky-200 to-green-200 h-full min-h-0">
       {/* Left side - Controls and Stats */}
@@ -515,13 +632,19 @@ const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
             onTimeSpeedChange={setTimeSpeed} 
           />
           
-          <StatusBar stats={stats} />
+          <StatusBar
+            character={character}
+            timeSpeed={timeSpeed}
+            aiMovementEnabled={aiMovementEnabled}
+            aiSpeechEnabled={aiSpeechEnabled}
+            onAiMovementChange={handleAiMovementChange}
+            onAiSpeechChange={handleAiSpeechChange}
+          />
           
           <GameControls
-            onFeed={handleFeed}
-            onPlay={handlePlay}
-            onSleep={handleSleep}
-            canPlay={stats.energy > 20}
+            currentMode={currentMode}
+            onModeChange={handleModeChange}
+            onReset={handleReset}
           />
           
           <div className="bg-white/60 rounded-2xl p-3 backdrop-blur-sm">
@@ -619,7 +742,14 @@ const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
 
           {/* Stats and Controls */}
           <div className="w-full space-y-4">
-            <StatusBar stats={stats} />
+            <StatusBar
+              character={character}
+              timeSpeed={timeSpeed}
+              aiMovementEnabled={aiMovementEnabled}
+              aiSpeechEnabled={aiSpeechEnabled}
+              onAiMovementChange={handleAiMovementChange}
+              onAiSpeechChange={handleAiSpeechChange}
+            />
             
             <TimeControls 
               timeSpeed={timeSpeed} 
@@ -627,10 +757,9 @@ const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
             />
             
             <GameControls
-              onFeed={handleFeed}
-              onPlay={handlePlay}
-              onSleep={handleSleep}
-              canPlay={stats.energy > 20}
+              currentMode={currentMode}
+              onModeChange={handleModeChange}
+              onReset={handleReset}
             />
           </div>
 
@@ -650,53 +779,67 @@ const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
   );
 
   const dialogContent = (
-    <div className="flex flex-col h-full overflow-hidden resize">
-      <DialogHeader className="flex-none">
-        <div className="flex justify-between items-center">
-          <DialogTitle className="text-xl font-semibold">Game Controls</DialogTitle>
-          <Settings
-            aiMovementEnabled={aiMovementEnabled}
-            aiSpeechEnabled={aiSpeechEnabled}
-            onAiMovementChange={handleAiMovementChange}
-            onAiSpeechChange={handleAiSpeechChange}
-          />
+    <div className="relative w-full h-full bg-background">
+      {/* Game Canvas */}
+      <div className="absolute inset-0">
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full"
+          width={windowSize.width}
+          height={windowSize.height}
+        />
+      </div>
+
+      {/* Status Bar */}
+      <div className="absolute bottom-0 left-0 right-0 h-8 bg-background/80 backdrop-blur-sm border-t">
+        <StatusBar
+          character={character}
+          timeSpeed={timeSpeed}
+          aiMovementEnabled={aiMovementEnabled}
+          aiSpeechEnabled={aiSpeechEnabled}
+          onAiMovementChange={handleAiMovementChange}
+          onAiSpeechChange={handleAiSpeechChange}
+        />
+      </div>
+
+      {/* Game Controls */}
+      <div className="absolute top-4 right-4 flex flex-col gap-2">
+        <GameControls
+          onModeChange={handleModeChange}
+          currentMode={currentMode}
+          onReset={handleReset}
+        />
+      </div>
+
+      {/* Time Controls */}
+      <div className="absolute bottom-12 right-4">
+        <TimeControls
+          timeSpeed={timeSpeed}
+          onTimeSpeedChange={setTimeSpeed}
+        />
+      </div>
+
+      {/* Dialogue System */}
+      {currentMessage && (
+        <div className="absolute bottom-16 left-4 right-4 bg-background/80 backdrop-blur-sm border rounded-lg p-4">
+          <p className="text-sm">{currentMessage}</p>
         </div>
-      </DialogHeader>
-      <Tabs defaultValue="rpg" className="flex-1 overflow-hidden">
-        <TabsList className="w-full justify-start px-4 pt-2 flex-none">
-          <TabsTrigger value="rpg" className="flex items-center gap-2">
-            <Gamepad2 className="h-4 w-4" />
-            RPG Mode
-          </TabsTrigger>
-          <TabsTrigger value="tamagotchi" className="flex items-center gap-2">
-            <Heart className="h-4 w-4" />
-            Virtual Pet
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="rpg" className="mt-0 h-[calc(100%-3rem)] overflow-hidden">
-          {renderRpgMode()}
-        </TabsContent>
-        
-        <TabsContent value="tamagotchi" className="mt-0 h-[calc(100%-3rem)] overflow-hidden">
-          {renderTamagotchiMode()}
-        </TabsContent>
-      </Tabs>
+      )}
     </div>
   );
 
-  // If open and onOpenChange are provided, use controlled mode
-  if (open !== undefined && onOpenChange) {
+  if (isControlled) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent 
-          className="max-w-4xl min-w-[600px] min-h-[400px] h-[90vh] p-0 gap-0"
-          style={{
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            resize: 'both'
-          }}
+        <DialogContent
+          title="Kamiji RPG"
+          initialPosition={windowPosition}
+          initialSize={windowSize}
+          minSize={{ width: 400, height: 300 }}
+          maxSize={{ width: window.innerWidth * 0.9, height: window.innerHeight * 0.9 }}
+          onPositionChange={handlePositionChange}
+          onSizeChange={handleSizeChange}
+          zIndex={50}
         >
           {dialogContent}
         </DialogContent>
@@ -704,26 +847,22 @@ const KamijiRpg: React.FC<KamijiRpgProps> = ({ open, onOpenChange }) => {
     );
   }
 
-  // Otherwise use standalone mode with trigger
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <button 
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          aria-label="Open Kamiji RPG Game"
-          type="button"
-        >
-          <Gamepad2 className="h-5 w-5 text-gray-600" />
-        </button>
+        <Button variant="outline" className="w-full">
+          Open Kamiji RPG
+        </Button>
       </DialogTrigger>
-      <DialogContent 
-        className="max-w-4xl min-w-[600px] min-h-[400px] h-[90vh] p-0 gap-0"
-        style={{
-          left: '50%',
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
-          resize: 'both'
-        }}
+      <DialogContent
+        title="Kamiji RPG"
+        initialPosition={windowPosition}
+        initialSize={windowSize}
+        minSize={{ width: 400, height: 300 }}
+        maxSize={{ width: window.innerWidth * 0.9, height: window.innerHeight * 0.9 }}
+        onPositionChange={handlePositionChange}
+        onSizeChange={handleSizeChange}
+        zIndex={50}
       >
         {dialogContent}
       </DialogContent>

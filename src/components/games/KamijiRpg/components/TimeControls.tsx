@@ -1,56 +1,75 @@
 import React from 'react';
-import { Clock, FastForward, Rewind } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { Pause, Play, FastForward } from 'lucide-react';
 
 interface TimeControlsProps {
   timeSpeed: number;
   onTimeSpeedChange: (speed: number) => void;
 }
 
-const TimeControls: React.FC<TimeControlsProps> = ({
+export const TimeControls: React.FC<TimeControlsProps> = ({
   timeSpeed,
-  onTimeSpeedChange
+  onTimeSpeedChange,
 }) => {
-  const speeds = [0.5, 1, 2, 4];
+  const [isPaused, setIsPaused] = React.useState(timeSpeed === 0);
+
+  const handlePauseToggle = React.useCallback(() => {
+    if (isPaused) {
+      setIsPaused(false);
+      onTimeSpeedChange(1);
+    } else {
+      setIsPaused(true);
+      onTimeSpeedChange(0);
+    }
+  }, [isPaused, onTimeSpeedChange]);
+
+  const handleSpeedChange = React.useCallback((speed: number) => {
+    setIsPaused(false);
+    onTimeSpeedChange(speed);
+  }, [onTimeSpeedChange]);
 
   return (
-    <div className="bg-white/60 rounded-2xl p-4 backdrop-blur-sm">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-lg font-semibold text-gray-800">Time Speed</h3>
-        <Clock className="h-5 w-5 text-gray-600" />
-      </div>
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => onTimeSpeedChange(Math.max(0.5, timeSpeed / 2))}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          title="Slow down time"
+    <div className="flex items-center gap-2 bg-background/80 backdrop-blur-sm border rounded-lg p-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handlePauseToggle}
+        className="flex items-center gap-2"
+      >
+        {isPaused ? (
+          <>
+            <Play className="h-4 w-4" />
+            <span className="sr-only">Resume</span>
+          </>
+        ) : (
+          <>
+            <Pause className="h-4 w-4" />
+            <span className="sr-only">Pause</span>
+          </>
+        )}
+      </Button>
+
+      <div className="flex items-center gap-1">
+        <Button
+          variant={timeSpeed === 1 ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleSpeedChange(1)}
+          className="flex items-center gap-2"
         >
-          <Rewind className="h-5 w-5 text-gray-600" />
-        </button>
-        <div className="flex-1 flex justify-center gap-1">
-          {speeds.map((speed) => (
-            <button
-              key={speed}
-              onClick={() => onTimeSpeedChange(speed)}
-              className={`px-3 py-1 rounded-lg text-sm transition-colors ${
-                timeSpeed === speed
-                  ? 'bg-blue-500 text-white'
-                  : 'hover:bg-gray-100 text-gray-600'
-              }`}
-            >
-              {speed}x
-            </button>
-          ))}
-        </div>
-        <button
-          onClick={() => onTimeSpeedChange(Math.min(4, timeSpeed * 2))}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-          title="Speed up time"
+          <Play className="h-4 w-4" />
+          <span className="sr-only">Normal Speed</span>
+        </Button>
+
+        <Button
+          variant={timeSpeed === 2 ? "default" : "outline"}
+          size="sm"
+          onClick={() => handleSpeedChange(2)}
+          className="flex items-center gap-2"
         >
-          <FastForward className="h-5 w-5 text-gray-600" />
-        </button>
+          <FastForward className="h-4 w-4" />
+          <span className="sr-only">Fast Forward</span>
+        </Button>
       </div>
     </div>
   );
-};
-
-export default TimeControls; 
+}; 
