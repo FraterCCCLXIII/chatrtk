@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { GameEngine } from './gameEngine/GameEngine';
 import { DialogueSystem } from './dialogue/DialogueSystem';
@@ -11,7 +10,7 @@ import GameControls from '../GameControls';
 import TimeControls from '../TimeControls';
 import { PetStats } from '../TamagotchiGame';
 
-const RPG = () => {
+const KamijiRPG = () => {
   const [gameEngine] = useState(() => {
     const initialCharacter: Character = {
       id: 'kamiji',
@@ -253,4 +252,4 @@ const RPG = () => {
   );
 };
 
-export default RPG;
+export default KamijiRPG;

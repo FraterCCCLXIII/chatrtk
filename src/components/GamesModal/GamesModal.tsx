@@ -9,6 +9,7 @@ import { Gamepad2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import WordChain from '../games/WordChain/WordChain';
+import KamijiRPG from '../../../kamiji-game-main/src/components/rpg/RPG';
 
 interface GamesModalProps {
   open: boolean;
@@ -56,6 +57,7 @@ const GamesModal: React.FC<GamesModalProps> = ({
           
           <TabsContent value="all" className="space-y-4">
             <WordChain onGameEnd={handleGameEnd} />
+            <KamijiRPG />
             <GamePlaceholder 
               title="Memory Match" 
               description="Test your memory by matching pairs of cards"
@@ -83,6 +85,7 @@ const GamesModal: React.FC<GamesModalProps> = ({
           
           <TabsContent value="ai" className="space-y-4">
             <WordChain onGameEnd={handleGameEnd} />
+            <KamijiRPG />
             <GamePlaceholder 
               title="AI Story Builder" 
               description="Collaborate with AI to create stories"
